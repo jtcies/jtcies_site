@@ -23,6 +23,9 @@ fit
 ```
 
 # Including Plots
+## Including Plots
+### Including Plots
+#### Including Plots
 
 You can also embed plots. See Figure \@ref(fig:pie) for example:
 

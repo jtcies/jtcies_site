@@ -76,7 +76,7 @@ div.content
     font-size: 18px;
     font-weight: 300;
 
-    color: #777;
+    color: #4f4f4f;
 }
 .copyright
 {
@@ -234,7 +234,7 @@ section.meta {
     font-family: 'Alegreya Sans', serif;
     font-weight: 400;
 
-    color: #555;
+    color: #6b7a8f;
 }
 header.title
 {
@@ -260,3 +260,14 @@ pre > code {
     word-wrap: initial;
     word-break: initial;
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Alegreya Sans';
+  color: #6b7a8f;
+}
+
