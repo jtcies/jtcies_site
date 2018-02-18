@@ -1,0 +1,57 @@
+## Basic Configuration
+
+baseurl = "https://jtcies.netlify.com" 
+builddrafts = false
+canonifyurls = false
+languageCode = "en-US"
+
+contentdir = "content"
+layoutdir = "layouts"
+publishdir = "public"
+
+author = "jtcies"
+title = "jtcies"
+
+theme = "hugo-goa"
+
+## Hugo Built-in Features
+disqusShortname = "jtcies" # Comment out to disable Disqus.
+#googleAnalytics = "XYZ"
+enableRobotsTXT = true
+
+## Site Settings
+[params]
+author = ""
+intro = ""
+description = ""
+authorimage = ""
+dateformat = "Jan 2, 2006"
+
+## Site Meta Settings
+[params.meta]
+description = ""
+keywords = ""
+
+## Social Accounts
+[params.social]
+github = "jtcies"
+twitter = "jtcies"
+email = "jtcies@gmail.com"
+
+## Extras
+[params.extra]
+copyright = "© 2018. Joseph Ciesielski. [Some Rights Reserved](http://creativecommons.org/licenses/by/3.0/)." 
+poweredby = true
+highlightjs = true
+
+## Main Menu
+[[menu.main]]
+    name = "posts"
+    weight = 100
+    identifier = "posts"
+    url = "/post/"
+[[menu.main]]
+    name = "about"
+    identifier = "about"
+    weight = 200
+    url = "/about/"
