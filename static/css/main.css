@@ -57,6 +57,7 @@ html
 .category
 {
     color: #966 !important;
+    
 }
 .container
 {
@@ -127,16 +128,19 @@ div.content
 {
     margin-top: 60px;
     margin-bottom: 20px;
+    
 }
 .headshot
 {
     width: 200px;
     height: 200px;
+    
 }
 .info
 {
     margin-top: 10px;
     margin-bottom: 20px;
+    
 }
 .intro
 {
@@ -196,7 +200,7 @@ h3.intro
     font-family: 'Alegreya', sans-serif;
     font-size: 12px;
     font-weight: 200;
-
+    text-align: center;
     color: #bbb;
 }
 a.meta
@@ -233,7 +237,8 @@ section.meta {
 {
     font-family: 'Alegreya Sans', serif;
     font-weight: 400;
-
+    font-variant: small-caps;
+    text-align: center;
     color: #6b7a8f;
 }
 header.title
