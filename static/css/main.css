@@ -203,6 +203,14 @@ h3.intro
     text-align: center;
     color: #bbb;
 }
+.metalist
+{
+    font-family: 'Alegreya', sans-serif;
+    font-size: 12px;
+    font-weight: 200;
+    color: #bbb;
+}
+
 a.meta
 {
     color: #966;
