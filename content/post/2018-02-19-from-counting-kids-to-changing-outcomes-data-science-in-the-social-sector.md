@@ -33,13 +33,33 @@ The main problem with using data in this way is that it does not fit the mental 
 
 In order to combat this, there are two basic options: shift the mental models or shift the ways in which data is presented. We do a little of both. This post is primarily about how shift the data use to more closely align to staff's mental models. However, I do think it's worth a brief word about shifting mental models. 
 
-In fact, the approach we take is not really to shift mental models but rather than clarify them and make them more explicit. Typically this is done in the social sciences using logic models. And while our approach is similar, logic modes tend to be too simplistic to fully capture the ideas that direct service staff have about their work. 
+In fact, the approach we take is not really to shift mental models but rather than clarify them and make them more explicit. Typically this is done in the social sciences using logic models. And while our approach is similar, logic modes tend to be too simplistic to fully capture the ideas that direct service staff have about their work. We work with program staff to develop conceptual models that capture the nuance of how they think about their work. They tend to focus on the activites of the particular program and the shorter-term outcomes that give some immediate feedback about how participants are doing. Long-term outcomes are obviously what we are ultimately striving for but usually come too far int he distance to have a direct impact on decisions that staff make. We tend to rely on external researchers to help us measure impact on those longer-term outcomes while focusing on presenting information which relates more directly to programmatic activities. 
 
 # Shifting to tidy data
 
+A substantial focus of our work is to present data analysis to staff in ways that more closely reflects the mental models they have about their programs. Only then can you start to impact the decisions they make about their work. 
 
+Doing this requires getting the data into a format that allows you to ask it a broad variety of questions. Here is where the principles of tidy data are invaluable. The basic idea is to get to a 
 
+Here are the tables that we use:
 
+- Characteritics
+    - row: a participant
+    - column: a demographic variable (date of birth, race, gender, etc.)
+- Activities
+    - a service offered to a participant
+    - a descriptor of that service (subject of class, notes that describe what was discussed during a casem management session, etc.)
+- Test Scores
+    - row: a test taken
+    - column: a descriptor of that test (subject, score, etc.)
+- Outcomes
+    - an outcome
+    - a descriptor of that outcome
+
+I present these tables here for two reasons:
+
+1. Some rseaders might find this breakdown useful in their work; 
+2. I want to get as specific about the details of our implementation as possible; 
 
 
 [^1]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
