@@ -1,6 +1,6 @@
 +++
 categories = ["ad"]
-comments = false
+comments = true
 date = "2016-10-02T15:59:13-04:00"
 draft = false
 showpagemeta = true
