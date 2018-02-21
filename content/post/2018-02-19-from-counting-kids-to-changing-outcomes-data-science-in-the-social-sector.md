@@ -23,7 +23,7 @@ The reason for this is because data use is almost exclusively a compliance exerc
 
 <center><img src = "/img/2018-02-19_data_sci_social/eto.png" width=400 height=400 align="middle"></center>
 
-## Counting
+### Counting
 
 This method of data extraction lends itself to being only able to use the data for one thing - counting. A lot of data in the social sector tends to be counting how many particiapnts achieved some outcome, for example. You then divide this by a count of the toal and get a percentage.  
 
@@ -35,20 +35,24 @@ In order to combat this, there are two basic options: shift the mental models or
 
 In fact, the approach we take is not really to shift mental models but rather than clarify them and make them more explicit. Typically this is done in the social sciences using logic models. And while our approach is similar, logic modes tend to be too simplistic to fully capture the ideas that direct service staff have about their work. We work with program staff to develop conceptual models that capture the nuance of how they think about their work. They tend to focus on the activites of the particular program and the shorter-term outcomes that give some immediate feedback about how participants are doing. Long-term outcomes are obviously what we are ultimately striving for but usually come too far int he distance to have a direct impact on decisions that staff make. We tend to rely on external researchers to help us measure impact on those longer-term outcomes while focusing on presenting information which relates more directly to programmatic activities. 
 
+### Snowballing challenges
+
+The counting mindset leads to a snowball effect of other issues with data use. First, as we've seen, when the data doesn't intersect with any part of the mental models of the staff, it isn't able to impact the decisions that those staff are making. When the data isn't used, the quality starts to suffer. The vast majority of the data that we rely on is entered direclty by program staff. When a participant attends a class or achieves an outcome, someone has to go and put that into the system. If the data presented back to them doesn't seem meaningful, or worse, isn't presented back at all, motivation to to enter the data will wane. And when the quality of the data suffers, staff will become distrustful of the data. They will know that it doesn't accurately reflect their efforts because they are the ones entering it. Therefore staff can continue to make decisions based on their prior mental models and not update them based on the data. 
+
 # Shifting to tidy data
 
 A substantial focus of our work is to present data analysis to staff in ways that more closely reflects the mental models they have about their programs. Only then can you start to impact the decisions they make about their work. 
 
-Doing this requires getting the data into a format that allows you to ask it a broad variety of questions. Here is where the principles of tidy data are invaluable. The basic idea is to get to a 
+Doing this requires getting the data into a format that allows you to ask it a broad variety of questions. Here is where the principles of tidy data are invaluable. The basic idea is to get to a format where every row is an observation, every column is a variable, and every table is a level of observation. 
 
 Here are the tables that we use:
 
 - Characteritics
     - row: a participant
-    - column: a demographic variable (date of birth, race, gender, etc.)
+    - column: a demographic variable (date of birth, race, gender, etc.
 - Activities
     - a service offered to a participant
-    - a descriptor of that service (subject of class, notes that describe what was discussed during a casem management session, etc.)
+    - a descriptor of that service (subject of class, notes that describe what was discussed during a case management session, etc.)
 - Test Scores
     - row: a test taken
     - column: a descriptor of that test (subject, score, etc.)
@@ -56,10 +60,12 @@ Here are the tables that we use:
     - an outcome
     - a descriptor of that outcome
 
-I present these tables here for two reasons:
+I present these tables in order to get as specific as possible with our implementation in case that is helpful to others. 
 
-1. Some rseaders might find this breakdown useful in their work; 
-2. I want to get as specific about the details of our implementation as possible; 
+Getting the data into the correct format is one of the most important parts of the process. I typically use R to process my data; the benefit of this is that there are a number of packages in the "Tidyverse" which faciliate getting data into a tidy format and moreover, make working with data more straightforward once its in this format. 
+
+In the same way that the reporting/counting mindset creates a snowball of challenges, getting data into a tidy format creates a positive snowball leading to 
+
 
 
 [^1]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
