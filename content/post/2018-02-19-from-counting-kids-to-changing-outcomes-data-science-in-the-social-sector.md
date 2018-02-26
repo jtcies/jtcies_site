@@ -64,9 +64,17 @@ I present these tables in order to get as specific as possible with our implemen
 
 Getting the data into the correct format is one of the most important parts of the process. I typically use R to process my data; the benefit of this is that there are a number of packages in the "Tidyverse" which faciliate getting data into a tidy format and moreover, make working with data more straightforward once its in this format. 
 
-In the same way that the reporting/counting mindset creates a snowball of challenges, getting data into a tidy format creates a positive snowball leading to 
+In the same way that the reporting/counting mindset creates a snowball of challenges, getting data into a tidy format creates a positive snowball leading to more effective use of the data. 
+
+## Exploration
+
+One use for data is to tell you how you are doing with things you alrady care about. This is important. But it should also be able to generate insights into things which are important but you didn't know about. Getting data into a tidy format makes things much simplier. 
 
 
+
+## Processes
+
+## Collboration
 
 [^1]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
 
