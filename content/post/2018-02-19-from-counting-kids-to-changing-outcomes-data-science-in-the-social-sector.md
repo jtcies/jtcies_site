@@ -10,7 +10,7 @@ showcomments: yes
 showpagemeta: yes
 ---
 
-The non-profit organizaiton I work at collects tons of data. But the ways in which we use that data can be pretty limited. I want to talk about why I think that challenge exits and how we are working to change that fact, putting our data to work improving opportunities for young people[^1]. 
+The non-profit organizaiton I work at collects tons of data. But the ways in which we use that data can be pretty limited. I want to talk about why I think that challenge exits and how we are working to change that fact, putting our data to work improving opportunities for young people[^a]. 
 
 # Challenge
 
@@ -26,7 +26,7 @@ The reason for this is because data use is almost exclusively a compliance exerc
 
 This method of data extraction lends itself to being only able to use the data for one thing - counting. A lot of data in the social sector tends to be counting how many particiapnts achieved some outcome, for example. You then divide this by a count of the toal and get a percentage.  
 
-This is not to deny that counting is frequently a useful method to understand what's happening in program through its data. The problem becomes when this is the primary use of the data. As an example, many people have identified problems with how test scores have negatively impacted schooling in recent years. In my view this is the quintessential example of [counting][^2]: you count how many kids scored above a certain score, count the total who took the test, and then divide. You come out with one number that tells how a classroom, school, or district is performing, but you lose all nuance. 
+This is not to deny that counting is frequently a useful method to understand what's happening in program through its data. The problem becomes when this is the primary use of the data. As an example, many people have identified problems with how test scores have negatively impacted schooling in recent years. In my view this is the quintessential example of counting[^b]: you count how many kids scored above a certain score, count the total who took the test, and then divide. You come out with one number that tells how a classroom, school, or district is performing, but you lose all nuance. 
 
 The main problem with using data in this way is that it does not fit the mental models of what the people most directly invovled with programs - direct service staff such as teachers, case managers, program directors, etc. - have about what they are trying to achieve. They have specific, often unspoken, ideas about how the activities of their program lead to the changes that they want for participants. If the data that is presented to them doesn't interact with the mental models of these staff it doesn't have any chance of impacting how their practice. 
 
@@ -73,9 +73,9 @@ The social sector seems to be in a in a similar place as journalism was a few ye
 In my estimation the social sector is ripe for a similar shift. We have very much relied on external experts, academics and contracted evaluators, to tell us how we are doing. These perspectives are immensely valuable and will not go away any time soon just as experts providing quotes for reports will not go away. However, there is an immense gap that can be filled by more internal analysts. These individuals have the skills to conduct their own analysis, present findings, and communicate results directly to program staff. They bring additional context by doing this full-time, are able establish processes around data review, and focus on influencing decisions of program staff. Most organizations in this sector would benefit from this skill-set immensely. 
 
 
-[^1]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
+[^a]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
 
-[^2]: This isn't to say that the tests themselves are not problematic, just to note that the way that the data is used is also lacking. 
+[^b]: This isn't to say that the tests themselves are not problematic, just to note that the way that the data is used is also lacking. 
 
 [1]: https://www.vox.com/2015/2/4/7975535/what-is-data-journalism
 
