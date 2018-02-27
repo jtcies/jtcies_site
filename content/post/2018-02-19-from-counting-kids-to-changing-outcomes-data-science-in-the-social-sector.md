@@ -70,11 +70,24 @@ In the same way that the reporting/counting mindset creates a snowball of challe
 
 One use for data is to tell you how you are doing with things you alrady care about. This is important. But it should also be able to generate insights into things which are important but you didn't know about. Getting data into a tidy format makes things much simplier. 
 
+A key problem that we've experienced is that staff believe there are limiations to the data which are in fact not just limiations of the data but of the systems which report that data. Getting data into a tidy format allows you to explore things in a way that weren't possible previously. 
 
+It's not possible to guess what staff's mental models are. Instead, a more effective approach is to present them with different forms of data, unique visualizations, that allow them to think differently about their work. These conversations tend to be pretty superficial at first, but overtime, staff will provide feedback about what is useful to them, what they are interested in seeing, and how small tweaks to reports or charts could lead to big insights. 
 
 ## Processes
 
+However, one-off analyses typically don't lead to impactful insights. More important than any one analysis are the processes surrounding the data. Routines allow all involved to gain a familiartiy with both the data and eachother. 
+
+One of the key things we do is to put definitions of key metrics at the bottom of each report. This accomplishes two things. First, it increases transparency so that everyone can gain a deeper understanding of what data and how exactly indicators are calculated. Moreover, it provides direct opportunities for feedback on specific items. It allows the conversation to go beyond whether the data itself is "right" to whether the analysis of the data provides genuine insights. 
+
 ## Collboration
+
+Clear, consistent processes around data reporting and review leads to more opportunities for collaboration. Processes allow the conversation to go beyond reporting metrics and to ask interesting questions about relationships between variables. This gives staff and analysts to provide their unique perspective and delve into questions that can be further explored through exitsting or additional data. 
+
+# Conclusion
+
+I don't claim that our organization has all of our data routines figured out. We're constantly iterating and thinking about how to improve. I do belive that we are approaching the problem in a unique way and hope that sharing some of our process will help other organizations. 
+
 
 [^1]: This post is modified from a talk I gave at [EARL Boston 2017](https://earlconf.com/). 
 
