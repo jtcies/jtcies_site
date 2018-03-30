@@ -1,0 +1,75 @@
+---
+title: Extending luck
+author: 'Joe Ciesielski'
+date: '2018-03-29'
+slug: extending-luck
+categories: []
+tags: []
+comments: no
+showcomments: yes
+showpagemeta: yes
+draft: true
+---
+
+```{r}
+library(tidyverse)
+library(gganimate)
+
+set.seed(2018)
+
+# set the environment variables
+n = 1000 # number of individuals
+c = 10 # starting captial
+m = 0.6 # mean talent
+sd = 0.1 # std dev talent
+i = 80 - 1 # number of iterations (years times two for each six months,
+ # minus 1 because time zero is already incorporated)
+ne = 500 # number of lucky/unlucky events
+pl = 0.5 # probability of lucky events
+
+t = rnorm(n, m, sd) # talent
+e = sample(c(-1,1), ne, prob = c(1 - pl, pl), replace = TRUE) # events
+
+# set the coordinates for the invididuals and events
+nx <- sample.int(100, size = n, replace = TRUE)
+ny <- sample.int(100, size = n, replace = TRUE)
+
+qplot(nx, ny) # make sure spread of individuals looks good
+
+ex <- sample.int(100, size = ne, replace = TRUE)
+ey <- sample.int(100, size = ne, replace = TRUE)
+
+ggplot(data.frame(ex, ey, e), aes(ex, ey, color = factor(e))) +
+  geom_point() # make sure events look good
+
+# now try with multiple random walks
+
+rand_walk <- function(xstart, ystart, xwalks, ywalks){
+  xwalks <- c(xstart, xwalks) %>% cumsum()
+  ywalks <- c(ystart, ywalks) %>% cumsum()
+  cbind(xwalks, ywalks)
+}
+
+walks <- data.frame(
+  a = sample(c(-1, 1), ne * i, TRUE),
+  b = sample(c(-1, 1), ne * i, TRUE)
+) %>% 
+  split(1:ne)
+
+event_walks <- data.frame(ex, ey) %>% 
+  split(1:ne) %>% 
+  map2(walks, ~ rand_walk(.x$ex, .x$ey, .y$a, .y$b)) %>% 
+  map_df(~ transform(.x, step = 0:i)) %>% 
+  mutate(event_num = rep(1:ne, each = i + 1),
+         luck = rep(e, each = i + 1))
+
+sample_events <- sample(c(1:500), 10)
+
+event_walks %>% 
+  filter(event_num %in% sample_events) %>% 
+  ggplot(aes(xwalks, ywalks, color = factor(event_num * luck), 
+             group = event_num, alpha = step)) +
+    geom_path()
+  
+
+```
