@@ -10,6 +10,7 @@ showcomments: yes
 showpagemeta: yes
 draft: true
 ---
+First we set up the experiment
 
 ```{r}
 library(tidyverse)
@@ -36,8 +37,11 @@ ny <- sample.int(100, size = n, replace = TRUE)
 
 qplot(nx, ny) # make sure spread of individuals looks good
 
+agents <- data.frame(nx, ny, t, c)
+
 ex <- sample.int(100, size = ne, replace = TRUE)
 ey <- sample.int(100, size = ne, replace = TRUE)
+
 
 ggplot(data.frame(ex, ey, e), aes(ex, ey, color = factor(e))) +
   geom_point() # make sure events look good
@@ -71,5 +75,59 @@ event_walks %>%
              group = event_num, alpha = step)) +
     geom_path()
   
+```
+
+Next determine which events intersected with which agents.
+
+```{r}
+
+intersect <- function(x) {
+  for (i in 0:i + 1) {
+    
+    this_step <- event_walks[event_walks$step == i, ]
+    
+    agents <- left_join(agents, this_step, 
+                        by = c("nx" = "xwalks", "ny" = "ywalks"))
+    
+    agents <- agents %>% 
+      replace_na(replace = list(luck = 0)) %>% 
+      mutate(
+        c = case_when(
+          luck == 1  & runif(1) < t ~ c * 2,
+          luck == -1 & runif(1) > t ~ c / 2,
+          TRUE                      ~ c)
+      ) %>% 
+      select(nx, ny, t, c)
+  }
+  agents
+}
+
+experiment <- intersect()
+
+summary(experiment$c)
 
 ```
+
+Histogram of capital after experiment. 
+
+```{r}
+
+ggplot(experiment, aes(c + 1)) + 
+  geom_histogram(binwidth = 50) +
+  scale_y_log10()
+
+```
+
+
+Plot the amount of capital as a size of the agents.
+
+```{r}
+
+ggplot(experiment, aes(nx, ny, size = c)) +
+  geom_point()
+
+```
+
+This model operates on a couple of assumptions. First, that intelligence in normally distrubted and that higher intelligence is what allows somewhat to take advantage of a lucky event or not be harmed by an unlucky event. Additionally, it assumes that (un)lucky events follow a random pattern. 
+
+I'm interested in testing a different set of assumptions. Namely, events do not follow a random pattern but are systematically located around specific individuals. 
