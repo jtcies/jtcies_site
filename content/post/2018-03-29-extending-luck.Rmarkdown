@@ -97,7 +97,8 @@ intersect <- function(x) {
           luck == -1 & runif(1) > t ~ c / 2,
           TRUE                      ~ c)
       ) %>% 
-      select(nx, ny, t, c)
+      select(nx, ny, t, c) %>% 
+      distinct(nx, ny, .keep_all = TRUE)
   }
   agents
 }
@@ -131,3 +132,60 @@ ggplot(experiment, aes(nx, ny, size = c)) +
 This model operates on a couple of assumptions. First, that intelligence in normally distrubted and that higher intelligence is what allows somewhat to take advantage of a lucky event or not be harmed by an unlucky event. Additionally, it assumes that (un)lucky events follow a random pattern. 
 
 I'm interested in testing a different set of assumptions. Namely, events do not follow a random pattern but are systematically located around specific individuals. 
+
+```{r}
+
+# same random events and same agent locations
+
+events <- data.frame(ex, ey, luck = e)
+
+agents <- data.frame(nx, ny, c)
+
+experiment2 <- function(events, agents, steps) {
+ 
+  for(i in 1:steps) {
+    intersection <- left_join(agents, events, 
+                              by = c("nx" = "ex",
+                                     "ny" = "ey")) %>% 
+      replace_na(replace = list(luck = 0)) %>% 
+      mutate(
+        c = case_when(
+          luck == 1 & runif(1) >= 0.5 ~ c * 2,
+          luck == -1 & runif(1) <= .5 ~ c / 2, 
+          TRUE ~ c)
+      )
+    
+    lucky <- intersection %>% 
+      filter(luck == 1) %>% 
+      mutate(
+        dup = case_when(
+          runif(1) >= 0.75 ~ 2,
+          TRUE ~ 1
+        )
+      ) %>% 
+      select(ex = nx, ey = ny, dup)
+    
+    events <- left_join(events, lucky, by = c("ex", "ey")) %>% 
+      replace_na(replace = list(dup = 1))
+    
+    events[rep(row.names(events), events$dup), ]
+    
+    agents <- select(intersection, nx, ny, c) %>% 
+      distinct(nx, ny, .keep_all = TRUE)
+    
+    events <- events %>%
+      mutate(
+        ex = ex + sample(c(-1, 1)),
+        ey = ey + sample(c(-1, 1))
+      ) %>% 
+      select(ex, ey, luck)
+      
+     
+  }
+   
+}
+
+experiment2(events, agents, i)
+
+```
+
