@@ -141,17 +141,21 @@ events <- data.frame(ex, ey, luck = e)
 
 agents <- data.frame(nx, ny, c)
 
+rep_data <- function(df, rep) {
+ df[rep(1:nrow(df), each = rep), ]
+}
+
 experiment2 <- function(events, agents, steps) {
- 
-  for(i in 1:steps) {
+  
+  for (i in 1:steps) {
     intersection <- left_join(agents, events, 
                               by = c("nx" = "ex",
                                      "ny" = "ey")) %>% 
       replace_na(replace = list(luck = 0)) %>% 
       mutate(
         c = case_when(
-          luck == 1 & runif(1) >= 0.5 ~ c * 2,
-          luck == -1 & runif(1) <= .5 ~ c / 2, 
+          luck ==  1 & runif(1) >= 0.5 ~ c * 2,
+          luck == -1 & runif(1) <= 0.5 ~ c / 2, 
           TRUE ~ c)
       )
     
@@ -159,33 +163,52 @@ experiment2 <- function(events, agents, steps) {
       filter(luck == 1) %>% 
       mutate(
         dup = case_when(
-          runif(1) >= 0.75 ~ 2,
-          TRUE ~ 1
+          runif(1) >= 0.75 ~ 2L,
+          TRUE             ~ 1L
         )
       ) %>% 
       select(ex = nx, ey = ny, dup)
     
     events <- left_join(events, lucky, by = c("ex", "ey")) %>% 
-      replace_na(replace = list(dup = 1))
+      replace_na(replace = list(dup = 1L))
     
-    events[rep(row.names(events), events$dup), ]
+    events <- events %>% 
+      split(1:nrow(.)) %>% 
+      map_dfr(~rep_data(., .$dup))
     
     agents <- select(intersection, nx, ny, c) %>% 
       distinct(nx, ny, .keep_all = TRUE)
     
+    xwalk <- sample(c(-1, 1), nrow(events), replace = TRUE)
+    ywalk <- sample(c(-1, 1), nrow(events), replace = TRUE)
+    
     events <- events %>%
       mutate(
-        ex = ex + sample(c(-1, 1)),
-        ey = ey + sample(c(-1, 1))
+        ex = ex + xwalk,
+        ey = ey + ywalk,
       ) %>% 
       select(ex, ey, luck)
-      
-     
+    
   }
-   
+  as_tibble(agents)
 }
 
-experiment2(events, agents, i)
+experiment2(events, agents, 15)
+
+```
+
+```{r}
+
+match_up <- function(ax, ay, bx, by) {
+  for (i in 1:length(bx)) {
+    if(ax == bx[i] && ay == by[i]) {
+      print("yay")
+    } else {
+      print("boo")
+    }
+  }
+}
+
 
 ```
 
