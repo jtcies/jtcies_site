@@ -15,6 +15,7 @@ First we set up the experiment
 ```{r}
 library(tidyverse)
 library(gganimate)
+library(data.table)
 
 set.seed(2018)
 
@@ -32,15 +33,15 @@ t = rnorm(n, m, sd) # talent
 e = sample(c(-1,1), ne, prob = c(1 - pl, pl), replace = TRUE) # events
 
 # set the coordinates for the invididuals and events
-nx <- sample.int(100, size = n, replace = TRUE)
-ny <- sample.int(100, size = n, replace = TRUE)
+nx <- sample.int(1000, size = n, replace = TRUE)
+ny <- sample.int(1000, size = n, replace = TRUE)
 
 qplot(nx, ny) # make sure spread of individuals looks good
 
 agents <- data.frame(nx, ny, t, c)
 
-ex <- sample.int(100, size = ne, replace = TRUE)
-ey <- sample.int(100, size = ne, replace = TRUE)
+ex <- sample.int(1000, size = ne, replace = TRUE)
+ey <- sample.int(1000, size = ne, replace = TRUE)
 
 
 ggplot(data.frame(ex, ey, e), aes(ex, ey, color = factor(e))) +
@@ -200,15 +201,66 @@ experiment2(events, agents, 15)
 ```{r}
 
 match_up <- function(ax, ay, bx, by) {
-  for (i in 1:length(bx)) {
-    if(ax == bx[i] && ay == by[i]) {
-      print("yay")
-    } else {
-      print("boo")
+  ret <- vector(length = length(ax))
+  for(i in 1:length(ax)) {
+    for (j in 1:length(bx)) {
+      if(ax[i] == bx[j] && ay[i] == by[j]) {
+        log <- TRUE
+      } else {
+        log <- FALSE
+      }
+      ret[i] <- log
     }
   }
+  ret
 }
 
+matches <- match_up(x, y, a, b)
+```
 
+```{r}
+events <- data.frame(ex, ey, luck = e) %>% 
+  data.table(key = "ex,ey")
+
+agents <- data.frame(nx, ny, c) %>% 
+  data.table(key = "nx,ny")
+
+match_2 <- function(agents, events, rep) {
+ 
+  walk <- function(a) {
+   a <- a + sample(c(-1, 1), 1)
+   a
+  }
+  
+  for (i in 1:rep) {
+    # match up the agents and events that intersect
+    setkeyv(events, c("ex", "ey"))
+    agents <- unique(agents)
+    agents <- data.table(agents)
+    setkeyv(agents, c("nx", "ny"))
+    ret <- events[agents]
+    ret$luck[is.na(ret$luck)] <- 0
+    ret$c <- ifelse(ret$luck == 1 & runif(1) >= 0.5, ret$c * 2, ret$c)
+    ret$c <- ifelse(ret$luck == -1 & runif(1) < 0.5, ret$c / 2, ret$c)
+    agents <- ret[, .(nx = ex, ny = ey, c)]
+
+    # duplicate some of the events that are lucky
+    ret$dup <- ifelse(ret$luck == 1 & runif(1) >= 0.75, 2, 1)
+    duplicate <- ret[, .(ex, ey, dup)]
+    setkeyv(duplicate, c("ex", "ey"))
+    events <- duplicate[events]
+    events$dup[is.na(events$dup)] <- 1
+    events <- events[rep(1:nrow(events), events$dup), ]
+    events <- events[, c("ex", "ey", "luck")]
+    
+    # walk the events
+    events$ex <- map_dbl(events$ex, walk)
+    events$ey <- map_dbl(events$ex, walk)
+     
+  }
+  agents 
+}
+
+tmp <- match_2(agents, events, 20)
 ```
 
