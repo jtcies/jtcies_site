@@ -139,11 +139,28 @@ events <- data.table(ex, ey, luck = e, eid = 1:500)
 
 agents <- data.table(nx, ny, c, aid = 1:1000)
 
+# paramaters
+# chance of lucky event impacting capital
+prob <- 0.25
+# chance that an event is duplciated
+prob_dup <- 0.9
+
 match_2 <- function(agents, events, rep) {
  
   walk <- function(a) {
    a <- a + sample(c(-1, 1), 1)
    a
+  }
+  
+  agents_normal <- function(a) {
+   dif <- a %>% 
+     group_by(aid) %>% 
+     summarise(dif = max(c) - min(c))
+   a <- merge(a, dif, by = "aid")
+   a$c <- a$dif + a$c
+   a %>% 
+     distinct(aid, .keep_all = TRUE) %>% 
+     select(-dif)
   }
   
   for (i in 1:rep) {
@@ -155,18 +172,21 @@ match_2 <- function(agents, events, rep) {
     # vector of luck
     lucky <- runif(n = nrow(ret), min = 0, max = 1)
     # double of half with 50% chance
-    ret$c <- ifelse(ret$luck == 1 & lucky >= 0.5, ret$c * 2, ret$c)
-    ret$c <- ifelse(ret$luck == -1 & lucky < 0.5, ret$c / 2, ret$c)
+    ret$c <- ifelse(ret$luck == 1 & lucky >= prob, ret$c * 2, ret$c)
+    ret$c <- ifelse(ret$luck == -1 & lucky < prob, ret$c / 2, ret$c)
     # keep the agents info
     agents <- ret[, c("nx", "ny", "aid", "c")]
+  # need to deal with agents that intersect with multiple events
+    # remove duplciate rows
+    agents <- agents_normal(agents)
 
   # duplicate some of the events that are lucky
     # vector of chance to duplciate
-    dup_lucky <- runif(n = nrow(ret), min = 0, max = 1)
+    dup_chance <- runif(n = nrow(ret), min = 0, max = 1)
     # duplciate 10% of time
-    ret$dup <- ifelse(ret$luck %in% c(-1, 1) & dup_lucky >= 0.9, 2, 1)
+    ret$dup <- ifelse(ret$luck %in% c(-1, 1) & dup_chance >= prob_dup, 2, 1)
     # merge duplicates in to events
-    duplicate <- ret[ret$dup == 2, .(eid = aid, dup)]
+    duplicate <- ret[ret$dup == 2, c("eid", "dup")]
     events <- merge(events, duplicate, by = "eid", 
                     all.x = TRUE)
     # duplciate events
@@ -185,5 +205,7 @@ match_2 <- function(agents, events, rep) {
 }
 
 tmp <- match_2(agents, events, i)
+
+qplot(tmp$c)
 ```
 
