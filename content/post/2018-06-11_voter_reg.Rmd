@@ -14,11 +14,20 @@ library(readxl)
 library(here)
 library(tidycensus)
 library(stringr)
+library(GGally)
 
 fix_names <- function(x) {
   names(x) <- tolower(make.names(names(x)))
   names(x) <- str_replace_all(names(x), "[/.]+", "_")
   x
+}
+
+
+get_census_data <- function(vars) {
+  get_acs(geography = "state", variables = vars) %>% 
+    mutate(state = tolower(NAME)) %>% 
+    select(-moe, -NAME, -GEOID) %>% 
+    spread(variable, estimate)
 }
 
 # state voter registration and voting info
@@ -33,16 +42,36 @@ state <- "data/table04a.xls" %>%
   fix_names()
 
 # educational characteristics
-educ_vars <- c(total_pop = "B23006_001",
+educ_vars <- c(pop_25_older = "B23006_001",
                bach_or_higher = "B23006_023")
                
-educ <- get_acs(geography = "state", variables = educ_vars) %>% 
-  select(-moe) %>% 
-  spread(variable, estimate) %>% 
-  mutate(pct_bach = bach_or_higher / total_pop,
-         state = tolower(NAME))
+pov_vars <- c(pop = "B06012_001",
+              blw_pov = "B06012_002")
 
-state_chars <- left_join(state, educ, by = "state")
+age <- c(med_age = "B01002_001")
+
+race <- c(black = "B01001B_001",
+          latino = "B18101I_001")
+
+state_dat <- list(educ_vars, pov_vars, age, race) %>% 
+  map_dfc(get_census_data) %>% 
+  left_join(state) %>% 
+  mutate(
+    pct_blw_pov = blw_pov / pop,
+    pct_bach = bach_or_higher / pop_25_older,
+    pct_black = black / pop,
+    pct_latino = latino / pop
+  )
+
+state_dat %>% 
+  select(pct_blw_pov,
+         med_age,
+         percent_registered_citizen_,
+         percent_registered_total_,
+         pct_black,
+         pct_latino) %>% 
+  ggpairs()
+         
 
 ```
 
