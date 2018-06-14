@@ -15,6 +15,7 @@ library(here)
 library(tidycensus)
 library(stringr)
 library(GGally)
+library(ipumsr)
 
 fix_names <- function(x) {
   names(x) <- tolower(make.names(names(x)))
@@ -22,16 +23,24 @@ fix_names <- function(x) {
   x
 }
 
-
 get_census_data <- function(vars) {
-  get_acs(geography = "state", variables = vars) %>% 
-    mutate(state = tolower(NAME)) %>% 
-    select(-moe, -NAME, -GEOID) %>% 
+  get_acs(geography = "county", variables = vars) %>% 
+    select(-moe, -NAME) %>% 
     spread(variable, estimate)
 }
 
+# read in cps data
+ddi <- read_ipums_ddi(here::here("data/cps_00002.xml"))
+voting <- read_ipums_micro(ddi)
+
+# only keep those that have county
+county <- voting %>% 
+  fix_names() %>% 
+  filter(county != 0,
+         !is.na(voreg))
+
 # state voter registration and voting info
-state <- "data/table04a.xls" %>% 
+state_voting <- "data/table04a.xls" %>% 
   here::here() %>% 
   read_excel(skip = 4) %>% 
   rename(state = X__1,
@@ -53,9 +62,8 @@ age <- c(med_age = "B01002_001")
 race <- c(black = "B01001B_001",
           latino = "B18101I_001")
 
-state_dat <- list(educ_vars, pov_vars, age, race) %>% 
+demos <- list(educ_vars, pov_vars, age, race) %>% 
   map_dfc(get_census_data) %>% 
-  left_join(state) %>% 
   mutate(
     pct_blw_pov = blw_pov / pop,
     pct_bach = bach_or_higher / pop_25_older,
@@ -63,26 +71,7 @@ state_dat <- list(educ_vars, pov_vars, age, race) %>%
     pct_latino = latino / pop
   )
 
-state_dat %>% 
-  select(pct_blw_pov,
-         med_age,
-         percent_registered_citizen_,
-         percent_registered_total_,
-         pct_black,
-         pct_latino) %>% 
-  ggpairs()
-         
-
 ```
 
 
-
-```{r}
-
-ggplot(state_chars, aes(pct_bach, percent_registered_total_)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  geom_label(aes(label = state))
-
-```
 
