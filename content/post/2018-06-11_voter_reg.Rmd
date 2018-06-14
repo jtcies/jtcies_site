@@ -15,7 +15,8 @@ library(here)
 library(tidycensus)
 library(stringr)
 library(GGally)
-library(ipumsr)
+library(stringr)
+library(httr)
 
 fix_names <- function(x) {
   names(x) <- tolower(make.names(names(x)))
@@ -23,21 +24,35 @@ fix_names <- function(x) {
   x
 }
 
-get_census_data <- function(vars) {
-  get_acs(geography = "county", variables = vars) %>% 
-    select(-moe, -NAME) %>% 
-    spread(variable, estimate)
+make_names <- function(x) {
+  x <- tolower(make.names(x))
+  x <- str_replace_all(x, "[/.]+", "_")
+  x
 }
 
-# read in cps data
-ddi <- read_ipums_ddi(here::here("data/cps_00002.xml"))
-voting <- read_ipums_micro(ddi)
+download_state_data <- function(x) {
+  url <- paste0(
+     "https://www2.census.gov/programs-surveys/demo/tables/voting/", 
+     x, 
+     ".xlsx"
+   )
+  GET(url, write_disk(tmp <- tempfile(fileext = ".xlsx")))
+  df <- read_excel(tmp, skip = 1)
+  names(df)[1] <- "variable"
+  df %>% 
+    fix_names() %>% 
+    slice(1:29) %>% 
+    filter(!is.na(estimate)) %>% 
+    mutate(state = x)
+}
 
-# only keep those that have county
-county <- voting %>% 
-  fix_names() %>% 
-  filter(county != 0,
-         !is.na(voreg))
+capitalize <- function(x) {
+  # capitalze all not conjunction words
+  x <- tolower(x)
+  x <- gsub("(?<!^)\\b(?:the|an?|[io]n|at|with(?:out)?|from|for|and|but|n?or|yet|[st]o|around|by|after|along|from|of)\\b(*SKIP)(*FAIL)|\\b(\\pL)", "\\U\\1", x, perl=T)
+  x <- str_replace_all(x, " ", "")
+  x
+}
 
 # state voter registration and voting info
 state_voting <- "data/table04a.xls" %>% 
@@ -47,29 +62,12 @@ state_voting <- "data/table04a.xls" %>%
          total_pop = X__2,
          total_citizens = X__3) %>% 
   slice(2:52) %>% 
-  mutate(state = tolower(state)) %>% 
+  mutate(state = capitalize(state)) %>% 
   fix_names()
 
-# educational characteristics
-educ_vars <- c(pop_25_older = "B23006_001",
-               bach_or_higher = "B23006_023")
-               
-pov_vars <- c(pop = "B06012_001",
-              blw_pov = "B06012_002")
-
-age <- c(med_age = "B01002_001")
-
-race <- c(black = "B01001B_001",
-          latino = "B18101I_001")
-
-demos <- list(educ_vars, pov_vars, age, race) %>% 
-  map_dfc(get_census_data) %>% 
-  mutate(
-    pct_blw_pov = blw_pov / pop,
-    pct_bach = bach_or_higher / pop_25_older,
-    pct_black = black / pop,
-    pct_latino = latino / pop
-  )
+state_demos <- state_voting$state %>%
+  map_dfr(download_state_data) %>% 
+  mutate(variable = make_names(variable))
 
 ```
 
