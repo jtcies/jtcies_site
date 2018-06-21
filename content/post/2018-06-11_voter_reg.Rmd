@@ -17,6 +17,10 @@ library(stringr)
 library(GGally)
 library(stringr)
 library(httr)
+library(modelr)
+library(forcats)
+library(ggrepel)
+library(rvest)
 
 fix_names <- function(x) {
   names(x) <- tolower(make.names(names(x)))
@@ -41,15 +45,16 @@ download_state_data <- function(x) {
   names(df)[1] <- "variable"
   df %>% 
     fix_names() %>% 
-    slice(1:29) %>% 
     filter(!is.na(estimate)) %>% 
+    slice(c(2:17, 19, 21, 23)) %>% 
     mutate(state = x)
 }
 
 capitalize <- function(x) {
   # capitalze all not conjunction words
   x <- tolower(x)
-  x <- gsub("(?<!^)\\b(?:the|an?|[io]n|at|with(?:out)?|from|for|and|but|n?or|yet|[st]o|around|by|after|along|from|of)\\b(*SKIP)(*FAIL)|\\b(\\pL)", "\\U\\1", x, perl=T)
+  x <- gsub("(?<!^)\\b(?:the|an?|[io]n|at|with(?:out)?|from|for|and|but|n?or|yet|[st]o|around|by|after|along|from|of)\\b(*SKIP)(*FAIL)|\\b(\\pL)", 
+            "\\U\\1", x, perl = TRUE)
   x <- str_replace_all(x, " ", "")
   x
 }
@@ -65,11 +70,159 @@ state_voting <- "data/table04a.xls" %>%
   mutate(state = capitalize(state)) %>% 
   fix_names()
 
+# get partisanship
+partisan <- "https://en.wikipedia.org/wiki/Political_party_strength_in_U.S._states" %>% 
+  read_html() %>% 
+  html_node(xpath = "/html/body/div[3]/div[3]/div[4]/div/table[2]") %>% 
+  html_table() %>% 
+  fix_names() %>% 
+  rename(split = partisan_split_as_of_2014_update_)
+
+partisan_split <- partisan %>% 
+  select(state, split) %>% 
+  mutate(
+    split = str_extract_all(split, "\\d+\\.?\\d*"),
+  )
+
+partisan_split$split_low <- lapply(partisan_split$split, `[`, 2)
+partisan_split$split_high <- lapply(partisan_split$split, `[`, 1)
+partisan_split[c("split_low", "split_high")] <- lapply(partisan_split[c("split_low", "split_high")], as.numeric)
+
+partisan_split$split_dif <- partisan_split$split_high - partisan_split$split_low
+
+partisan_split <- partisan_split %>% 
+  mutate(state = capitalize(state))
+
+drop_rows <- c("citizens|households")
+
 state_demos <- state_voting$state %>%
   map_dfr(download_state_data) %>% 
-  mutate(variable = make_names(variable))
+  mutate(variable = make_names(variable)) %>% 
+  dplyr::select(state, variable, percent_estimate) %>% 
+  mutate(percent_estimate = as.numeric(percent_estimate)) %>% 
+  spread(variable, percent_estimate) %>% 
+  left_join(state_voting %>% select(state, 
+                                    total_pop,
+                                    percent_voted_citizen_,
+                                    percent_voted_citizen_)) %>% 
+  mutate_at(vars(percent_voted_citizen_, percent_voted_citizen_),
+            function(x) x * .01) %>% 
+  left_join(partisan_split %>% select(state, split_dif), by = "state")
+
+# na for split dif for DC; use mean
+state_demos <- state_demos %>% 
+  mutate(split_dif = if_else(is.na(split_dif), 
+                             mean(split_dif, na.rm = TRUE), 
+                             split_dif))
 
 ```
+
+```{r}
+
+state_demos %>% 
+  ggplot(aes(x = fct_reorder(state, percent_voted_citizen_),
+             y = percent_voted_citizen_)) +
+    geom_point(stat = "identity") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+```{r}
+state_demos %>% 
+  select(bachelor_s_degree_or_higher,
+         hispanic_or_latino,
+         black_or_african_american_alone,
+         asian_alone,
+         households_with_income_100_000_or_more,
+         x18_to_29_years,
+         x65_years_and_over,
+         below_poverty_level_poverty_rate_,
+         split_dif,
+         percent_voted_citizen_
+         ) %>% 
+  mutate_at(
+    vars(bachelor_s_degree_or_higher, 
+         asian_alone,
+         hispanic_or_latino,
+         black_or_african_american_alone,
+         split_dif),
+    log
+) %>% 
+  ggpairs()
+```
+
+- outliers for Asian (Hawaii), Black (DC), and Latino (New Mexico)
+- try interaction of ages, poverty level and income
+
+```{r}
+model_demos <- state_demos %>% 
+  select(percent_voted_citizen_,
+         hispanic_or_latino,
+         bachelor_s_degree_or_higher,
+         households_with_income_100_000_or_more,
+         split_dif) %>% 
+  mutate_at(vars(bachelor_s_degree_or_higher, split_dif), log)
+
+ols <- lm(percent_voted_citizen_ ~ ., model_demos)
+
+summary(ols)
+```
+
+```{r}
+resids <- state_demos %>% 
+  add_predictions(ols) %>% 
+  add_residuals(ols) 
+```
+
+## Bootstrapped model
+```{r}
+bootstrapped <- model_demos %>% 
+  bootstrap(1000)
+
+boot_model <- bootstrapped$strap %>% 
+  map(~ lm(percent_voted_citizen_ ~ ., data = .x)) %>% 
+  map_df(broom::tidy, .id = ".id")
+
+ggplot(boot_model, aes(estimate)) +
+  geom_histogram() + 
+  facet_wrap(~term, scales = "free_x")
+```
+
+```{r}
+boot_model %>% 
+  group_by(term) %>% 
+  summarize(low = quantile(estimate, .025),
+            high = quantile(estimate, .975)) %>% 
+  knitr::kable()
+```
+
+## Deeper exploration of some states
+
+```{r}
+resids %>% 
+  arrange(desc(abs(resid))) %>% 
+  mutate(lab = if_else(row_number() %in% 1:10, 1, 0)) %>% 
+  ggplot(aes(pred, percent_voted_citizen_)) +
+    geom_point(aes(color = lab), show.legend = FALSE) +
+    geom_smooth(method = "lm", se = FALSE) +
+    geom_text_repel(data = . %>% filter(lab == 1), 
+                    aes(label = state))
+```
+
+Hawaii
+- below expected
+- recent reforms:
+    - onine voter registration: http://editions.lib.umn.edu/electionacademy/2015/08/10/hawaii-launches-online-voter-registration/
+    - same day registration: http://www.honolulumagazine.com/Honolulu-Magazine/Politics/June-2014/Same-Day-Voter-Registration-Coming-to-Hawaii/#.WyKzd6kna34
+- historically low turnout
+    
+Mississippi
+- last state in the nation to implement motor voter law, 
+    - https://www.nytimes.com/1998/02/20/us/mississippi-legislature-accepts-bill-to-ease-voter-registration.html
+    - what has changed? 
+- politically engaged despite low bachelor degree attainment (lower than any state other than WV)
 
 
 
