@@ -21,6 +21,7 @@ library(modelr)
 library(forcats)
 library(ggrepel)
 library(rvest)
+library(broom)
 
 fix_names <- function(x) {
   names(x) <- tolower(make.names(names(x)))
@@ -70,7 +71,7 @@ state_voting <- "data/table04a.xls" %>%
   mutate(state = capitalize(state)) %>% 
   fix_names()
 
-# get partisanship
+# get partisanship of states
 partisan <- "https://en.wikipedia.org/wiki/Political_party_strength_in_U.S._states" %>% 
   read_html() %>% 
   html_node(xpath = "/html/body/div[3]/div[3]/div[4]/div/table[2]") %>% 
@@ -93,6 +94,24 @@ partisan_split$split_dif <- partisan_split$split_high - partisan_split$split_low
 partisan_split <- partisan_split %>% 
   mutate(state = capitalize(state))
 
+# get info on state voter id laws
+id <- "https://en.wikipedia.org/wiki/Voter_ID_laws_in_the_United_States" %>% 
+  read_html() %>%
+  html_node(xpath = "/html/body/div[3]/div[3]/div[4]/div/table[2]") %>% 
+  html_table() %>% 
+  fix_names() %>% 
+  mutate(
+    state = capitalize(state),
+    state = recode(state, "Washington,D.C." = "DistrictofColumbia"),
+    # recode, mail only counts as no id
+    id_law = case_when(
+      state == "Iowa" ~ "No ID required", # Iowa enacted in 2017
+      str_detect(type_of_law, "Strict") ~ "strict",
+      str_detect(type_of_law, "non-strict") ~ "non-strict",
+      TRUE ~ "No ID required"
+    )
+  )
+# comine it all
 drop_rows <- c("citizens|households")
 
 state_demos <- state_voting$state %>%
@@ -107,7 +126,8 @@ state_demos <- state_voting$state %>%
                                     percent_voted_citizen_)) %>% 
   mutate_at(vars(percent_voted_citizen_, percent_voted_citizen_),
             function(x) x * .01) %>% 
-  left_join(partisan_split %>% select(state, split_dif), by = "state")
+  left_join(partisan_split %>% select(state, split_dif), by = "state") %>% 
+  left_join(id %>% select(state, id_law), by = "state")
 
 # na for split dif for DC; use mean
 state_demos <- state_demos %>% 
@@ -140,32 +160,62 @@ state_demos %>%
          x65_years_and_over,
          below_poverty_level_poverty_rate_,
          split_dif,
-         percent_voted_citizen_
-         ) %>% 
-  mutate_at(
-    vars(bachelor_s_degree_or_higher, 
-         asian_alone,
-         hispanic_or_latino,
-         black_or_african_american_alone,
-         split_dif),
-    log
-) %>% 
+         percent_voted_citizen_) %>% 
   ggpairs()
 ```
 
 - outliers for Asian (Hawaii), Black (DC), and Latino (New Mexico)
 - try interaction of ages, poverty level and income
 
-```{r}
-model_demos <- state_demos %>% 
-  select(percent_voted_citizen_,
-         hispanic_or_latino,
-         bachelor_s_degree_or_higher,
-         households_with_income_100_000_or_more,
-         split_dif) %>% 
-  mutate_at(vars(bachelor_s_degree_or_higher, split_dif), log)
 
-ols <- lm(percent_voted_citizen_ ~ ., model_demos)
+```{r}
+
+state_demos %>% 
+  select(bachelor_s_degree_or_higher,
+         hispanic_or_latino,
+         black_or_african_american_alone,
+         asian_alone,
+         households_with_income_100_000_or_more,
+         x18_to_29_years,
+         x65_years_and_over,
+         below_poverty_level_poverty_rate_,
+         split_dif,
+         percent_voted_citizen_) %>% 
+  gather(predictor, value, 1:9) %>% 
+  ggplot(aes(value, percent_voted_citizen_)) +
+    geom_point() +
+    facet_wrap(~predictor, scales = "free_x") +
+    geom_smooth(method = "lm")
+```
+
+Impact of voter id laws
+```{r}
+
+ggplot(state_demos, aes(id_law, percent_voted_citizen_)) +
+  geom_boxplot() +
+  geom_jitter()
+
+```
+
+Voter id laws and minority
+
+```{r}
+ggplot(state_demos, aes(factor(id_law), white_alone)) + 
+  geom_jitter() + 
+  geom_smooth()
+
+```
+
+
+```{r}
+
+ols <- lm(percent_voted_citizen_ ~ 
+            hispanic_or_latino + 
+            log(bachelor_s_degree_or_higher) +
+            households_with_income_100_000_or_more  +
+            log(split_dif) +
+            id_law,
+          data = state_demos)
 
 summary(ols)
 ```
@@ -173,16 +223,28 @@ summary(ols)
 ```{r}
 resids <- state_demos %>% 
   add_predictions(ols) %>% 
-  add_residuals(ols) 
+  add_residuals(ols)
 ```
 
 ## Bootstrapped model
 ```{r}
-bootstrapped <- model_demos %>% 
-  bootstrap(1000)
+bootstrapped <- state_demos %>% 
+  select(percent_voted_citizen_,
+         hispanic_or_latino,
+         bachelor_s_degree_or_higher,
+         households_with_income_100_000_or_more,
+         split_dif,
+         id_law) %>% 
+  modelr::bootstrap(1000)
 
 boot_model <- bootstrapped$strap %>% 
-  map(~ lm(percent_voted_citizen_ ~ ., data = .x)) %>% 
+  map(~ lm(percent_voted_citizen_ ~ 
+             hispanic_or_latino +
+             log(bachelor_s_degree_or_higher) +
+             households_with_income_100_000_or_more +
+             log(split_dif) +
+             id_law,
+           data = .x)) %>% 
   map_df(broom::tidy, .id = ".id")
 
 ggplot(boot_model, aes(estimate)) +
@@ -200,10 +262,26 @@ boot_model %>%
 
 ## Deeper exploration of some states
 
+
+```{r}
+state_demos %>% 
+  select(state,
+         percent_voted_citizen_,
+         hispanic_or_latino,
+         bachelor_s_degree_or_higher,
+         households_with_income_100_000_or_more,
+         split_dif) %>% 
+  gather(predictor, value, 3:6) %>% 
+  ggplot(aes(fct_reorder(state, percent_voted_citizen_), value)) +
+    geom_point() + 
+    facet_wrap(~predictor, scales = "free_y") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 ```{r}
 resids %>% 
   arrange(desc(abs(resid))) %>% 
-  mutate(lab = if_else(row_number() %in% 1:10, 1, 0)) %>% 
+  mutate(lab = if_else(row_number() %in% 1:5, 1, 0)) %>% 
   ggplot(aes(pred, percent_voted_citizen_)) +
     geom_point(aes(color = lab), show.legend = FALSE) +
     geom_smooth(method = "lm", se = FALSE) +
@@ -211,18 +289,41 @@ resids %>%
                     aes(label = state))
 ```
 
+
+ 
 Hawaii
 - below expected
 - recent reforms:
     - onine voter registration: http://editions.lib.umn.edu/electionacademy/2015/08/10/hawaii-launches-online-voter-registration/
     - same day registration: http://www.honolulumagazine.com/Honolulu-Magazine/Politics/June-2014/Same-Day-Voter-Registration-Coming-to-Hawaii/#.WyKzd6kna34
 - historically low turnout
+- photo id required
     
 Mississippi
 - last state in the nation to implement motor voter law, 
     - https://www.nytimes.com/1998/02/20/us/mississippi-legislature-accepts-bill-to-ease-voter-registration.html
     - what has changed? 
 - politically engaged despite low bachelor degree attainment (lower than any state other than WV)
+- strict voter id requirement implemented in 2014
+  - https://ballotpedia.org/Voter_identification_laws_by_state 
+- maybe Trump appeal? no, turnout down
+  - https://mississippitoday.org/2016/11/21/election-recap-turnout-down-voters-were-prepared/ 
+- 2016 first year without federal monitors
+  - http://www.jacksonfreepress.com/news/2016/nov/22/mississippi-voter-turnout-down-over-last-president/ 
+
+Wyoming
+- similar turnout to 2012
+  - http://soswy.state.wy.us/Elections/Docs/VoterProfile.pdf 
+- allows same-day registration
+- no id requirement
+
+Tennessee
+- id requirement
+- historically low turnout
+  - https://www.tennessean.com/story/news/2017/12/11/tennessee-voter-registration-cooper-dickerson-project-register/941325001/ 
+
+
+
 
 
 
