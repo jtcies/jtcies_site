@@ -9,7 +9,6 @@ tags:
   - r
   - segregation
 output: html_document
-
 ---
 
 ```{r, include=FALSE}

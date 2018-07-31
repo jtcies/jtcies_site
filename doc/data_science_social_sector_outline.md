@@ -3,10 +3,21 @@
 - Deloitte article
   - prioritizing on the ground decision-making
   - data for advancing equity
+- [michael quinn patton][1]
+  - The evaluator’s primary function in the team is to elucidate team discussions with evaluative questions, data and logic, and to facilitate data-based assessments and decision-making in the unfolding and developmental processes of innovation.
 - where are placed that this has worked?
   - examples:
     - Atlanta housing article?
-    - Pittsburgh DHS model
+    - Pittsburgh abuse warning detector
+      - researchers created a model to estimate the risk of abuse for a child; 'offers up a second opinion'
+      - based on prior calls and other administrative data
+      - gives results as probability
+      - presents information to decision-makers rather making decisions for practitioners
+      - elements
+        - innovation is the algorithm; however, there must have been a process to determine that just letting humans do the assessment alone waasn't working for some reason
+        - clear goals: improve the rate at which department accurately assesses the risk of abuse
+        - intersects directly in decision-making process; very tough decisions made many times a day; goal is to enchance decision-making
+        - rather just create a report that says, 'here are the risk factors associated with abuse', they went further to interesect directly in the decision-making process of practitioners
     - Philly pre-k
   - common elements
     - focus on parternship
@@ -36,3 +47,7 @@
 - provide opportunities for parternship, analyzing together
 - start with simple visualizations and buidl up to more complex models
 - this is an idealzied version; still working on implementing this cycle
+
+
+[1]: https://nonprofitquarterly.org/2006/03/21/evaluation-for-the-way-we-work/
+[2]: https://www.nytimes.com/2018/01/02/magazine/can-an-algorithm-tell-when-kids-are-in-danger.html

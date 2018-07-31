@@ -1,0 +1,30 @@
+---
+title: "Data science in the social sector (part 1)"
+author: "Joe Ciesielski"
+date: "2018-07-19"
+output: html_document
+draft: true
+---
+
+A recent report by Monitor Institute at Deloitte attempts to asses the landscape of the use of data in the social sector. They come away with three 'characteristics of a better future'.
+
+1. More effectively put decision-making at the center
+2. Better empowering constituents and promoting diversity, equity, and inclusion
+3. More productively learning at scale
+
+In the next couple of posts, I'd like to lay out the case that the tools and techniques associated with data science present the opportunity to help make this future a reality. I'll focus especially on the first point about decision-making but will also touch on the other two topics. 
+
+## What does it mean to put decision-making at the center?
+
+The Monitor report makes the case that the main limitation in the use of data in the social sector is that evidence-making is not integrated with decion-making. They argue for what they call 'decion-based evidence making'. This resembles Michael Quinn's Patton approach to developmental evaluation. Back in 2006, he wrote:
+
+> The evaluator’s primary function in the team is to elucidate team discussions with evaluative questions, data and logic, and to facilitate data-based assessments and decision-making in the unfolding and developmental processes of innovation.
+
+Let's take a look at a few examples of places where data science has helped organizations to put decision-making at the center of their evaluation and data processes. 
+
+### Pittsburgh child abuse hotline
+
+The Allegheny (Pa.) Department of Children, Youth, and Families recieves over 14,000 calls regarding allegations or referrals for child abuse or neglect. Typically, screeners, who must dozens of decisions every day about what constitutes a substantial risk, would quickly review whatever information they have access 
+
+Starting in 2016, they began implmenting a new tool to help screeners determine the risk to the child - a predictive algorithm. 
+
