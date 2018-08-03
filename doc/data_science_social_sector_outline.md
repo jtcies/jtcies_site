@@ -18,7 +18,8 @@
         - clear goals: improve the rate at which department accurately assesses the risk of abuse
         - intersects directly in decision-making process; very tough decisions made many times a day; goal is to enchance decision-making
         - rather just create a report that says, 'here are the risk factors associated with abuse', they went further to interesect directly in the decision-making process of practitioners
-    - Philly pre-k
+        - presmise is that it may not be the quality of the services or types of intervention, but contrained capacity which means that you can only offer assistance to some of the 
+    - [Philly pre-k][3]
   - common elements
     - focus on parternship
     - prioritizing decision-making, implementation
@@ -51,3 +52,4 @@
 
 [1]: https://nonprofitquarterly.org/2006/03/21/evaluation-for-the-way-we-work/
 [2]: https://www.nytimes.com/2018/01/02/magazine/can-an-algorithm-tell-when-kids-are-in-danger.html
+[3]: https://repository.upenn.edu/cgi/viewcontent.cgi?article=1000&context=pennchild_briefs

@@ -24,7 +24,42 @@ Let's take a look at a few examples of places where data science has helped orga
 
 ### Pittsburgh child abuse hotline
 
-The Allegheny (Pa.) Department of Children, Youth, and Families recieves over 14,000 calls regarding allegations or referrals for child abuse or neglect. Typically, screeners, who must dozens of decisions every day about what constitutes a substantial risk, would quickly review whatever information they have access 
+The Allegheny (Pa.) Department of Children, Youth, and Families recieves over 14,000 calls regarding allegations or referrals for child abuse or neglect. Typically, screeners, who must dozens of decisions every day about what constitutes a substantial risk, would quickly review whatever information they have access to and make a determination about risk. 
 
-Starting in 2016, they began implmenting a new tool to help screeners determine the risk to the child - a predictive algorithm. 
+Starting in 2016, they began implmenting a new tool to help screeners determine the risk to the child - a predictive algorithm. At the end of the call, screeners click a button on their computer that return a probability that the young person is at risk for abuse. The algorithm scans records of previous calls along with data from other sources like jails and pyshciatric treatment facilities. The risk assessment is given to screeners on a scale of one to twenty. They use that information to make a determination about whether or not a call is worthy of further inevestigation. 
+
+Because resources for investigations are limited screeners are asked to process all the information they have about an allegation and make a determination about whether it requires further investigation. According to the NYtimes, they have no more than an hour, usually half an hour, to make this assessment. A review of the cases showed that 48% of low risk cases were being screened in while 27% of the high risk cases were being screened out. 
+
+The algorithm tries to solve these two main problems, namely that resources for conducted investigations are limited and that screeners have difficulty processing all of the information that is available to make an accurate assessment of risk. But rather than take the assesmsent away from the screeners, researchers and policymakers determined that they still required their professional judgement in making the final call. They are layering the objectivity and science on top of professional expertise to hopefully get the most sound outcome for young people. 
+
+### Atlanta 
+
+
+
+### Philadelphia Pre-K Expansion
+
+When Philadelphia Mayor Jim Kenney ran for office he made expansion of pre-k a central tenant of his campaign. When he became mayor, he worked with City Council to enact a tax on sugary beverages that would help to pay for this expansion. Once this major hurdle was overcome, the City was left with a series of important questions, a main one being, "Where should we put these new pre-k centers?" 
+
+City staffers worked with researchers from the University of Pennsylvania to help answer this question. The group started by examining prior research that found risk factors associated with poor long-term outcomes for young children. They then identified neighborhoods with low concentrations for quality childcare centers. By overlaying those two analyses, they were able to identify specific neighborhood that were good candidates for additional pre-k centers or slots. 
+
+## Common elements
+
+All of these projects are examples of data analyses where on-the-ground decision-making was the primary focus. It's worth examining what are some common elements; how do you set-up these projects 
+
+### Shared understanding of goals
+
+Clearly articulated goals are necessary 
+
+### Decision support
+
+
+
+
+### Partnership
+
+Each of these projects invovled strong parternship between the analysts and the practitioners or policy-makers. 
+
+The Philly pre-k example is the most straightfoward goal - expanding pre-k to areas which will benefit from it the most. This a new program and the risks to expanding a service like this are relatively low. The child hotline risk analysis example, however, has extremely high potential for problems. As has been well-documented in the criminal justice sectors, algorithms that attempt to increase fairness can in fact have the opposite effect and further ingrain pre-existing biases. When the potential for bias, decreased equity, or a backlash effect, the partnership among analysts, practitioners, and policymakers must be strong. There needs to be opportunities for testing, feedback, and continuous improvement. Isolted projects, for example where someone creates a nice model and leaves, can and frequently do cause more harm than good in sceanrios such as these. 
+
+
 
