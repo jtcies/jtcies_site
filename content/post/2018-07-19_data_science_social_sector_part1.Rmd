@@ -32,9 +32,9 @@ Because resources for investigations are limited screeners are asked to process 
 
 The algorithm tries to solve these two main problems, namely that resources for conducted investigations are limited and that screeners have difficulty processing all of the information that is available to make an accurate assessment of risk. But rather than take the assesmsent away from the screeners, researchers and policymakers determined that they still required their professional judgement in making the final call. They are layering the objectivity and science on top of professional expertise to hopefully get the most sound outcome for young people. 
 
-### Atlanta 
+### Atlanta *Data Days*
 
-
+The Westside Atlant Land Trust (WALT) is a community organization developing a dual ownership model; WALT owns the land and the tenant owns the structure on top of the land. WALT partnerered with researchers to collect data about specific parcels of land hoping to analyze changes over time. They conducted a series of *Data Days* where community members walked the neighboorhood and, using tablets, collected data about homes and land. The researchers, using an ethic of care as their lens, found substnatial values from the local expertise of the community members. For example, they 
 
 ### Philadelphia Pre-K Expansion
 
@@ -44,16 +44,21 @@ City staffers worked with researchers from the University of Pennsylvania to hel
 
 ## Common elements
 
-All of these projects are examples of data analyses where on-the-ground decision-making was the primary focus. It's worth examining what are some common elements; how do you set-up these projects 
+These three projects represent a range of resource investment, time commitment, scale, and focus. However, each primarily focused on using data and evidence to support on-the-ground decision-making. It's worth examining the common elements; how do you set-up these projects so that decision-makers - be it policy-makers, community members, practitioners, agency staff - can make more data-informed decisions. 
 
 ### Shared understanding of goals
 
-Clearly articulated goals are necessary 
+Clearly articulated goals are necessary prerequisite for data-based projects. However, this step is often overlooked. Each of these projects had different ways of articulting these goals. In the Atlanta housing example, researchers created a theory of change in partnership with WALT staff; they then picked off a small piece of this framework for further investigation. In Philadelphia, the pre-k expandsion had explicit goals baked in: expand pre-k to more residents, starting with those whom have the least access and greatest need. This allowed researchers to conduct an analysis and present a clear recommendation for policymakers. 
 
-### Decision support
+Too often, this step is overlooked or goals are not explictly stated and agreed upon. For example, the use of algorithms in sentencing decisions has received a lot of critcism, and rightly so. The companies which created these algorithms did what they were asked to do - accurately predict whether or not someone will commit another crime. However, they didn't stop to consider racial equity, how trauma or enviroment impacts offenders, or how mental health, substance abuse, or employment support could break a cycle of injustice. Instead, the algorithms baked in the existing biases of the criminal justice system rather than alleviated them. Data-informed decisions are only produce better outcomes when we have deep and meaningful conversations about what our goals are and what systems and structures prevent us from getting there. 
 
+### Focous on implementation
 
+In order to data products to support decision-making, a clear understanding of what decisions need to be made is required. This is specifc than just asking good researchers questions. In each example, specific decisions needed to be made. In Philadelphia, staff managing the program wanted to know which area would be best to target. Staff at the child abuse hotline had extremely consequential decisions about whether or not to investgiate an allegation and those decisions needed to be made quickly. 
 
+Implmentation of social programs can be thought of a series of decisions. Things what constituents to target, what classes to teach, where to expand new resources, how to advertise for a new program, are all examples of decisions that get made on regularly, sometimes dozens of times per day. Analyses need to intersect directly in the decision-making process and that requires a clear understand of what those decisions are. Analyses can be interesting or insightful but won't impact decisions unless they are embedded in processes where decisions are made. 
+
+A related point is that, in each example, analyses or algorithms were helping humans make better decisions, but they weren't making decisions on their own. I think there is certainly room for exampnding the use of data products which improve social services through more automated decision-making. I'd be interested to hear about examples of places where this has been done well. 
 
 ### Partnership
 
@@ -61,5 +66,4 @@ Each of these projects invovled strong parternship between the analysts and the 
 
 The Philly pre-k example is the most straightfoward goal - expanding pre-k to areas which will benefit from it the most. This a new program and the risks to expanding a service like this are relatively low. The child hotline risk analysis example, however, has extremely high potential for problems. As has been well-documented in the criminal justice sectors, algorithms that attempt to increase fairness can in fact have the opposite effect and further ingrain pre-existing biases. When the potential for bias, decreased equity, or a backlash effect, the partnership among analysts, practitioners, and policymakers must be strong. There needs to be opportunities for testing, feedback, and continuous improvement. Isolted projects, for example where someone creates a nice model and leaves, can and frequently do cause more harm than good in sceanrios such as these. 
 
-
-
+## Conclusion
