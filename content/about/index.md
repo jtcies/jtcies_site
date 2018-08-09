@@ -1,6 +1,5 @@
 +++
 comments = false
-date = "2018-02-18"
 draft = false
 slug = ""
 tags = ["about"]

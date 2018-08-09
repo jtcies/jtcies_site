@@ -1,12 +1,11 @@
 ---
 title: "Data science for decision-making in the social sector"
 author: "Joe Ciesielski"
-date: "2018-07-19"
+date: "2018-08-08"
 output: html_document
-draft: true
 ---
 
-A recent report by Monitor Institute at Deloitte attempts to asses the landscape of the use of data in the social sector. They come away with three 'characteristics of a better future'.
+A recent [report][deloitte] by Monitor Institute at Deloitte attempts to asses the landscape of the use of data in the social sector. They present three 'characteristics of a better future':
 
 1. More effectively put decision-making at the center
 2. Better empowering constituents and promoting diversity, equity, and inclusion
@@ -16,7 +15,7 @@ In the next couple of posts, I'd like to lay out the case that the tools and tec
 
 ## What does it mean to put decision-making at the center?
 
-The Monitor report makes the case that the main limitation in the use of data in the social sector is that evidence-making is not integrated with decion-making. They argue for what they call 'decion-based evidence making'. This resembles Michael Quinn's Patton approach to developmental evaluation. Back in 2006, he wrote:
+The Monitor report makes the case that the main limitation in the use of data in the social sector is that evidence-making is not integrated with decion-making. They argue for what they call 'decion-based evidence making'. This resembles Michael Quinn's Patton approach to developmental evaluation. Back in [2006][2], he wrote:
 
 > The evaluator’s primary function in the team is to elucidate team discussions with evaluative questions, data and logic, and to facilitate data-based assessments and decision-making in the unfolding and developmental processes of innovation.
 
@@ -26,7 +25,7 @@ Let's take a look at a few examples of places where data science has helped orga
 
 The Allegheny (Pa.) Department of Children, Youth, and Families recieves over 14,000 calls regarding allegations or referrals for child abuse or neglect. Typically, screeners, who must dozens of decisions every day about what constitutes a substantial risk, would quickly review whatever information they have access to and make a determination about risk. 
 
-Starting in 2016, they began implmenting a new tool to help screeners determine the risk to the child - a predictive algorithm. At the end of the call, screeners click a button on their computer that return a probability that the young person is at risk for abuse. The algorithm scans records of previous calls along with data from other sources like jails and pyshciatric treatment facilities. The risk assessment is given to screeners on a scale of one to twenty. They use that information to make a determination about whether or not a call is worthy of further inevestigation. 
+Starting in 2016, they began [implmenting a new tool][a] to help screeners determine the risk to the child - a predictive algorithm. At the end of the call, screeners click a button on their computer that return a probability that the young person is at risk for abuse. The algorithm scans records of previous calls along with data from other sources like jails and pyshciatric treatment facilities. The risk assessment is given to screeners on a scale of one to twenty. They use that information to make a determination about whether or not a call is worthy of further inevestigation. 
 
 Because resources for investigations are limited screeners are asked to process all the information they have about an allegation and make a determination about whether it requires further investigation. According to the NYtimes, they have no more than an hour, usually half an hour, to make this assessment. A review of the cases showed that 48% of low risk cases were being screened in while 27% of the high risk cases were being screened out. 
 
@@ -34,13 +33,17 @@ The algorithm tries to solve these two main problems, namely that resources for 
 
 ### Atlanta *Data Days*
 
-The Westside Atlant Land Trust (WALT) is a community organization developing a dual ownership model; WALT owns the land and the tenant owns the structure on top of the land. WALT partnerered with researchers to collect data about specific parcels of land hoping to analyze changes over time. They conducted a series of *Data Days* where community members walked the neighboorhood and, using tablets, collected data about homes and land. The researchers, using an ethic of care as their lens, found substnatial values from the local expertise of the community members. For example, they 
+The Westside Atlant Land Trust (WALT) is a community organization developing a dual ownership model; WALT owns the land and the tenant owns the structure on top of the land. [WALT partnerered with researchers][b] to collect data about specific parcels of land hoping to analyze changes over time. They conducted a series of *Data Days* where community members walked the neighboorhood and, using tablets, collected data about homes and land. The ultimate goal of this parternship was to identify homes which might be good for 
+
+The researchers, using an ethic of care as their lens, bring WALT constituents into all aspects of the data science process, from data collection and cleaning through presentation. In doing this, they found substnatial values from the local expertise of the community members. For example, they discuss how partners helped to fix issues with how some houses were categorized. They are able to help determine which houses are occupied using their knowledge of the neighboorhood rather than just exterior visual cues. 
+
+The researchers also taught skills such as data wrangling and using software like ArcGIS. This was not just a nice thing to do; WALT members saw see data-based language as essential for being seen and treated as experts in policy conversations. By bringing the WALT partners into the research process, the community increased their capacity to engage in decision-making processes that they may have been excluded from previously. 
 
 ### Philadelphia Pre-K Expansion
 
 When Philadelphia Mayor Jim Kenney ran for office he made expansion of pre-k a central tenant of his campaign. When he became mayor, he worked with City Council to enact a tax on sugary beverages that would help to pay for this expansion. Once this major hurdle was overcome, the City was left with a series of important questions, a main one being, "Where should we put these new pre-k centers?" 
 
-City staffers worked with researchers from the University of Pennsylvania to help answer this question. The group started by examining prior research that found risk factors associated with poor long-term outcomes for young children. They then identified neighborhoods with low concentrations for quality childcare centers. By overlaying those two analyses, they were able to identify specific neighborhood that were good candidates for additional pre-k centers or slots. 
+City staffers [worked with researchers][c] from the University of Pennsylvania to help answer this question. The group started by examining prior research that found risk factors associated with poor long-term outcomes for young children. They then identified neighborhoods with low concentrations for quality childcare centers. By overlaying those two analyses, they were able to identify specific neighborhood that were good candidates for additional pre-k centers or slots. 
 
 ## Common elements
 
@@ -50,20 +53,36 @@ These three projects represent a range of resource investment, time commitment, 
 
 Clearly articulated goals are necessary prerequisite for data-based projects. However, this step is often overlooked. Each of these projects had different ways of articulting these goals. In the Atlanta housing example, researchers created a theory of change in partnership with WALT staff; they then picked off a small piece of this framework for further investigation. In Philadelphia, the pre-k expandsion had explicit goals baked in: expand pre-k to more residents, starting with those whom have the least access and greatest need. This allowed researchers to conduct an analysis and present a clear recommendation for policymakers. 
 
-Too often, this step is overlooked or goals are not explictly stated and agreed upon. For example, the use of algorithms in sentencing decisions has received a lot of critcism, and rightly so. The companies which created these algorithms did what they were asked to do - accurately predict whether or not someone will commit another crime. However, they didn't stop to consider racial equity, how trauma or enviroment impacts offenders, or how mental health, substance abuse, or employment support could break a cycle of injustice. Instead, the algorithms baked in the existing biases of the criminal justice system rather than alleviated them. Data-informed decisions are only produce better outcomes when we have deep and meaningful conversations about what our goals are and what systems and structures prevent us from getting there.
+Too often, this step is overlooked or goals are not explictly stated and agreed upon. For example, the authors of [this][1] paper demonstrate a methodology for using algorithms to increase fairness using the example FICO credit scores. However, it's not enough for models to be 'race-blind'; those creating the algorithms must equity (they call 'non-discrimination') as a goal from the outset. 
 
 ### Focous on implementation
 
 In order to data products to support decision-making, a clear understanding of what decisions need to be made is required. This is specifc than just asking good researchers questions. In each example, specific decisions needed to be made. In Philadelphia, staff managing the program wanted to know which area would be best to target. Staff at the child abuse hotline had extremely consequential decisions about whether or not to investgiate an allegation and those decisions needed to be made quickly. 
 
-Implmentation of social programs can be thought of a series of decisions. Things what constituents to target, what classes to teach, where to expand new resources, how to advertise for a new program, are all examples of decisions that get made on regularly, sometimes dozens of times per day. Analyses need to intersect directly in the decision-making process and that requires a clear understand of what those decisions are. Analyses can be interesting or insightful but won't impact decisions unless they are embedded in processes where decisions are made. 
+Implmentation of social programs is often just a series of decisions. Things like what constituents to target, what classes to teach, where to expand new resources, how to advertise for a new program, are all examples of decisions that get made on regularly, sometimes dozens of times per day. Analyses need to intersect directly in the decision-making process and that requires a clear understand of what those decisions are. Analyses can be interesting or insightful but won't impact decisions unless they are embedded in processes where decisions are made. 
 
 A related point is that, in each example, analyses or algorithms were helping humans make better decisions, but they weren't making decisions on their own. I think there is certainly room for exampnding the use of data products which improve social services through more automated decision-making. I'd be interested to hear about examples of places where this has been done well. 
 
 ### Partnership
 
-Each of these projects invovled strong parternship between the analysts and the practitioners or policy-makers. 
+Each of these projects invovled strong parternship between the analysts and the practitioners or policy-makers. Policy and practice decisions are rarely one-off events; they are usually made in existing processes and systems. Analysts are better able to understand and be included in these processes when they create strong partnerships with decision-makers. 
 
-The Philly pre-k example is the most straightfoward goal - expanding pre-k to areas which will benefit from it the most. This a new program and the risks to expanding a service like this are relatively low. The child hotline risk analysis example, however, has extremely high potential for problems. As has been well-documented in the criminal justice sectors, algorithms that attempt to increase fairness can in fact have the opposite effect and further ingrain pre-existing biases. When the potential for bias, decreased equity, or a backlash effect, the partnership among analysts, practitioners, and policymakers must be strong. There needs to be opportunities for testing, feedback, and continuous improvement. Isolted projects, for example where someone creates a nice model and leaves, can and frequently do cause more harm than good in sceanrios such as these. 
+The Philly pre-k example had the most straightfoward goal - expanding pre-k to areas which will benefit from it the most. This a new program and the risks to expanding a service like this are relatively low. The child hotline risk analysis example, however, has extremely high potential for problems. As has been well-documented in the criminal justice sectors, algorithms that attempt to increase fairness can in fact have the opposite effect and further ingrain pre-existing biases. When the potential for bias, decreased equity, or a backlash effect, the partnership among analysts, practitioners, and policymakers must be strong. There needs to be opportunities for testing, feedback, and continuous improvement. Isolted projects, for example where someone creates a nice model and leaves, can and frequently do cause more harm than good in scenarios such as these. 
 
 ## Conclusion
+
+There a many outstanding questions about how we can create more evidence, build more tools which more explictly focus on decision-making. How can we embed these functions within organizations rather than relying on external partners? How do we encourage funders to invest in this type of work? How do we ensure they are primarly focused on increasing equity? Can we use data to bring the decisions that are happening at the policy and practice level closer together? 
+
+Projects like those described here won't replace more traditional forms of evaluation or research. But the ways in which we can use data products and tools to inform specific decisions of practitioners and policy-makers seems like an underexplored area. As data science techniques bleed and more into the social sector, we should get clear about what makes our sector unique and how we can incorporate these new ideas affect positive change. 
+
+[1]: https://arxiv.org/abs/1610.02413
+
+[2]: https://nonprofitquarterly.org/2006/03/21/evaluation-for-the-way-we-work/
+
+[a]: https://www.nytimes.com/2018/01/02/magazine/can-an-algorithm-tell-when-kids-are-in-danger.html
+
+[b]: https://dl.acm.org/citation.cfm?doid=3209811.3209877
+
+[c]: https://repository.upenn.edu/cgi/viewcontent.cgi?article=1000&context=pennchild_briefs
+
+[deloitte]: https://www2.deloitte.com/us/en/pages/monitor-institute/articles/re-imagining-measurement-strategic-learning-toolkit.html
