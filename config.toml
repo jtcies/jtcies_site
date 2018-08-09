@@ -21,10 +21,10 @@ enableRobotsTXT = true
 
 ## Site Settings
 [params]
-author = ""
+author = "Joe Ciesielski"
 intro = ""
 description = ""
-authorimage = ""
+authorimage = "jtcies_img.png"
 dateformat = "Jan 2, 2006"
 
 ## Site Meta Settings
@@ -37,6 +37,7 @@ keywords = ""
 github = "jtcies"
 twitter = "jtcies"
 email = "jtcies@gmail.com"
+linkedin = "joseph-ciesielski"
 
 ## Extras
 [params.extra]
@@ -46,14 +47,19 @@ highlightjs = true
 
 ## Main Menu
 [[menu.main]]
-    name = "posts"
+    name = "blog"
     weight = 100
     identifier = "blog"
     url = "/blog/"
 [[menu.main]]
+    name = "talks / publications"
+    identifier = "talks and publications"
+    weight = 200
+    url = "/talks/"
+[[menu.main]]
     name = "about"
     identifier = "about"
-    weight = 200
+    weight = 300
     url = "/about/"
 
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
