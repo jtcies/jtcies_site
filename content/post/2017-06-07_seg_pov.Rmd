@@ -72,11 +72,14 @@ We'd need to dig deeper into the history and specifics to examine the extent to 
 
 ## The solutions to segregation are less clear
 
-This analysis helps to shed some light on the issue of segregation and the impact on communities. But how we break these cycles is a much harder question. There are few examples of [intentional mixed-income communities][5], but these take lots of work and political will and obviously are focused on income levels rather than racial integration. School integration is another option but Philadelphia seems to be going the opposite direction by focusing on parental 'choice,' which has only led to increased segregation. (This latter issue is one that I hope to return to later.) 
+This analysis helps to shed some light on the issue of segregation and the impact on communities. But how we break these cycles is a much harder question. There are few examples of [intentional mixed-income communities][5], but these take lots of work and political will and obviously are focused on income levels rather than racial integration. School integration may be an option, but it has had [difficulty][6] gaining momentum. 
 
-It's a hard thing to get handle on because, while segregated residential communities may have been a root cause of many of the social issues we experience today, simply making people that look different neighbors is unlikley to solve them. These structures have been so ingrained in social fabric, one thing will not solve it. 
+It's a hard thing to get handle on because, while segregated residential communities may have been a root cause of many of the social issues we experience today, simply making people that look different neighbors seems unlikley to solve them. These structures have been so ingrained in social fabric, one thing will not solve it. 
 
 However, I do think that it will be hard to make progress on any of those other issues unless we have a common understanding of the ways in which segregation has impacted them. By bringing this one issue to the center of the dialogue, it can serve as a common ground from which to build those other solutions. Perhaps it's naive to think that something like segregation can galvanize broad constituencies. But I do think it's necessary and more information can only help.
+
+
+*Edit 8/8/2018: Updated to include link to article about school integration.*
 
 [1]: https://billypenn.com/2015/09/14/a-tale-of-two-philadelphias-census-data-reveals-income-inequality-around-the-citys-most-segregated-neighborhoods/
 
@@ -87,3 +90,5 @@ However, I do think that it will be hard to make progress on any of those other 
 [4]: https://www.manhattan-institute.org/pdf/cr_66.pdf 
 
 [5]: http://www.lcis.com.tw/paper_store/paper_store/412292-effects-from-living-2015115172956533.pdf 
+
+[6]: https://www.theatlantic.com/education/archive/2017/12/progressives-are-undermining-public-schools/548084/
