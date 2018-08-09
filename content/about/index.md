@@ -10,4 +10,6 @@ title = "About"
 showpagemeta = false
 +++
 
-Personal website for Joe Ciesielski
+I work at the intersection of data science and program evaluation, helping non-profits and social service organizations to improve program implemention and decision-making. 
+
+All views presented here are my own.
