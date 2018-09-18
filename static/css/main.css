@@ -21,7 +21,7 @@ a:link
 }
 body
 {
-    font-family: 'Alegreya Sans', 'Alegreya', sans-serif;
+    font-family: 'Libre Franklin', 'Libre Baskerville', sans-serif;
     font-size: 20px;
     font-weight: 400;
 
@@ -52,7 +52,7 @@ html
 .author h6,
 .author p
 {
-    font-family: 'Alegreya Sans', serif;
+    font-family: 'Libre Franklin', serif;
 }
 .category
 {
@@ -73,7 +73,7 @@ html
 }
 div.content
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-size: 18px;
     font-weight: 300;
 
@@ -81,19 +81,19 @@ div.content
 }
 .copyright
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-size: 12px;
     font-weight: 200;
 }
 .description
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-weight: 200;
     color: #bbb;
 }
 .error
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
 
     margin-top: 100px;
 }
@@ -111,7 +111,7 @@ div.content
 }
 .excerpt
 {
-    font-family: 'Alegreya Sans', sans-serif;
+    font-family: 'Libre Franklin', sans-serif;
     font-size: 18px;
     font-weight: 200;
 
@@ -144,7 +144,7 @@ div.content
 }
 .intro
 {
-    font-family: 'Alegreya Sans', serif;
+    font-family: 'Libre Franklin', serif;
     font-weight: 200;
     color: #777;
 }
@@ -154,7 +154,7 @@ h3.intro
 }
 .list
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
 
     margin-top: 50px;
 }
@@ -164,7 +164,7 @@ h3.intro
 }
 .list-entry
 {
-    font-family: 'Alegreya Sans', serif;
+    font-family: 'Libre Franklin', serif;
     font-size: 25px;
     font-weight: 400;
 
@@ -187,7 +187,7 @@ h3.intro
 }
 .menu-item
 {
-    font-family: 'Alegreya Sans', sans-serif;
+    font-family: 'Libre Franklin', sans-serif;
     font-size: 20px;
     font-weight: 300;
 
@@ -197,7 +197,7 @@ h3.intro
 }
 .meta
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-size: 12px;
     font-weight: 200;
     text-align: center;
@@ -205,7 +205,7 @@ h3.intro
 }
 .metalist
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-size: 12px;
     font-weight: 200;
     color: #bbb;
@@ -217,7 +217,7 @@ a.meta
 }
 h6.meta
 {
-    font-family: 'Alegreya Sans', sans-serif;
+    font-family: 'Libre Franklin', sans-serif;
     font-size: 12px;
     font-weight: 200;
 
@@ -228,7 +228,7 @@ section.meta {
 }
 .powered
 {
-    font-family: 'Alegreya', sans-serif;
+    font-family: 'Libre Baskerville', sans-serif;
     font-size: 12px;
     font-weight: 300;
 }
@@ -243,7 +243,7 @@ section.meta {
 }
 .title
 {
-    font-family: 'Alegreya Sans', serif;
+    font-family: 'Libre Franklin', serif;
     font-weight: 400;
     font-variant: small-caps;
     text-align: center;
@@ -263,7 +263,7 @@ header.title
     }
     .list
     {
-        font-family: 'Alegreya', sans-serif;
+        font-family: 'Libre Baskerville', sans-serif;
 
         margin-top: 30px;
     }
@@ -280,7 +280,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Alegreya Sans';
+  font-family: 'Libre Franklin';
   color: #6b7a8f;
 }
 
