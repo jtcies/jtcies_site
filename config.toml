@@ -24,7 +24,7 @@ enableRobotsTXT = true
 author = "Joe Ciesielski"
 intro = ""
 description = ""
-authorimage = "jtcies_img.png"
+authorimage = ""
 dateformat = "Jan 2, 2006"
 
 ## Site Meta Settings
