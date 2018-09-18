@@ -1,0 +1,91 @@
+---
+title: "Comparing NBA teams from the past 20 years"
+author: "Joe Ciesielski"
+date: '2018-09-18'
+tags:
+  - Shiny
+  - r
+  - Elo
+  - NBA
+output: html_document
+draft: true
+---
+
+
+
+<p>With the NBA season fast-approaching (maybe not fast enough for some of us), I wanted to play around with some NBA data and explore teams from recent history. My beloved Philadelphia 76ers have made a remarkable rise in the past two years, going from one of the worst teams in history to a contender for the conference championship, so their might be some bragging rights invovled in this too.</p>
+<div id="whats-the-best-way-to-rate-teams" class="section level2">
+<h2>What’s the best way to rate teams?</h2>
+<p>The first step was to determine the best empirical measure of a team’s ability. The website <a href="https://www.fivethirtyeight.com">Fivethirtyeight</a> uses Elo for their ratings. They have an excellent primer on Elo overall as well some specific decisions they made in creating their NBA rankings as well. They also publish complete Elo ratings since the start of the NBA, but I wanted to create the ratings mayself (while using their ratings as a comparison benchmark).</p>
+<p>For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating.</p>
+<p>You can look at how a team’s Elo changes over time, but that has been done a lot. I thought it would be fun to use Elo to see how any two teams would match up on any date. I created a Shiny application that does both; the rest of this post walks through the process of creating that application. In a later post, I’ll take a look at some things we can glean from this data.</p>
+</div>
+<div id="creating-the-elo-tables" class="section level2">
+<h2>Creating the Elo tables</h2>
+<div id="getting-the-data" class="section level3">
+<h3>Getting the data</h3>
+<p>First we need to get the data. <a href="https://www.basketball-reference.com">Basketball Reference</a> is the go-to place for any NBA related data. It’s organized in a way that makes it possible to scrape the data.</p>
+<p>I wrote a function to scrape this data. The website is organized by month and year. I wanted to go back about 20 years, but one thing that made this tricky a change in format after the 2000 season (BR added a ‘start time’ column). The function below parses the tables that include data, teams, and final score.</p>
+<pre class="r"><code>scrape_br &lt;- function(url) {
+# function to scrape the data and organize it into a data frame
+  # table from older years missing start time
+  old_format_years &lt;- &quot;1997|1998|1999|2000&quot;
+  old_format &lt;- if_else(grepl(old_format_years, url), TRUE, FALSE) 
+  table_names &lt;- c(&quot;date&quot;, &quot;start_time&quot;, &quot;visitor&quot;, &quot;visitor_pts&quot;,
+                   &quot;home&quot;, &quot;home_pts&quot;, &quot;link&quot;, &quot;ot&quot;, &quot;attendance&quot;,
+                   &quot;notes&quot;)
+  if(old_format) num_col &lt;- 9 else num_col &lt;- 10
+  # get the table
+  tmp &lt;- url %&gt;% 
+    read_html() %&gt;% 
+    html_nodes(&quot;.right , .left , .center&quot;) %&gt;% 
+    html_text()
+  # prep to read as csv
+  tmp &lt;- gsub(&quot;,&quot;, &quot;&quot;, tmp) # remove commas for reading as csv
+  # add a comma to the end of each field
+  tmp &lt;- paste0(tmp, &quot;,&quot;)
+  # start a new row after each 9/10 element depending on season
+  new_rows &lt;- seq(0, length(tmp), by = num_col)
+  tmp[new_rows] &lt;- paste0(tmp[new_rows], &quot;\n&quot;)
+  # collapse to a chacter string then read as csv
+  # convert all cols to character, read.csv was reading some in correctly
+  dat &lt;- paste0(tmp, collapse = &quot;&quot;) %&gt;% 
+    read.csv(text = .,
+             colClasses = rep(&quot;character&quot;, num_col)) %&gt;% 
+    filter(PTS != &quot;&quot;) # remove rows w/o data
+  # clean up column names
+  if(old_format) {
+    names(dat) &lt;- table_names[table_names != &quot;start_time&quot;]
+  } else {
+    names(dat) &lt;- table_names
+  }
+  dat[!is.na(names(dat))]
+}</code></pre>
+<p>This gets the games for each month. Then we map this over all of the months for the past 20 years and combine it into one table.</p>
+<pre class="r"><code># create all combinations of months and years
+months &lt;- c(&quot;october&quot;, &quot;november&quot;, &quot;december&quot;, &quot;january&quot;, &quot;february&quot;, 
+            &quot;march&quot;, &quot;april&quot;, &quot;may&quot;, &quot;june&quot;)
+
+years &lt;- seq(1997, 2018, by = 1)
+
+season_months &lt;- expand.grid(years, months)
+
+# create a list of urls for scraping data
+br_urls &lt;- paste0(
+  &quot;https://www.basketball-reference.com/leagues/NBA_&quot;, 
+  season_months$Var1, 
+  &quot;_games-&quot;,
+  season_months$Var2,
+  &quot;.html&quot;
+)
+
+# get only valid urls and scrape
+br_dat &lt;- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %&gt;% 
+  .[!is.na(.)] %&gt;% 
+  map(., scrape_br) %&gt;% 
+  bind_rows()</code></pre>
+</div>
+<div id="calculating-elo" class="section level3">
+<h3>Calculating Elo</h3>
+</div>
+</div>
