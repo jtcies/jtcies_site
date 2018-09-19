@@ -106,6 +106,106 @@ br_dat <- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %>%
 
 ### Calculating Elo
 
+After some pre-processing of the data, we're ready to calculate each team's Elo. The `elo` package makes this fairly easy. The easiest way I've found to do this is to use two tables. The first table is `games` which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called `teams`, which keeps a running tally of each teams Elo. After each game we append the updated score to the `teams` table. 
+
+First I created function which does this for each season. A few things to note here. Fivethirtyeight recommends a 100 point bonus to each home team. However, based on the data from the past 20 years, the home team wins 60% of the time on average. A 70 point difference translates to a 60% win probability, so each home team gets 35 Elo points and each away team gets the same penalty. The value of `k` represents how much a the Elo should move after each individual result. Setting this at 20 is fairly high, meaning that each result has the potential to move the Elo a lot.
+
+```{r, eval = FALSE, echo = TRUE}
+
+elo_calc_in_season <- function(games, teams) {
+  
+  for (i in seq_len(nrow(games))) {
+    # function for creating a running elo
+    game <- games[i, ]
+    
+    # extract most recent elo adding in home/away adjustment
+    elo_home <- teams[teams$team == game$home_team, "elo"][[1]] + 35
+    elo_vis <- teams[teams$team == game$vis_team, "elo"][[1]] - 35
+    
+    elo_update <- elo.calc(
+      score(game["home_pts"], game["visitor_pts"]),
+      elo_home,
+      elo_vis,
+      k = 20 # recommended by 538
+    )
+    # reshape elo update
+    new_elo <- elo_update %>% 
+      gather() %>% 
+      rename(elo = value) %>% 
+      mutate(
+        team = c(game$home_team, game$vis_team),
+        date = game$date,
+        season = game$season
+      ) %>% 
+      select(date, team, elo, season)
+    
+    # give the home/away adjustment back
+    new_elo[1, "elo"] <- new_elo[1, "elo"] - 35
+    new_elo[2, "elo"] <- new_elo[2, "elo"] + 35
+    
+    # bind elo update to teams data for running list
+    teams <- bind_rows(new_elo, teams)
+  }
+  return(teams)
+}
+
+```
+
+Next I created a function that calculates the carry over between seasons. Each team keeps 75% of their Elo from each season, gets 25% closer to the average of 1500. Then I created a function that runs these together and creates the `teams` table. 
+
+```{r, eval = FALSE, echo = TRUE}
+carry_over <- function(teams) {
+# at the start of every new season, carry over 75% of elo
+# rec by 538, start new season on 10/01
+  new_season <- teams %>% 
+    filter(season == season[[1]]) %>% # don't include expansions til they join
+    distinct(team, .keep_all = TRUE) %>% 
+    mutate(
+      elo = (.75 * elo) + (.25 * 1505),
+      date = ymd(paste0(season, "0930")),
+      season = season + 1 # add one for start of new season
+  )
+  bind_rows(new_season, teams)
+}
+
+elo_calc <- function(games, teams) {
+  
+  seasons <- unique(games$season)
+  
+  for (j in seq_len(length(seasons))) {
+    # run the calculation within each season
+    season_games <- games[games$season == seasons[[j]], ]
+    teams <- elo_calc_in_season(season_games, teams)
+    # then apply the carryover
+    teams <- carry_over(teams)
+  }
+  return(teams)
+}
+```
+
+Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. The `fill_elo` function will give us that. Then we run them all. 
+
+```{r, eval = FALSE, echo = TRUE}
+fill_elo <- function(data) {
+  # function to fill in missing elo
+  data %>% 
+    tidyr::complete(date = full_seq(date, period = 1), team) %>% 
+    arrange(date) %>% 
+    fill(elo) %>% 
+    mutate(elo = if_else(month(date) %in% 7:9, NA_real_, elo))
+}
+
+# this will take a few minutes to run
+running_elo <- elo_calc(nba, teams)
+
+# fill in missing dates
+complete_elo <- running_elo %>% 
+  split(.$team) %>% 
+  map_dfr(fill_elo) %>% 
+  mutate(elo = lag(elo)) # get elo at beginning of day instead of end
+```
+
+
 
 
 [1]: https://www.fivethirtyeight.com
