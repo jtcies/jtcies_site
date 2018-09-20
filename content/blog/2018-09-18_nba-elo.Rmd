@@ -13,7 +13,7 @@ draft: true
 
 ```{r, include=FALSE}
 
-knitr::opts_chunk$set(fig.align = 'center', fig.width = 6, fig.asp = 0.618,
+knitr::opts_chunk$set(fig.align = 'center', fig.width = 8, fig.asp = 0.618,
                       echo = FALSE, warning = FALSE, message = FALSE)
 
 
@@ -206,6 +206,9 @@ complete_elo <- running_elo %>%
 ```
 
 
+## How does it compare? 
+
+<img src = "/img/nba-elo/538_compare.png" width="750" height="463.5">
 
 
 [1]: https://www.fivethirtyeight.com
