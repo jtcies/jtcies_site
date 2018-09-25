@@ -13,22 +13,30 @@ draft: true
 
 
 
-<p>With the NBA season fast-approaching (maybe not fast enough for some of us), I wanted to play around with some NBA data and explore teams from recent history. My beloved Philadelphia 76ers have made a remarkable rise in the past two years, going from one of the worst teams in history to a contender for the conference championship, so their might be some bragging rights invovled in this too.</p>
+<p>With the NBA season fast-approaching (not fast enough for me), I wanted to play around with some NBA data and explore teams from recent history. My beloved Philadelphia 76ers have made a remarkable rise in the past two years, going from one of the worst teams in history to a contender for the conference championship, so there are some bragging rights invovled in this too.</p>
 <div id="whats-the-best-way-to-rate-teams" class="section level2">
 <h2>What’s the best way to rate teams?</h2>
 <p>The first step was to determine the best empirical measure of a team’s ability. The website <a href="https://www.fivethirtyeight.com">Fivethirtyeight</a> uses Elo for their ratings. They have an excellent primer on Elo overall as well some specific decisions they made in creating their NBA rankings as well. They also publish complete Elo ratings since the start of the NBA, but I wanted to create the ratings mayself (while using their ratings as a comparison benchmark).</p>
 <p>For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating.</p>
-<p>You can look at how a team’s Elo changes over time, but that has been done a lot. I thought it would be fun to use Elo to see how any two teams would match up on any date. I created a Shiny application that does both; the rest of this post walks through the process of creating that application. In a later post, I’ll take a look at some things we can glean from this data.</p>
+<p>Elo can be used in to look at trends over time to see how a team’s relative ability rises and falls. It can also be used for prediction: comparing the Elo rating of two teams gives you a probability of each team winning.</p>
+<p>I built an application that lets you look at both of those things. On the first tab, you can track any team’s Elo over time using a specified date range. On the second tab, you can pick any two teams to see how they would match up on a given date in the last 20 years. It also shows the actual NBA games that took place on that date and whether the outcome was expected or an upset. You can view the standalone application <a href="https://jtcies.shinyapps.io/nba-elo/">here</a>.</p>
 <iframe src="https://jtcies.shinyapps.io/nba-elo/" height="494px" width="800px">
 </iframe>
+<p>The rest of this post walks through the process of creating this application. Note that this code is for reference and won’t be reproducible as it’s written on this post. The full source code for the application is avaialbe <a href="https://www.github.com/jtcies/nba-elo">here</a>.</p>
 </div>
-<div id="creating-the-elo-tables" class="section level2">
-<h2>Creating the Elo tables</h2>
+<div id="generating-the-elo-ratings" class="section level2">
+<h2>Generating the Elo ratings</h2>
 <div id="getting-the-data" class="section level3">
 <h3>Getting the data</h3>
 <p>First we need to get the data. <a href="https://www.basketball-reference.com">Basketball Reference</a> is the go-to place for any NBA related data. It’s organized in a way that makes it possible to scrape the data.</p>
 <p>I wrote a function to scrape this data. The website is organized by month and year. I wanted to go back about 20 years, but one thing that made this tricky a change in format after the 2000 season (BR added a ‘start time’ column). The function below parses the tables that include data, teams, and final score.</p>
-<pre class="r"><code>scrape_br &lt;- function(url) {
+<pre class="r"><code>library(tidyverse)
+library(elo)
+library(rvest)
+library(Rcurl)
+
+
+scrape_br &lt;- function(url) {
 # function to scrape the data and organize it into a data frame
   # table from older years missing start time
   old_format_years &lt;- &quot;1997|1998|1999|2000&quot;
@@ -63,7 +71,7 @@ draft: true
   }
   dat[!is.na(names(dat))]
 }</code></pre>
-<p>This gets the games for each month. Then we map this over all of the months for the past 20 years and combine it into one table.</p>
+<p>This gets the games for each month. Then we use the <code>map</code> function to get this for all of the months for the past 20 years and combine it into one table.</p>
 <pre class="r"><code># create all combinations of months and years
 months &lt;- c(&quot;october&quot;, &quot;november&quot;, &quot;december&quot;, &quot;january&quot;, &quot;february&quot;, 
             &quot;march&quot;, &quot;april&quot;, &quot;may&quot;, &quot;june&quot;)
@@ -87,9 +95,9 @@ br_dat &lt;- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %&gt;%
   map(., scrape_br) %&gt;% 
   bind_rows()</code></pre>
 </div>
-<div id="calculating-elo" class="section level3">
-<h3>Calculating Elo</h3>
-<p>After some pre-processing of the data, we’re ready to calculate each team’s Elo. The <code>elo</code> package makes this fairly easy. The easiest way I’ve found to do this is to use two tables. The first table is <code>games</code> which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called <code>teams</code>, which keeps a running tally of each teams Elo. After each game we append the updated score to the <code>teams</code> table.</p>
+<div id="calculating-the-ratings" class="section level3">
+<h3>Calculating the ratings</h3>
+<p>After some pre-processing of the data, we’re ready to calculate each team’s Elo. The <code>elo</code> package makes this fairly straightforward. The easiest way I’ve found to do this is to use two tables. The first table is <code>games</code> which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called <code>teams</code>, which keeps a running tally of each teams Elo. After each game we append the updated score to the <code>teams</code> table.</p>
 <p>First I created function which does this for each season. A few things to note here. Fivethirtyeight recommends a 100 point bonus to each home team. However, based on the data from the past 20 years, the home team wins 60% of the time on average. A 70 point difference translates to a 60% win probability, so each home team gets 35 Elo points and each away team gets the same penalty. The value of <code>k</code> represents how much a the Elo should move after each individual result. Setting this at 20 is fairly high, meaning that each result has the potential to move the Elo a lot.</p>
 <pre class="r"><code>elo_calc_in_season &lt;- function(games, teams) {
   
@@ -155,7 +163,7 @@ elo_calc &lt;- function(games, teams) {
   }
   return(teams)
 }</code></pre>
-<p>Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. The <code>fill_elo</code> function will give us that. Then we run them all.</p>
+<p>Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. This is what will allows us to do the hypothetical comparisons. The <code>fill_elo</code> function will give us that. Then we run them all.</p>
 <pre class="r"><code>fill_elo &lt;- function(data) {
   # function to fill in missing elo
   data %&gt;% 
@@ -174,12 +182,19 @@ complete_elo &lt;- running_elo %&gt;%
   map_dfr(fill_elo) %&gt;% 
   mutate(elo = lag(elo)) # get elo at beginning of day instead of end</code></pre>
 </div>
-</div>
-<div id="how-does-it-compare" class="section level2">
-<h2>How does it compare?</h2>
+<div id="how-does-it-compare" class="section level3">
+<h3>How does it compare?</h3>
 <p><img src = "/img/nba-elo/538_compare.png"></p>
-<p>The image above shows the comparison my calculated Elo scores and the Fivethirthyeight scores as a benchmark. The r^2 is about .98 so it looks like I was able to match it farily closely. I used 1997 as my base year and eliminated that from most of my analyses; this gave my ratings some time to even out (probably more than I needed actually).</p>
+<p>The image above shows the comparison my calculated Elo scores and the Fivethirthyeight scores as a benchmark. The r^2 is about .98 so it looks like I was able to match it farily closely. I used 1997 as my base year and eliminated that from most of my analyses; this gave my ratings some time to even out.</p>
 </div>
-<div id="lessons-learned" class="section level2">
-<h2>Lessons learned</h2>
+</div>
+<div id="updates-to-the-application" class="section level2">
+<h2>Updates to the application</h2>
+<p>While I’m pretty happy with how the application turned out, there’s still a few updates I’d like to make.</p>
+<ul>
+<li>Logos: the logos on the ‘compare’ tab are currently being pulled from stats.nba.com. This only gives the current logos, so teams that moved get the logo of their franchise. For example, the logo for the New Jersey Nets is Brooklyn’s logo. At some point I would like to get each team a logo. Maybe I could even get correct logos based on the date that is selected as well!</li>
+<li>Elo by season: I’d like to give the option of looking at a team’s Elo based on season in addition to date range. For this verison, I found date range to be the better option because it allows more flexibility and is more intuitive.</li>
+<li>Real-time results: Once the season is underway, we could look at how ratings change after each game. This would just be a matter of including current data when we scrape it.</li>
+</ul>
+<p>I welcome feeback on the applicaiton or data collection. Thoughts on things to add? Ways to improve the code or make it run faster? Feel free to leave them in the comments.</p>
 </div>
