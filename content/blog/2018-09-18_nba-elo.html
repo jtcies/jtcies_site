@@ -19,6 +19,8 @@ draft: true
 <p>The first step was to determine the best empirical measure of a team’s ability. The website <a href="https://www.fivethirtyeight.com">Fivethirtyeight</a> uses Elo for their ratings. They have an excellent primer on Elo overall as well some specific decisions they made in creating their NBA rankings as well. They also publish complete Elo ratings since the start of the NBA, but I wanted to create the ratings mayself (while using their ratings as a comparison benchmark).</p>
 <p>For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating.</p>
 <p>You can look at how a team’s Elo changes over time, but that has been done a lot. I thought it would be fun to use Elo to see how any two teams would match up on any date. I created a Shiny application that does both; the rest of this post walks through the process of creating that application. In a later post, I’ll take a look at some things we can glean from this data.</p>
+<iframe src="https://jtcies.shinyapps.io/nba-elo/" height="494px" width="800px">
+</iframe>
 </div>
 <div id="creating-the-elo-tables" class="section level2">
 <h2>Creating the Elo tables</h2>
@@ -175,5 +177,9 @@ complete_elo &lt;- running_elo %&gt;%
 </div>
 <div id="how-does-it-compare" class="section level2">
 <h2>How does it compare?</h2>
-<p><img src = "/img/nba-elo/538_compare.png" width="750" height="463.5"></p>
+<p><img src = "/img/nba-elo/538_compare.png"></p>
+<p>The image above shows the comparison my calculated Elo scores and the Fivethirthyeight scores as a benchmark. The r^2 is about .98 so it looks like I was able to match it farily closely. I used 1997 as my base year and eliminated that from most of my analyses; this gave my ratings some time to even out (probably more than I needed actually).</p>
+</div>
+<div id="lessons-learned" class="section level2">
+<h2>Lessons learned</h2>
 </div>

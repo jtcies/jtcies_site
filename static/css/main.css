@@ -15,8 +15,7 @@ a:hover,
 a:visited,
 a:link
 {
-    text-decoration: underline;
-
+    font-weight: 700;
     color: #526d7a;
 }
 body
@@ -24,12 +23,10 @@ body
     font-family: 'Libre Franklin', 'Libre Baskerville', sans-serif;
     font-size: 20px;
     font-weight: 400;
-
     width: auto;
     height: 100%;
     min-height: 100%;
     margin: 0;
-
     background-color: #ffffff;
 }
 html
@@ -62,9 +59,20 @@ html
 .container
 {
     overflow: auto;
-
-    max-width: 680px;
     padding: 0 15px;
+    max-width: 1000px;
+}
+div.container p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h5 {
+  max-width: 680px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 .content
 {
@@ -76,7 +84,6 @@ div.content
     font-family: 'Libre Baskerville', sans-serif;
     font-size: 18px;
     font-weight: 300;
-
     color: #4f4f4f;
 }
 .copyright
@@ -200,7 +207,6 @@ h3.intro
     font-family: 'Libre Baskerville', sans-serif;
     font-size: 12px;
     font-weight: 200;
-    text-align: center;
     color: #bbb;
 }
 .metalist
@@ -283,4 +289,15 @@ h6 {
   font-family: 'Libre Franklin';
   color: #6b7a8f;
 }
+.img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 800px !important;
+    height: 494px !important
+}
 
+.iframe {
+  frameborder: 0;
+  outline: none;
+}

@@ -16,10 +16,9 @@ draft: true
 knitr::opts_chunk$set(fig.align = 'center', fig.width = 8, fig.asp = 0.618,
                       echo = FALSE, warning = FALSE, message = FALSE)
 
-
 ```
 
-With the NBA season fast-approaching (maybe not fast enough for some of us), I wanted to play around with some NBA data and explore teams from recent history. My beloved Philadelphia 76ers have made a remarkable rise in the past two years, going from one of the worst teams in history to a contender for the conference championship, so their might be some bragging rights invovled in this too. 
+With the NBA season fast-approaching (not fast enough for me), I wanted to play around with some NBA data and explore teams from recent history. My beloved Philadelphia 76ers have made a remarkable rise in the past two years, going from one of the worst teams in history to a contender for the conference championship, so there are some bragging rights invovled in this too. 
 
 ## What's the best way to rate teams?
 
@@ -27,9 +26,15 @@ The first step was to determine the best empirical measure of a team's ability. 
 
 For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating. 
 
-You can look at how a team's Elo changes over time, but that has been done a lot. I thought it would be fun to use Elo to see how any two teams would match up on any date. I created a Shiny application that does both; the rest of this post walks through the process of creating that application. In a later post, I'll take a look at some things we can glean from this data. 
+Elo can be used in to look at trends over time to see how a team's relative ability rises and falls. It can also be used for prediction: comparing the Elo rating of two teams gives you a probability of each team winning. 
 
-## Creating the Elo tables
+I built an application that lets you look at both of those things. On the first tab, you can track any team's Elo over time using a specified date range. On the second tab, you can pick any two teams to see how they would match up on a given date in the last 20 years. It also shows the actual NBA games that took place on that date and whether the outcome was expected or an upset. You can view the standalone application [here][3].
+
+<iframe src="https://jtcies.shinyapps.io/nba-elo/" height=494px width=800px></iframe>
+
+The rest of this post walks through the process of creating this application. Note that this code is for reference and won't be reproducible as it's written on this post. The full source code for the application is avaialbe [here][4].
+
+## Generating the Elo ratings
 
 ### Getting the data
 
@@ -38,6 +43,13 @@ First we need to get the data. [Basketball Reference][2] is the go-to place for 
 I wrote a function to scrape this data. The website is organized by month and year. I wanted to go back about 20 years, but one thing that made this tricky a change in format after the 2000 season (BR added a 'start time' column). The function below parses the tables that include data, teams, and final score.
 
 ```{r, eval = FALSE, echo = TRUE}
+
+library(tidyverse)
+library(elo)
+library(rvest)
+library(Rcurl)
+
+
 scrape_br <- function(url) {
 # function to scrape the data and organize it into a data frame
   # table from older years missing start time
@@ -76,7 +88,7 @@ scrape_br <- function(url) {
 
 ```
 
-This gets the games for each month. Then we map this over all of the months for the past 20 years and combine it into one table. 
+This gets the games for each month. Then we use the `map` function to get this for all of the months for the past 20 years and combine it into one table. 
 
 ```{r, eval = FALSE, echo = TRUE}
 
@@ -104,9 +116,9 @@ br_dat <- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %>%
   bind_rows()
 ```
 
-### Calculating Elo
+### Calculating the ratings
 
-After some pre-processing of the data, we're ready to calculate each team's Elo. The `elo` package makes this fairly easy. The easiest way I've found to do this is to use two tables. The first table is `games` which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called `teams`, which keeps a running tally of each teams Elo. After each game we append the updated score to the `teams` table. 
+After some pre-processing of the data, we're ready to calculate each team's Elo. The `elo` package makes this fairly straightforward. The easiest way I've found to do this is to use two tables. The first table is `games` which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called `teams`, which keeps a running tally of each teams Elo. After each game we append the updated score to the `teams` table. 
 
 First I created function which does this for each season. A few things to note here. Fivethirtyeight recommends a 100 point bonus to each home team. However, based on the data from the past 20 years, the home team wins 60% of the time on average. A 70 point difference translates to a 60% win probability, so each home team gets 35 Elo points and each away team gets the same penalty. The value of `k` represents how much a the Elo should move after each individual result. Setting this at 20 is fairly high, meaning that each result has the potential to move the Elo a lot.
 
@@ -183,7 +195,7 @@ elo_calc <- function(games, teams) {
 }
 ```
 
-Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. The `fill_elo` function will give us that. Then we run them all. 
+Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. This is what will allows us to do the hypothetical comparisons. The `fill_elo` function will give us that. Then we run them all. 
 
 ```{r, eval = FALSE, echo = TRUE}
 fill_elo <- function(data) {
@@ -205,11 +217,25 @@ complete_elo <- running_elo %>%
   mutate(elo = lag(elo)) # get elo at beginning of day instead of end
 ```
 
+### How does it compare? 
 
-## How does it compare? 
+<img src = "/img/nba-elo/538_compare.png">
 
-<img src = "/img/nba-elo/538_compare.png" width="750" height="463.5">
+The image above shows the comparison my calculated Elo scores and the Fivethirthyeight scores as a benchmark. The r^2 is about .98 so it looks like I was able to match it farily closely. I used 1997 as my base year and eliminated that from most of my analyses; this gave my ratings some time to even out. 
+
+## Updates to the application
+
+While I'm pretty happy with how the application turned out, there's still a few updates I'd like to make. 
+
+- Logos: the logos on the 'compare' tab are currently being pulled from stats.nba.com. This only gives the current logos, so teams that moved get the logo of their franchise. For example, the logo for the New Jersey Nets is Brooklyn's logo. At some point I would like to get each team a logo. Maybe I could even get correct logos based on the date that is selected as well!
+- Elo by season: I'd like to give the option of looking at a team's Elo based on season in addition to date range. For this verison, I found date range to be the better option because it allows more flexibility and is more intuitive. 
+- Real-time results: Once the season is underway, we could look at how ratings change after each game. This would just be a matter of including current data when we scrape it. 
+
+I welcome feeback on the applicaiton or data collection. Thoughts on things to add? Ways to improve the code or make it run faster? Feel free to leave them in the comments. 
+
 
 
 [1]: https://www.fivethirtyeight.com
 [2]: https://www.basketball-reference.com
+[3]: https://jtcies.shinyapps.io/nba-elo/
+[4]: https://www.github.com/jtcies/nba-elo
