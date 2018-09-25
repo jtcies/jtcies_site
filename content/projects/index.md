@@ -1,4 +1,7 @@
-# Projects
+---
+title: "Projects"
+comments: false
+---
 
 ## [NBA Elo Shiny App][1]
 
