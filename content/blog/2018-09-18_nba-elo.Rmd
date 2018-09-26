@@ -8,7 +8,6 @@ tags:
   - Elo
   - NBA
 output: html_document
-draft: true
 ---
 
 ```{r, include=FALSE}
@@ -22,7 +21,7 @@ With the NBA season fast-approaching (not fast enough for me), I wanted to play 
 
 ## What's the best way to rate teams?
 
-The first step was to determine the best empirical measure of a team's ability. The website [Fivethirtyeight][1] uses Elo for their ratings. They have an excellent primer on Elo overall as well some specific decisions they made in creating their NBA rankings as well. They also publish complete Elo ratings since the start of the NBA, but I wanted to create the ratings mayself (while using their ratings as a comparison benchmark). 
+The first step was to determine the best empirical measure of a team's ability. The website [Fivethirtyeight][1] uses Elo for their ratings. They have an excellent [primer][6] on Elo and decisions they made in creating their NBA rankings as well. They also publish complete Elo ratings since the start of the NBA, but I wanted to create the ratings mayself (while using their ratings as a comparison benchmark). 
 
 For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating. 
 
@@ -32,7 +31,7 @@ I built an application that lets you look at both of those things. On the first 
 
 <iframe src="https://jtcies.shinyapps.io/nba-elo/" height=494px width=800px></iframe>
 
-The rest of this post walks through the process of creating this application. Note that this code is for reference and won't be reproducible as it's written on this post. The full source code for the application is avaialbe [here][4].
+The rest of this post walks through the process of creating this application. Note that this code is for reference and won't be reproducible as it's written on this post. The full source code for the application is available [here][4].
 
 ## Generating the Elo ratings
 
@@ -47,7 +46,7 @@ I wrote a function to scrape this data. The website is organized by month and ye
 library(tidyverse)
 library(elo)
 library(rvest)
-library(Rcurl)
+library(RCurl)
 
 
 scrape_br <- function(url) {
@@ -110,7 +109,7 @@ br_urls <- paste0(
 )
 
 # get only valid urls and scrape
-br_dat <- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %>% 
+games <- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %>% 
   .[!is.na(.)] %>% 
   map(., scrape_br) %>% 
   bind_rows()
@@ -118,9 +117,22 @@ br_dat <- map(br_urls, ~ifelse(RCurl::url.exists(.), ., NA)) %>%
 
 ### Calculating the ratings
 
-After some pre-processing of the data, we're ready to calculate each team's Elo. The `elo` package makes this fairly straightforward. The easiest way I've found to do this is to use two tables. The first table is `games` which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called `teams`, which keeps a running tally of each teams Elo. After each game we append the updated score to the `teams` table. 
+After some [pre-processing][5] of the data, we're ready to calculate each team's Elo. The `elo` package makes this fairly straightforward. The easiest way I've found to do this is to use two tables. The first table is `games` which contains each of the games and results; this is what we scraped from Basketball Reference. The second I called `teams`, which keeps a running tally of each team's rating. After each game we append the updated score to the `teams` table. 
 
-First I created function which does this for each season. A few things to note here. Fivethirtyeight recommends a 100 point bonus to each home team. However, based on the data from the past 20 years, the home team wins 60% of the time on average. A 70 point difference translates to a 60% win probability, so each home team gets 35 Elo points and each away team gets the same penalty. The value of `k` represents how much a the Elo should move after each individual result. Setting this at 20 is fairly high, meaning that each result has the potential to move the Elo a lot.
+We create a base `teams` table like this[^1]:
+
+```{r, eval=FALSE, echo = TRUE}
+teams <- games %>% 
+  distinct(home_team) %>% 
+  rename(team = home_team) %>% 
+  mutate(
+    season = if_else(team == "CHA", 2005, 1997),
+    elo = if_else(team == "CHA", 1300, 1500),
+    date = ymd(paste0(season - 1, "1001"))
+  )
+```
+
+We first calculate the Elo within each season. A few things to note here. Fivethirtyeight recommends a 100 point bonus to each home team. However, based on the data from the past 20 years, the home team wins 60% of the time on average. A 70 point difference translates to a 60% win probability, so each home team gets 35 Elo points and each away team gets the same penalty. The value of `k` represents how much a the Elo should move after each individual result. Setting this at 20 is fairly high, meaning that each result has the potential to move the Elo a lot. 
 
 ```{r, eval = FALSE, echo = TRUE}
 
@@ -163,7 +175,7 @@ elo_calc_in_season <- function(games, teams) {
 
 ```
 
-Next I created a function that calculates the carry over between seasons. Each team keeps 75% of their Elo from each season, gets 25% closer to the average of 1500. Then I created a function that runs these together and creates the `teams` table. 
+I created a function that calculates the carry over between seasons. Each team keeps 75% of their Elo from each season, gets 25% closer to the average of 1500. Then I created a function that runs the within season and carry over functions together, returning our final teams table. 
 
 ```{r, eval = FALSE, echo = TRUE}
 carry_over <- function(teams) {
@@ -195,7 +207,7 @@ elo_calc <- function(games, teams) {
 }
 ```
 
-Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. This is what will allows us to do the hypothetical comparisons. The `fill_elo` function will give us that. Then we run them all. 
+Finally, we want an Elo for each date of the season (taking out the summer months), not just after games. This is what will allows us to do the hypothetical comparisons. The `fill_elo` function will give us that. 
 
 ```{r, eval = FALSE, echo = TRUE}
 fill_elo <- function(data) {
@@ -206,9 +218,13 @@ fill_elo <- function(data) {
     fill(elo) %>% 
     mutate(elo = if_else(month(date) %in% 7:9, NA_real_, elo))
 }
+```
 
+Then we run them all together get our complete Elo table which holds our running tally of rankings for hte past two years.
+
+```{r, eval = FALSE, echo = TRUE}
 # this will take a few minutes to run
-running_elo <- elo_calc(nba, teams)
+running_elo <- elo_calc(games, teams)
 
 # fill in missing dates
 complete_elo <- running_elo %>% 
@@ -233,9 +249,11 @@ While I'm pretty happy with how the application turned out, there's still a few 
 
 I welcome feeback on the applicaiton or data collection. Thoughts on things to add? Ways to improve the code or make it run faster? Feel free to leave them in the comments. 
 
-
-
 [1]: https://www.fivethirtyeight.com
 [2]: https://www.basketball-reference.com
 [3]: https://jtcies.shinyapps.io/nba-elo/
 [4]: https://www.github.com/jtcies/nba-elo
+[5]: https://github.com/jtcies/nba-elo/blob/master/external/2_preprocess_data.R
+[6]: https://fivethirtyeight.com/features/how-we-calculate-nba-elo-ratings/ 
+
+[^1]: Charlotte was an expansion team and starts with an Elo of 1300. Everyone else starts at 1500 in the 1997 season.
