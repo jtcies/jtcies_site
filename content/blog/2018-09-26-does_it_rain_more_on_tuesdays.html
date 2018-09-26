@@ -1,0 +1,183 @@
+---
+title: "Is it more likely to rain on Tuesdays in Philadelphia?"
+author: "Joe Ciesielski"
+date: "2018-09-26"
+output: html_document
+draft: true
+---
+
+
+
+<p>Trash days in our neighborhood is on Wednesday, which means we have to put our trash out on Tuesday night.</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(rvest)
+library(here)
+
+weather &lt;- &quot;data/phl_weather_20090925-20180924.csv&quot; %&gt;% 
+  here::here() %&gt;% 
+  read_csv()
+
+glimpse(weather)</code></pre>
+<pre><code>## Observations: 3,284
+## Variables: 33
+## $ STATION   &lt;chr&gt; &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW000...
+## $ NAME      &lt;chr&gt; &quot;PHILADELPHIA INTERNATIONAL AIRPORT, PA US&quot;, &quot;PHILAD...
+## $ LATITUDE  &lt;dbl&gt; 39.87327, 39.87327, 39.87327, 39.87327, 39.87327, 39...
+## $ LONGITUDE &lt;dbl&gt; -75.22678, -75.22678, -75.22678, -75.22678, -75.2267...
+## $ ELEVATION &lt;dbl&gt; 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3...
+## $ DATE      &lt;date&gt; 2009-09-25, 2009-09-26, 2009-09-27, 2009-09-28, 200...
+## $ AWND      &lt;dbl&gt; 9.84, 7.83, 8.28, 10.29, 16.11, 9.62, 8.05, 6.93, 2....
+## $ PRCP      &lt;dbl&gt; 0.00, 0.24, 0.77, 0.27, 0.00, 0.00, 0.00, 0.03, 0.01...
+## $ PSUN      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ SNOW      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ SNWD      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
+## $ TAVG      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ TMAX      &lt;int&gt; 75, 69, 75, 79, 70, 64, 59, 68, 76, 74, 68, 68, 72, ...
+## $ TMIN      &lt;int&gt; 56, 54, 59, 57, 53, 53, 48, 47, 60, 55, 50, 48, 56, ...
+## $ TSUN      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT01      &lt;int&gt; NA, NA, 1, NA, NA, NA, NA, 1, 1, 1, NA, NA, 1, NA, N...
+## $ WT02      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT03      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT04      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT05      &lt;int&gt; NA, 1, 1, 1, NA, 1, NA, 1, NA, NA, NA, NA, 1, NA, 1,...
+## $ WT06      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT07      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT08      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT09      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT11      &lt;int&gt; NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+## $ WT13      &lt;int&gt; NA, NA, 1, NA, NA, NA, NA, NA, 1, NA, NA, NA, 1, NA,...
+## $ WT14      &lt;int&gt; NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
+## $ WT15      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT16      &lt;int&gt; NA, 1, 1, 1, NA, 1, NA, 1, 1, NA, NA, 1, 1, 1, 1, 1,...
+## $ WT17      &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT18      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
+## $ WT21      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, 1, NA, NA, NA, NA, N...
+## $ WT22      &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...</code></pre>
+<p>I requested a bunch of variables when I ordered the data initially because I thought some might might be useful in the future. The only two we care about here are <code>DATE</code> and <code>PRCP</code> which is daily rainfall total in inches. Let’s check to make sure we got the dates we requested.</p>
+<pre class="r"><code>range(weather$DATE)</code></pre>
+<pre><code>## [1] &quot;2009-09-25&quot; &quot;2018-09-21&quot;</code></pre>
+<p>Looks good. Using the <code>wday</code> function from the <code>lubridate</code> package, we can easily get the day of the week for any date.</p>
+<pre class="r"><code>weather &lt;- weather %&gt;% 
+  mutate(
+    day_of_week = wday(DATE, label = TRUE)
+  )
+
+count(weather, day_of_week)</code></pre>
+<pre><code>## # A tibble: 7 x 2
+##   day_of_week     n
+##   &lt;ord&gt;       &lt;int&gt;
+## 1 Sun           469
+## 2 Mon           469
+## 3 Tue           469
+## 4 Wed           469
+## 5 Thu           469
+## 6 Fri           470
+## 7 Sat           469</code></pre>
+<p>Looks good.</p>
+<div id="total-rainfall" class="section level2">
+<h2>Total rainfall</h2>
+<p>Let’s get a picture of the distribution of rain.</p>
+<pre class="r"><code>ggplot(weather, aes(x = PRCP)) +
+  geom_histogram(binwidth = 0.1)</code></pre>
+<p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Rainfall totals are highly skewed becuse there is no rain most of the of time. We can log transfrom it to get a better s</p>
+<pre class="r"><code>ggplot(weather, aes(x = day_of_week, y = log(PRCP + 0.0001))) +
+  geom_boxplot()</code></pre>
+<p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-5-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Wow! It looks like Tuesday has more days with higher rainfall totals than any other day of the week. We can create a linear model to see how day of the week and rainfall are related.</p>
+<pre class="r"><code>rain_mod &lt;- lm(
+  PRCP ~ as.character(day_of_week),
+  data = weather
+)
+
+summary(rain_mod)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = PRCP ~ as.character(day_of_week), data = weather)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -0.1498 -0.1335 -0.1254 -0.0868  7.8930 
+## 
+## Coefficients:
+##                               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                   0.131021   0.018925   6.923 5.29e-12 ***
+## as.character(day_of_week)Mon -0.005669   0.026778  -0.212    0.832    
+## as.character(day_of_week)Sat  0.005802   0.026778   0.217    0.828    
+## as.character(day_of_week)Sun -0.004028   0.026778  -0.150    0.880    
+## as.character(day_of_week)Thu -0.016863   0.026778  -0.630    0.529    
+## as.character(day_of_week)Tue  0.018744   0.026778   0.700    0.484    
+## as.character(day_of_week)Wed  0.002433   0.026778   0.091    0.928    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.4103 on 3277 degrees of freedom
+## Multiple R-squared:  0.0006149,  Adjusted R-squared:  -0.001215 
+## F-statistic: 0.336 on 6 and 3277 DF,  p-value: 0.9181</code></pre>
+<p>Ok, this tells us that Tuesdays are associated with higher rainfall (about 0.019 inches) compared to our reference day (Friday - first day of the week alphabetically). None of our inputs are even close to significant though.</p>
+</div>
+<div id="did-it-rain-at-all" class="section level2">
+<h2>Did it rain at all?</h2>
+<p>However, this doesn’t really answer the question we were interested in. We don’t care too much about the total raint hat fell. Really we want to know if it is more likley to rain at all on Tuesdays. To do this we’ll create a binary variable that is 1 if it rained more than 0 inches, and 0 otherwise.</p>
+<pre class="r"><code>weather &lt;- weather %&gt;% 
+  mutate(
+    rain = if_else(PRCP &gt; 0, 1L, 0L)
+  )
+
+weather %&gt;% 
+  group_by(day_of_week) %&gt;% 
+  summarise(mean(rain))</code></pre>
+<pre><code>## # A tibble: 7 x 2
+##   day_of_week `mean(rain)`
+##   &lt;ord&gt;              &lt;dbl&gt;
+## 1 Sun                0.286
+## 2 Mon                0.320
+## 3 Tue                0.386
+## 4 Wed                0.326
+## 5 Thu                0.341
+## 6 Fri                0.306
+## 7 Sat                0.318</code></pre>
+<p>Wait … what? It actually does rain more on Tuesdays. By quite a bit. Almost 40% of the time compared to less than 30% of Sundays.</p>
+<p>This time we can use logistic regression to see if this finding is confrimed.</p>
+<pre class="r"><code>binary_mod &lt;- glm(
+  rain ~ as.character(day_of_week), 
+  family = &quot;binomial&quot;,
+  data = weather
+)
+
+summary(binary_mod)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = rain ~ as.character(day_of_week), family = &quot;binomial&quot;, 
+##     data = weather)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.9876  -0.8887  -0.8554   1.4666   1.5829  
+## 
+## Coefficients:
+##                              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)                  -0.81708    0.10006  -8.166 3.19e-16 ***
+## as.character(day_of_week)Mon  0.06253    0.14076   0.444   0.6569    
+## as.character(day_of_week)Sat  0.05271    0.14088   0.374   0.7083    
+## as.character(day_of_week)Sun -0.09921    0.14304  -0.694   0.4880    
+## as.character(day_of_week)Thu  0.15892    0.13964   1.138   0.2551    
+## as.character(day_of_week)Tue  0.35262    0.13787   2.558   0.0105 *  
+## as.character(day_of_week)Wed  0.09178    0.14040   0.654   0.5133    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 4147.0  on 3283  degrees of freedom
+## Residual deviance: 4134.5  on 3277  degrees of freedom
+## AIC: 4148.5
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<p>Ok, hang on. This tells us that the log odds of it raining on Tuesday are 0.35 points higher Friday. And that it is significant at the 0.05 level.</p>
+</div>
+<div id="whats-going-on-here" class="section level2">
+<h2>What’s going on here?</h2>
+<p>I really just wanted to look into this as a joke. It is true that it has rained more on Tuesdays than other day for the past nine years. Does this mean that there is some weather pattern designed to increase my annoyance on trash night?</p>
+</div>
