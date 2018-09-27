@@ -148,8 +148,8 @@ To find probability of rain on Tuesday:
 
 ```{r}
 
-intercept <- as.numeric(fit_table$estimate[fit_table$term == "(Intercept)"])
-tues_coef <- as.numeric(fit_table$estimate[fit_table$term == "day_of_weekTue"])
+intercept <- as.numeric(fit_tidy$estimate[fit_tidy$term == "(Intercept)"])
+tues_coef <- as.numeric(fit_tidy$estimate[fit_tidy$term == "day_of_weekTue"])
 
 tues_logit <- intercept + tues_coef
 

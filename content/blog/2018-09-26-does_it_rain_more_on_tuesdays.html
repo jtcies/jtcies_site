@@ -3,13 +3,12 @@ title: "Is it more likely to rain on Tuesdays in Philadelphia?"
 author: "Joe Ciesielski"
 date: "2018-09-26"
 output: html_document
-draft: true
 ---
 
 
 
-<p>Trash days in our neighborhood is on Wednesday, which means we have to put our trash out on Tuesday night. My wife and I always joke that it seems to rain more on Tuesdays than any other day. This may not seem like a thing to even notice, except that in our South Philly row home, we have to lug soaking wet trash cans and recycling bins through our kitchen and living room each week. It also results more trash on the streets in the following days due to the specificlly Philadelphia custom of putting bags of trash (i.e. not in a can) out on the sidewalk for collection.</p>
-<p>Does our intution hold up? I downloaded data on Philadelphia weather<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> from 2009 (when we moved in to our current home) to present to see.</p>
+<p>Trash day in our neighborhood is on Wednesday, which means we have to put our trash out on Tuesday night. My wife and I always joke that it seems to rain more on Tuesdays than any other day. This may not seem like a thing to even notice, except that in our South Philly row home, we have to lug soaking wet trash cans and recycling bins from our backyard through our kitchen and living to put them out on the sidewalk each week.</p>
+<p>Does our observation hold up? I downloaded data on Philadelphia weather<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> from 2009 (when we moved in to our current home) to present to see.</p>
 <pre class="r"><code>library(tidyverse)
 library(lubridate)
 library(here)
@@ -104,22 +103,22 @@ count(weather, day_of_week) %&gt;%
 </tr>
 </table>
 
-<p>Looks good.</p>
+<p>Perfect.</p>
 <div id="total-rainfall" class="section level2">
 <h2>Total rainfall</h2>
 <p>Let’s get a picture of the distribution of rain.</p>
 <pre class="r"><code>ggplot(weather, aes(x = PRCP)) +
   geom_histogram(binwidth = 0.1)</code></pre>
 <p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>Rainfall totals are highly skewed becuse there is no rain most of the of time. We can log transfrom it to get a better picture of how the days stack up.</p>
+<p>Rainfall totals are highly skewed becuse there is no rain most of the of time. We can log transfrom it to get a sense of how rainfall total differs on days of the week.</p>
 <pre class="r"><code>ggplot(weather, aes(x = day_of_week, y = log(PRCP + 0.0001))) +
   geom_boxplot()</code></pre>
 <p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-5-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>Ok, so it actually looks like Tuesday has more days with higher rainfall totals than any other day of the week. I wasn’t really expecting this but we’ll roll with it.</p>
+<p>Ok, so it actually looks like Tuesdays get more rain than other days. I wasn’t really expecting this but we’ll roll with it.</p>
 </div>
 <div id="did-it-rain-at-all" class="section level2">
 <h2>Did it rain at all?</h2>
-<p>However, this doesn’t really answer the question we’re interested in. We don’t care too much about the amount of rain that fell. Really we want to know if it is more likley to rain at all on Tuesdays. To do this we’ll create a binary variable that is 1 if it rained more than 0 inches, and 0 otherwise.</p>
+<p>However, this doesn’t really answer the question we’re interested in. We don’t care too much about the amount of rain that fell. Really we want to know if it is more likley to rain at all on Tuesdays. To do this we’ll create a binary variable that is <code>1</code> if it rained more than 0 inches, and <code>0</code> otherwise.</p>
 <pre class="r"><code>weather &lt;- weather %&gt;% 
   mutate(
     rain = if_else(PRCP &gt; 0, 1L, 0L)
@@ -167,7 +166,7 @@ weather %&gt;%
 </table>
 
 <p>Wait … what? It actually does rain more on Tuesdays. By quite a bit. Almost 40% of the time compared to less than 30% of Sundays.</p>
-<p>This time we can use logistic regression to see if this finding is confrimed.</p>
+<p>We can create a logistic regression model to</p>
 <pre class="r"><code>fit &lt;- weather %&gt;% 
   mutate(day_of_week = as.character(day_of_week)) %&gt;% 
   glm(
@@ -245,13 +244,27 @@ fit_tidy %&gt;%
       y = &quot;coefficients&quot;
     ) </code></pre>
 <p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-8-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>Of the coefficients for the days of the week, Tuesday is the only one whose range does not include zero. When we add the coefficent for a day to the incercept, we get the log odds that it will rain on that day, based solely on the day of the week. Friday is the reference day (because it’s the first alphabetically), so the intercept represents the log odds of rain on Fridays.</p>
+<p>Of the coefficients for the days of the week, Tuesday is the only one whose range does not include zero. This means that, based on our model, it is significantly likely that Tuesday has more rain than other days.</p>
+<p>When we add the coefficent for a day to the incercept, we get the log odds that it will rain on that day, based solely on the day of the week. Friday is the reference day (because it’s the first alphabetically), so the intercept represents the log odds of rain on Fridays.</p>
 <p>To find probability of rain on Tuesday:</p>
+<pre class="r"><code>intercept &lt;- as.numeric(fit_tidy$estimate[fit_tidy$term == &quot;(Intercept)&quot;])
+tues_coef &lt;- as.numeric(fit_tidy$estimate[fit_tidy$term == &quot;day_of_weekTue&quot;])
+
+tues_logit &lt;- intercept + tues_coef
+
+tues_odds &lt;- exp(tues_logit)
+
+tues_prob &lt;- tues_odds / (1 + tues_odds)
+
+tues_prob</code></pre>
+<pre><code>## [1] 0.3859275</code></pre>
+<p>We knew this from the table above, but would be useful if we added more variables to our model.</p>
 </div>
-<div id="whats-going-on-here" class="section level2">
-<h2>What’s going on here?</h2>
-<p>I wasn’t expecting find this. In fact, I assumed it was just my annoyance that it was once again trash night that made me more notice the rain. However, it is true that it has rained more on Tuesdays than other day for the past nine years. Does this mean that there is some weather pattern designed to increase my annoyance on trash night?</p>
-<p>Maybe. But most likley this is just a chance result. The probability that it rains more on Tuesdays is really not higher than the chance that it rains on any other day. While statistics is meant to elicit underlying patterns, it can only speak to us in terms of probabilities and likelihoods.</p>
+<div id="so-whats-going-on-here" class="section level2">
+<h2>So what’s going on here?</h2>
+<p>I wasn’t expecting find this. In fact, I assumed it was just my annoyance that it was once again trash night that made me more notice the rain. However, the observed data indicates that it is more likley to rain on Tuesday. The question is whether there is some underlying weather pattern designed to increase my annoyance on trash night?</p>
+<p>Maybe. But most likley this is just a chance result. In reality, the true probability that it rains more on Tuesdays is really not higher than the chance that it rains on any other day. The fact that it has rained more on Tuesdays is just a coincidence. While statistics is meant help us parse observed data to discover underling truths, it can only speak to us in terms of probabilities and likelihoods.</p>
+<p>Perhaps there is some lesson here about being careful about inferences made from statistics, especially when they seem suspect. Or maybe I should just move to a neighborhood where you put your trash out on Fridays.</p>
 </div>
 <div class="footnotes">
 <hr />
