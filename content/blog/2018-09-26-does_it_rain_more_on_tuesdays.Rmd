@@ -3,21 +3,25 @@ title: "Is it more likely to rain on Tuesdays in Philadelphia?"
 author: "Joe Ciesielski"
 date: "2018-09-26"
 output: html_document
-draft: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.width = 8, fig.align = "center",
                       fig.asp = 0.618, message = FALSE)
+
+options(huxtable.knitr_output_format = "html")
 ```
 
-Trash days in our neighborhood is on Wednesday, which means we have to put our trash out on Tuesday night. 
+Trash day in our neighborhood is on Wednesday, which means we have to put our trash out on Tuesday night. My wife and I always joke that it seems to rain more on Tuesdays than any other day. This may not seem like a thing to even notice, except that in our South Philly row home, we have to lug soaking wet trash cans and recycling bins from our backyard through our kitchen and living to put them out on the sidewalk each week.
+
+Does our observation hold up? I downloaded data on Philadelphia weather[^1] from 2009 (when we moved in to our current home) to present to see. 
 
 ```{r}
 library(tidyverse)
 library(lubridate)
-library(rvest)
 library(here)
+library(broom)
+library(huxtable)
 
 weather <- "data/phl_weather_20090925-20180924.csv" %>% 
   here::here() %>% 
@@ -26,7 +30,7 @@ weather <- "data/phl_weather_20090925-20180924.csv" %>%
 glimpse(weather)
 ```
 
-I requested a bunch of variables when I ordered the data initially because I thought some might might be useful in the future. The only two we care about here are `DATE` and `PRCP` which is daily rainfall total in inches. Let's check to make sure we got the dates we requested. 
+I requested a bunch of variables when getting the data initially because I thought some might might be useful in the future. The only two we care about here are `DATE` and `PRCP` which is daily rainfall total in inches. Let's check to make sure we got the dates we requested. 
 
 ```{r}
 range(weather$DATE)
@@ -40,10 +44,13 @@ weather <- weather %>%
     day_of_week = wday(DATE, label = TRUE)
   )
 
-count(weather, day_of_week)
+count(weather, day_of_week) %>% 
+  as_hux() %>% 
+  add_colnames() %>% 
+  theme_article()
 ```
 
-Looks good. 
+Perfect.
 
 ## Total rainfall
 
@@ -56,7 +63,7 @@ ggplot(weather, aes(x = PRCP)) +
 
 ```
 
-Rainfall totals are highly skewed becuse there is no rain most of the of time. We can log transfrom it to get a better s
+Rainfall totals are highly skewed becuse there is no rain most of the of time. We can log transfrom it to get a sense of how rainfall total differs on days of the week.
 
 ```{r}
 
@@ -65,23 +72,11 @@ ggplot(weather, aes(x = day_of_week, y = log(PRCP + 0.0001))) +
 
 ```
 
-Wow! It looks like Tuesday has more days with higher rainfall totals than any other day of the week. We can create a linear model to see how day of the week and rainfall are related. 
-
-```{r}
-
-rain_mod <- lm(
-  PRCP ~ as.character(day_of_week),
-  data = weather
-)
-
-summary(rain_mod)
-```
-
-Ok, this tells us that Tuesdays are associated with higher rainfall (about 0.019 inches) compared to our reference day (Friday - first day of the week alphabetically). None of our inputs are even close to significant though. 
+Ok, so it actually looks like Tuesdays get more rain than other days. I wasn't really expecting this but we'll roll with it. 
 
 ## Did it rain at all? 
 
-However, this doesn't really answer the question we were interested in. We don't care too much about the total raint hat fell. Really we want to know if it is more likley to rain at all on Tuesdays. To do this we'll create a binary variable that is 1 if it rained more than 0 inches, and 0 otherwise. 
+However, this doesn't really answer the question we're interested in. We don't care too much about the amount of rain that fell. Really we want to know if it is more likley to rain at all on Tuesdays. To do this we'll create a binary variable that is `1` if it rained more than 0 inches, and `0` otherwise. 
 
 ```{r}
 
@@ -92,30 +87,88 @@ weather <- weather %>%
 
 weather %>% 
   group_by(day_of_week) %>% 
-  summarise(mean(rain))
-
+  summarise(avg_days_rain = mean(rain)) %>% 
+  as_hux() %>% 
+  add_colnames() %>% 
+  theme_article()
 ```
-
 
 Wait ... what? It actually does rain more on Tuesdays. By quite a bit. Almost 40% of the time compared to less than 30% of Sundays. 
 
-This time we can use logistic regression to see if this finding is confrimed.
+We can create a logistic regression model to 
 
 ```{r}
 
-binary_mod <- glm(
-  rain ~ as.character(day_of_week), 
-  family = "binomial",
-  data = weather
-)
+fit <- weather %>% 
+  mutate(day_of_week = as.character(day_of_week)) %>% 
+  glm(
+    rain ~ day_of_week, 
+    family = "binomial",
+    data = .
+  )
 
-summary(binary_mod)
+fit_tidy <- fit %>% 
+  broom::tidy() 
+
+colors <- c("#ab3c00", "#f7882f", "#ffd57c")[cut(fit_tidy$p.value, 3)]
+
+fit_tidy %>% 
+  select(term, estimate, p.value) %>% 
+  as_hux() %>% 
+  set_background_color(everywhere, "p.value", colors) %>% 
+  add_colnames() %>% 
+  theme_article()
 
 ```
 
-Ok, hang on. This tells us that the log odds of it raining on Tuesday are 0.35 points higher Friday. And that it is significant at the 0.05 level. 
+Let's plot these coefficients. 
 
-## What's going on here?
+```{r}
 
-I really just wanted to look into this as a joke. It is true that it has rained more on Tuesdays than other day for the past nine years. Does this mean that there is some weather pattern designed to increase my annoyance on trash night? 
+fit_tidy %>% 
+  ggplot(aes(x = reorder(term, desc(estimate)), 
+             y = estimate, 
+             ymin = estimate - (1.96 * std.error),
+             ymax = estimate + (1.96 * std.error))) +
+    geom_pointrange(color = "#6b7a8f") +
+    coord_flip() +
+    labs(
+      title = "It is significantly more likley to rain on Tuesdays",
+      subtitle = "lines show 95% confidence intervals",
+      x = "Term (day of the week)",
+      y = "coefficients"
+    ) 
+```
 
+Of the coefficients for the days of the week, Tuesday is the only one whose range does not include zero. This means that, based on our model, it is significantly likely that Tuesday has more rain than other days. 
+
+When we add the coefficent for a day to the incercept, we get the log odds that it will rain on that day, based solely on the day of the week. Friday is the reference day (because it's the first alphabetically), so the intercept represents the log odds of rain on Fridays. 
+
+To find probability of rain on Tuesday:
+
+```{r}
+
+intercept <- as.numeric(fit_table$estimate[fit_table$term == "(Intercept)"])
+tues_coef <- as.numeric(fit_table$estimate[fit_table$term == "day_of_weekTue"])
+
+tues_logit <- intercept + tues_coef
+
+tues_odds <- exp(tues_logit)
+
+tues_prob <- tues_odds / (1 + tues_odds)
+
+tues_prob
+
+```
+
+We knew this from the table above, but would be useful if we added more variables to our model. 
+
+## So what's going on here?
+
+I wasn't expecting find this. In fact, I assumed it was just my annoyance that it was once again trash night that made me more notice the rain. However, the observed data indicates that it is more likley to rain on Tuesday. The question is whether there is some underlying weather pattern designed to increase my annoyance on trash night? 
+
+Maybe. But most likley this is just a chance result. In reality, the true probability that it rains more on Tuesdays is really not higher than the chance that it rains on any other day. The fact that it has rained more on Tuesdays is just a coincidence. While statistics is meant help us parse observed data to discover underling truths, it can only speak to us in terms of probabilities and likelihoods. 
+
+Perhaps there is some lesson here about being careful about inferences made from statistics, especially when they seem suspect. Or maybe I should just move to a neighborhood where you put your trash out on Fridays. 
+
+[^1]: The data comes from [this](https://www.ncdc.noaa.gov/cdo-web/) excellent source. 
