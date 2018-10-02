@@ -3,6 +3,9 @@ title: "Is it more likely to rain on Tuesdays in Philadelphia?"
 author: "Joe Ciesielski"
 date: "2018-09-26"
 output: html_document
+tags: 
+  - R
+  - Philadelphia
 ---
 
 
@@ -15,7 +18,7 @@ library(here)
 library(broom)
 library(huxtable)
 
-weather &lt;- &quot;data/phl_weather_20090925-20180924.csv&quot; %&gt;% 
+weather &lt;- &quot;content/data/phl_weather_20090925-20180924.csv&quot; %&gt;% 
   here::here() %&gt;% 
   read_csv()
 
@@ -166,7 +169,7 @@ weather %&gt;%
 </table>
 
 <p>Wait … what? It actually does rain more on Tuesdays. By quite a bit. Almost 40% of the time compared to less than 30% of Sundays.</p>
-<p>We can create a logistic regression model to</p>
+<p>We can create a logistic regression model to help us figure out whether this result is likley to be just due to variation in the data or whether there is some underlying pattern here.</p>
 <pre class="r"><code>fit &lt;- weather %&gt;% 
   mutate(day_of_week = as.character(day_of_week)) %&gt;% 
   glm(
@@ -244,8 +247,8 @@ fit_tidy %&gt;%
       y = &quot;coefficients&quot;
     ) </code></pre>
 <p><img src="/blog/2018-09-26-does_it_rain_more_on_tuesdays_files/figure-html/unnamed-chunk-8-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>Of the coefficients for the days of the week, Tuesday is the only one whose range does not include zero. This means that, based on our model, it is significantly likely that Tuesday has more rain than other days.</p>
-<p>When we add the coefficent for a day to the incercept, we get the log odds that it will rain on that day, based solely on the day of the week. Friday is the reference day (because it’s the first alphabetically), so the intercept represents the log odds of rain on Fridays.</p>
+<p>Of the coefficients for the days of the week, Tuesday is the only one whose range does not include zero. This means that, based on our model, it is significantly likely that it’s more likley to rain on Tuesdays than on other days.</p>
+<p>When we add the coefficent for a day to the incercept (which is the same for each day), we get the log odds that it will rain on that day, based solely on the day of the week. Friday is the reference day (because it’s the first alphabetically), so the intercept represents the log odds of rain on Fridays. Once we have the log odds, we can convert it back to a standard probability.</p>
 <p>To find probability of rain on Tuesday:</p>
 <pre class="r"><code>intercept &lt;- as.numeric(fit_tidy$estimate[fit_tidy$term == &quot;(Intercept)&quot;])
 tues_coef &lt;- as.numeric(fit_tidy$estimate[fit_tidy$term == &quot;day_of_weekTue&quot;])
