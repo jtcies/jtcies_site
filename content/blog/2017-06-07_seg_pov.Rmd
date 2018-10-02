@@ -35,16 +35,17 @@ First we have to get a handle on how segregated Philly actually is. Here, using 
 
 The map below shows those segregated tracts. Overall **44%** of Philadelphians live in segregated census tracts under this definition - a pretty staggering number. 
 
+<br>
 ```{r}
 includeHTML(here("static/img/2017-06-07_seg_pov/seg_pov_leaflet.html"))
 ```
-
+<br>
 
 A few things stick out a first. There are two large swaths of the city in North and West/Soutwest where more the 80% of the residents are black. There are more areas of the city, but fewer census tracts, that are primarily white. These include the Northeast, Port Richmond, Northwest, parts of center city, and parts of South Philly including Girard Estates. Only three census tracts are segregated with primiarly Hispanic residents. (I stick with the race/ethncity breakdowns used by the ACS here.)
 
 The chart below shows what percent of residents are the same race within each census tract. Each dot is a census tract and the color shows the race of the plurality of residents within that tract. The overall pattern trends upward; that is, as you get to higher levels of segregation, more census tracts start to fall in to those buckets. 
 
-<center><img src = "/img/2017-06-07_seg_pov/seg_dot_plot.png" width = 600></center>
+<center><img src = "/img/2017-06-07_seg_pov/seg_dot_plot.png" width=576></center>
 
 There are actually more tracts that with a plurality of white residents (180) compared to black residents (171) despite the fact that there are far more segregated tracts with primarly black residents (98) compared to segregated tracts with primarily white residents (68). White residents are more spread out across different neighborhoods and black residents are clustered in a smaller number of neighborhoods. White residents are more likely to live in diverse neighborhoods than black residents and those neighborhoods are spread across more parts of the city. 
 
@@ -54,7 +55,7 @@ Ok, so we've established pretty clearly: Philly is real segregated. How does seg
 
 The chart below shows the relationship between the percent of residents of each race and the poverty rate for each census tract. It's pretty clear that's theres a strong relationship between racial segregation and poverty, but that the effect is different in terms of direction and strength for each race. 
 
-<center><img src = "/img/2017-06-07_seg_pov/seg_pov_plot.png" width = 600></center>
+<center><img src = "/img/2017-06-07_seg_pov/seg_pov_plot.png" width = 576></center>
 
 The more white or Asian residents a census tract has, the lower its poverty rate. The more black or Hispanic residents, the higher the poverty rate. Not altogether suprising given what one might expect, but further inspection is required.
 

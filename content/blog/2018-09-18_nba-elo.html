@@ -20,8 +20,10 @@ output: html_document
 <p>For those not familar, Elo is a measure of relative ability. A rating of 1500 is average; a team gains points when they win and drops points after a loss. The points gained or lost are relative to the gap between the teams: a team will gain a lot of points for beating a team with a much higher rating but may only gain a few for beating a team with a lower rating.</p>
 <p>Elo can be used in to look at trends over time to see how a team’s relative ability rises and falls. It can also be used for prediction: comparing the Elo rating of two teams gives you a probability of each team winning.</p>
 <p>I built an application that lets you look at both of those things. On the first tab, you can track any team’s Elo over time using a specified date range. On the second tab, you can pick any two teams to see how they would match up on a given date in the last 20 years. It also shows the actual NBA games that took place on that date and whether the outcome was expected or an upset. You can view the standalone application <a href="https://jtcies.shinyapps.io/nba-elo/">here</a>.</p>
+<div id="app iframe" class="iframe">
 <iframe src="https://jtcies.shinyapps.io/nba-elo/" height="618px" width="1000px">
 </iframe>
+</div>
 <p>The rest of this post walks through the process of creating this application. Note that this code is for reference and won’t be reproducible as it’s written on this post. The full source code for the application is available <a href="https://www.github.com/jtcies/nba-elo">here</a>.</p>
 </div>
 <div id="generating-the-elo-ratings" class="section level2">
@@ -193,7 +195,7 @@ complete_elo &lt;- running_elo %&gt;%
 </div>
 <div id="how-does-it-compare" class="section level3">
 <h3>How does it compare?</h3>
-<p><img src = "/img/nba-elo/538_compare.png" width="800" height="494"></p>
+<p><img src = "/img/nba-elo/538_compare.png" width="576" height="356"></p>
 <p>The image above shows the comparison my calculated Elo scores and the Fivethirthyeight scores as a benchmark. The r^2 is about .98 so it looks like I was able to match it farily closely. I used 1997 as my base year and eliminated that from most of my analyses; this gave my ratings some time to even out.</p>
 </div>
 </div>
