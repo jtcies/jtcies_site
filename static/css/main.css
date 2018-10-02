@@ -21,10 +21,9 @@ a:link
 }
 body
 {
-    font-family: 'Libre Franklin', 'Libre Franklin', 'Libre Franklin', sans-serif;
+    font-family: 'Libre Franklin', sans-serif;
     font-size: 20px;
     font-weight: 400;
-
     width: auto;
     height: 100%;
     min-height: 100%;
@@ -34,11 +33,10 @@ body
 }
 html
 {
-    position: relative;
-
+    position: static;
     height: 100%;
     min-height: 100%;
-    margin: 0;
+    width: 100%;
 }
 .author
 {
@@ -60,10 +58,11 @@ html
 }
 .container
 {
-    overflow: auto;
-
+    position: relative;
+    overflow: visible;
     max-width: 680px;
     padding: 0 15px;
+    margin: auto;
 }
 .content
 {
@@ -259,4 +258,16 @@ pre > code {
     white-space: pre;
     word-wrap: initial;
     word-break: initial;
+}
+
+.app iframe {
+    position: relative;
+    left: -160px;
+    width: 1000px;
+    height: 618px;
+}
+
+img {
+    display: block;
+    margin: auto;
 }

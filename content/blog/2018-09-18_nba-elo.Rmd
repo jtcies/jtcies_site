@@ -30,7 +30,11 @@ Elo can be used in to look at trends over time to see how a team's relative abil
 
 I built an application that lets you look at both of those things. On the first tab, you can track any team's Elo over time using a specified date range. On the second tab, you can pick any two teams to see how they would match up on a given date in the last 20 years. It also shows the actual NBA games that took place on that date and whether the outcome was expected or an upset. You can view the standalone application [here][3].
 
+<br>
+<div class = "app">
 <iframe src="https://jtcies.shinyapps.io/nba-elo/"></iframe>
+</div>
+<br>
 
 The rest of this post walks through the process of creating this application. Note that this code is for reference and won't be reproducible as it's written on this post. The full source code for the application is available [here][4].
 
