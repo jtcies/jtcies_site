@@ -1,3 +1,9 @@
+---
+title: "Why use data?"
+author: "Joe Ciesielski"
+date: "2018-10-22"
+output: html_document
+---
 *This post is adapted from a talk I gave at the Forum for Justice and Opportunity organized by Episcopal Community Services in Philadelphia.*
 
 ## Why look at data?
@@ -6,17 +12,17 @@ I want to take a step back and think for a minute about this question: *Why do w
 
 Frequently, however, we measure things but don't make different decisions which lead to improvement. Take perhaps the most famous example of this: inequity in educational outcomes for different racial/ethnic groups. The chart below is from a 2017 report by NCES and shows college enrollment for 18-24 year olds by race/ethnicity from 1990 through 2015. 
 
-**college enrollment char**
+<img src="img/why_use_data/college_enrollment.png" width=640>
 
 It's clear that, while there may have been a slight upward trend in college enrollment overall, the gaps for racial and ethnic groups have remained basically the same. Even more stark is this quote from the report:
 
-**reading achievement quote**
+> At grade 12, the White-Black achievement gap in reading was larger in 2015 (30 points) than in 1992 (24 points), while the White-Hispanic reading achievement gap in 2015 (20 points) was not measurably different from the gap in 1992.
 
 Jerry Muller, in his book *The Tyranny of Metrics* takes on this topic. He says:
 
-**ToM quote** 
+> Such outcomes might lead one to conclude that the achievement gap cannot in fact be closed by education and that the reasons lie beyond the schoolhouse door. Yet measurement continues unabated. That is perhaps because ... the idea that some problems are insoluble is morally unacceptable to a substantial portion of Americans. When it comes to gaps in school achievement, it seems that in the absence of discernible progress in results, the resources devoted to ongoing measurement becomes itself a sign of moral earnestness. ... Not everything that can be measured can be improved - at least not by measurement.
 
-We have focused so much on measuring the *problem*, yet the decisions we've made based on this data haven't led to any improvement. 
+We have focused so much on measuring the problem, yet the decisions we've made based on this data haven't led to any improvement. 
 
 ## Technical vs Adaptive Problems
 
@@ -24,7 +30,7 @@ The Havard professor Ronald Heifitz, whose work focuses on organizational leader
 
 A simple data-based example of this distiction is someone's monthly budget. Take a made-up personal monthly budget like the one below:
 
-**budget chart**
+<img src="img/why_use_data/budget.png" width=640>
 
 This person is right on or under every budget item except for entertainment, things like going out to eat, get drinks, or go to the movies. If we approach this as a technical problem, the solution is clear: stop going out to eat! However, if we add additional context, the solution becomes less clear. For example, imagine this person just moved to a new city and doesn't have any family or friends there. Her co-wokers go out for drinks a few times a week, and this is pretty much her only social outlet. I haven't changed the problem at all, just the context surrounding the problem, and now we have to think differently about a solution. It requires new kinds of thinking, hard (internal) conversations about priorities and resources. It might require her to be in the red for a few months until her community is established. 
 
@@ -54,33 +60,33 @@ I use this example intentionally because the work we are seeking is complex. It 
 
 Below I offer some key questions that orgizations who are embarking on the process of building shared understandings and documenting their theories of change can begin with. This list is not meant to be exhaustive or authoritative. In my mind, there is not one best process or tool for developing a theory of change. The most important thing is ask challenging questions and document your conclusions. The most important this is that, when it comes time to make difficult decisions, you have something that you can turn to as a guide. 
 
-#### What specifically are we trying to change?
+### What specifically are we trying to change?
 
 Get really clear out on the key outcomes but also the problem you are seeking to solve. 
 
-#### For whom?
+### For whom?
 
 We can design the best program in the world, but if it's not offered to the people for whom it was designed, it's unlikley we'll see progress on our key outcomes even if it is successful with those those show up. If you create an afterschool program to improve school attendance, but only kids that already come to school everyday show up to your program, the school won't experience a measureable increase in attendance. Figure out exactly who you are designing for. 
 
-#### What are the root causes? 
+### What are the root causes? 
 
 Our initiative is unlikley to be successful if it's not directly addressing, or at least acknowledging, the root cuases of the challenge you want to solve. Articulating root causes requires a combination of new learning, through reading research and looking at data, combined with local expertise from those directly affected. Be sure to get a big dose of both. 
 
-#### What assumptions are we making? 
+### What assumptions are we making? 
 
 Too often we need dozens of things to fall into place for our program to work and yet we just assume they will. What needs to happen for your to be sucessful? Why is the problem that we are addressing even considered a problem? What does research say and how have people who have done this before been successful? 
 
-#### What are some leading indicators? 
+### What are some leading indicators? 
 
 Frequently, evaluation work is treated as an autopsy: diagnosing something that already happened. It's really for data to impact decisions if you already made the decisions. Put on paper some ideas about things that will tell you whether or not you are on the right track. This gives an opportunity to course-correct. Say you want to want to provide recycling bins to increase recylcing in a neighborhood. After you hand out the bins, interview or survey folks to see if they think they recylced more after getting the bin. It's not definitive proof, but it gives you some idea about whether you are on the right track. 
 
 ## Resources and conclusion
 
-The website www.theoryofchange.org has some good resources and examples for those who want to learn more. 
+The website [www.theoryofchange.org](http://www.theoryofchange.org) has some good resources and examples for those who want to learn more. 
 
-I also like [this] tool for developing a theory of change with a specific racial-equity focus. 
+I also like [this](http://www.racialequitytools.org/resourcefiles/Roundtable%20on%20Community%20Change%20RETOC.pdf) tool for developing a theory of change with a specific racial-equity focus. 
 
-The book *The Tyranny of Metrics* gives both plenty of examples of how data use can go wrong and ideas for how to use it more responsibly and effectivley. 
+The book [*The Tyranny of Metrics*](https://www.indiebound.org/book/9780691174952) gives both plenty of examples of how data use can go wrong and ideas for how to use it more responsibly and effectivley. 
 
 Finally, don't get drawn in by any one specific tool or creating a flashy thing you can put on your annual report. If you want data to impact decisions, the most important is to have a strong foundation built on shared understandings, and to have these ideas documented so that they can be returned to regularly. 
 
