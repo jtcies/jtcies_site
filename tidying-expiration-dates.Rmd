@@ -1,0 +1,151 @@
+---
+title: "Tidying data with expiration dates"
+author: "Joe Ciesielski"
+date: "12/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+theme_set(theme_minimal())
+```
+
+## The challenge
+
+I recently started a new position where I'm primarily working membership or subscription data. In this case, all of the data has subscription dates but not all of the expiration dates are "real" expiration dates; someone may have renewed before their previous subscription expiring. The data doesn't record when someone really expires. 
+
+We want to get the data into a tidy format so we can see the full subscription history for each individual. In this case we want a column for every date where there was a change (renewal, expiration) and a field that describes what happened on that date. 
+
+Here's some example data to show how we can get it into a tidy format and why that's helpful. 
+
+## Tidying the data
+
+```{r}
+
+library(tidyverse)
+library(lubridate)
+
+set.seed(2018)
+
+
+ids <- sample(1:20, 100, replace = TRUE)
+
+# round to month for simplicty
+renewal <- sample(seq.Date(ymd(20100101), ymd(20181201), by = "month"), 100)
+
+# expires a year later
+expiration <- floor_date(renewal + 365, "month")
+
+subscriptions <- data_frame(
+  id = ids, 
+  renewal_date = renewal, 
+  expiration_date = expiration
+) %>% 
+  arrange(id, renewal)
+
+```
+
+For the first ID here, we can see that some of the time they renewed before the previous expiration date, while other times there was a gap between expiration date and when they renewed. 
+
+First we want to determine when a subscription actually expired. 
+
+```{r}
+
+subscriptions <- subscriptions %>% 
+  mutate(
+    real_expire = case_when(
+      # if renewal date is greater than the expiration date on the prev row
+      # that subscription actually expired
+      id == lead(id) & expiration_date < lead(renewal_date) ~ 1L,
+      # the last expiration date will always be the true expriation date
+      # for each individual
+      id != lead(id) | is.na(lead(id)) ~ 1L,
+      TRUE ~ 0L
+    )
+  )
+
+```
+
+Now we keep only the true expiration dates, and merge them back in as rows.
+
+```{r}
+
+expire_only <- subscriptions %>% 
+  filter(real_expire == 1) %>% 
+  select(id, date = expiration_date) %>% 
+  mutate(activity = "expiration")
+
+subs_tidy <- subscriptions %>% 
+  select(id, date = renewal_date) %>% 
+  mutate(activity = "renewal") %>% 
+  bind_rows(expire_only) %>% 
+  arrange(id, date)
+
+head(subs_tidy, 20)
+
+```
+
+## Analyzing subscription history
+
+The real power of this comes when we can get a picture of each person's history. But we're missing all of the dates where someone was a member. So we need to fill in those dates. The package `padr` can help us with that. 
+
+We don't need all dates for everyone, just all the dates between the earliest and lastest activity for each person. So first we can create a list column by nesting the data for each individual, and then expand the dates to include each month within their activity date range. 
+
+
+```{r}
+
+library(padr)
+
+subs_hist_all <- subs_tidy %>% 
+  group_by(id) %>% 
+  nest() %>% 
+  mutate(
+    data = map(
+      data,
+      ~ .x %>% 
+        pad("month") %>% 
+        fill(activity)
+    )
+  )
+
+```
+
+
+Now that we have an activity for each individual for each month, we can get counts of activity members in each month. 
+
+```{r}
+
+active_month <- subs_hist_all %>% 
+  unnest() %>% 
+  filter(activity != "expiration",
+         date <= today()) %>% # our data include dates in the future
+  count(date)
+
+active_month %>% 
+  ggplot(aes(date, n)) +
+    geom_line() +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    labs(title = "Count of active subscribers by date", 
+         y = "count of active")
+
+```
+
+We can also look at churn, which the individuals who drop out of our program each month divided by the 
+
+```{r}
+
+
+subs_hist_all %>% 
+  unnest() %>% 
+  group_by(date, activity) %>% 
+  count() %>% 
+  spread(activity, n) %>% 
+  mutate(churn = expiration / renewal) %>% 
+  ggplot(aes(date, churn)) +
+    geom_line() +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y")
+
+
+```
+
