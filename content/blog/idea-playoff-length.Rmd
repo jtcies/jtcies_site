@@ -1,0 +1,46 @@
+---
+title: "Untitled"
+author: "Joe Ciesielski"
+date: "1/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+
+nba <- read_csv(here::here("content/data/nba_scores_w_elo.csv"),
+                guess_max = 30000)
+
+nba_playoffs <- nba %>% 
+  filter(playoffs == 1) %>% 
+  mutate(teams = if_else(home_team < vis_team, paste0(home_team, vis_team),
+                         paste0(vis_team, home_team))
+  )
+
+# need to create an id for each series
+
+nba_playoffs$series <- group_indices(nba_playoffs, season, teams)
+
+nba_playoffs <- nba_playoffs %>% 
+  group_by(season, teams) %>% 
+  mutate(
+    game_number = row_number(),
+    max_game_number = max(game_number)
+  ) %>% 
+  ungroup()
+
+```
+
+## How many games does each series go? 
+
+```{r}
+
+nba_playoffs %>% 
+  distinct(series, .keep_all = TRUE) %>% 
+  count(max_game_number)
+
+```
+
