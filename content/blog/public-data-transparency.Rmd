@@ -1,0 +1,23 @@
+---
+title: "Untitled"
+author: "Joe Ciesielski"
+date: "1/15/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+A recent op-ed in Foreign Policy argued that problematic uses of data could constirubte to the downfall of liberal democracy in the west. The author cites two examples on from Denmark. In the first, an algorithm predicits the likelihood that children are at risk for abuse which could then be used to remove children from homes. The second use centralized assess whether residents may be receiving benefits to which they are not entitled. 
+
+The author's main argument is that the lack of transparency allows these systems to operate outside the channels that are designed to actually deal with these issues. Even the people using them don't understand them! Therefore, the public can't comment on the appropriateness of such efforts, and individuals won't know why they're being targeted. The logical conclusion then, is that the increased efficiency 
+
+The author's concerns seem well-founded. The two examples from Denmark provide only a surface straching view of the concern. Folks in every arm of every institution and organization are trying to figure out ways to use data and alogrithms to increase the quality of their work. But what that regulation looks like isn't described. It can't be limited to the public sector. 
+
+I believe that when a data-based process concerns the wellfare of individuals human actors need to be a part of the decision-making process. 
+
+In a recent interview, Cathy O'Neill, author of Weapons of Math Desctruction, asserted that we need to measure the harm that algorithms cause. 
+
+I would also argue that we need to figure out better ways for humans and algorithm outputs to interact. We shouldn't be using algorithms to replace human processes, but rather enhance them. Take the example from Pittsburgh that I wrote about previously. There, social workers are given access to information they didn't have previously but are asked to combine that information their expertise and make a decision about how to act. 
+
