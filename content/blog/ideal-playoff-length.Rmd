@@ -3,6 +3,7 @@ title: "Untitled"
 author: "Joe Ciesielski"
 date: "1/15/2019"
 output: html_document
+draft: true
 ---
 
 ```{r setup, include=FALSE}
@@ -10,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(here)
+
+theme_set(theme_minimal())
 
 nba <- read_csv(here::here("content/data/nba_scores_w_elo.csv"),
                 guess_max = 30000)
@@ -32,15 +35,35 @@ nba_playoffs <- nba_playoffs %>%
   ) %>% 
   ungroup()
 
+playoffs_recent <- nba_playoffs %>% 
+  filter(season >= 2003)
+
 ```
 
 ## How many games does each series go? 
 
 ```{r}
 
-nba_playoffs %>% 
+playoffs_recent %>% 
   distinct(series, .keep_all = TRUE) %>% 
-  count(max_game_number)
+  count(max_game_number) %>% 
+  ggplot(aes(max_game_number, n)) +
+    geom_col()
 
 ```
 
+## How often does the home team win
+
+```{r}
+
+playoffs_recent %>% 
+  filter(game_number == max_game_number) %>% 
+  mutate(
+    home_winner = if_else(home_pts > visitor_pts, 1L, 0L)
+  ) %>%
+  count(home_winner) %>% 
+  mutate(pct = n /sum(n))
+
+```
+
+Home team only wins ~54% of the time. That is less than I would have expected and less than in the regular season. I thought that the home team would be more likely 
