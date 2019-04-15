@@ -8,6 +8,7 @@ languageCode = "en-US"
 contentdir = "content"
 layoutdir = "layouts"
 publishdir = "public"
+relativeurls = true
 
 author = "Joe Ciesielski"
 title = "jtcies"

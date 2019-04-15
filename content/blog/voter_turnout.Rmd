@@ -1,0 +1,61 @@
+---
+title: "Predicting voter turnout"
+author: "Joe Ciesielski"
+date: "11/6/2018"
+output: html_document
+draft: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(pdftools)
+library(tidyverse)
+
+theme_set(theme_minimal())
+
+read_pdfs <- function(url, year) {
+  year <- enquo(year)
+  pdf_text(url) %>%
+      str_replace_all("[ ]{2,}", ",") %>% 
+      read_csv(skip = 1) %>%
+      mutate(election = !!year) %>% 
+      .[-c(1, nrow(.)), ] %>% 
+      filter(!is.na(X1) & !X1 %in% c("Total", "U.S. Territories"))
+}
+
+state_legis_raw <- c(
+  "http://www.ncsl.org/documents/statevote/LegisControl_2010.pdf",
+  "http://www.ncsl.org/documents/statevote/LegisControl_2012.pdf",
+  "http://www.ncsl.org/documents/statevote/LegisControl_2014.pdf",
+  "http://www.ncsl.org/portals/1/documents/elections/Legis_Control_2016.pdf"
+) %>% 
+  map2_dfr(seq(2010, 2016, by = 2), ~ read_pdfs(.x, .y))
+
+col_names <- c("state", "total_seats", "total_senate", "senate_dem", 
+               "senate_rep", "senate_other", "total_house", "house_dem",
+               "house_rep", "house_other", "legis_cntrl", "gov_party",
+               "state_cntrl", "year")
+
+names(state_legis_raw) <- col_names
+
+state_legis <- state_legis_raw %>% 
+  filter(!state %in% c("National Conference of State Legislatures", "Total States")) %>% 
+  mutate_at(vars(2:10), as.numeric) %>% 
+  mutate(total_dem = senate_dem + house_dem,
+         dem_prop = total_dem / total_seats)
+
+
+```
+
+
+## Partisanship in states
+
+```{r}
+
+ggplot(state_legis, aes(year, dem_prop, group = state)) +
+  geom_line() +
+  geom_label(aes(label = state))
+
+```
+
