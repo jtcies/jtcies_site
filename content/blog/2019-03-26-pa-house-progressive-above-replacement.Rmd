@@ -24,11 +24,21 @@ win_share_voting <- read_csv("https://raw.githubusercontent.com/jtcies/pa-par/ma
 State legislatures were not immune to the much discussed 'blue wave' of 2018. In Pennsylvnaia, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler. 
 
 A few months ago, Data for Progress put out a piece of US House Democrats fared on their '[Progressive above Replacement](https://www.dataforprogress.org/par-scores)' score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy. 
-Given the excitement about some of the far-left candidates for Pennsylvania's State House, I wanted to replicate this approach. I chose 
+
+Given the excitement about some of the far-left candidates for Pennsylvania's State House, I wanted to replicate this approach. 
 
 I also wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decieded not to run) in 2018. 
 
 ## Methodology
+
+
+
+```{r}
+
+
+
+
+```
 
 
 
