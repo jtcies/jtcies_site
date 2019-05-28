@@ -21,27 +21,42 @@ win_share_voting <- read_csv("https://raw.githubusercontent.com/jtcies/pa-par/ma
 
 ```
 
-State legislatures were not immune to the much discussed 'blue wave' of 2018. In Pennsylvnaia, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler. 
+State legislatures were not immune to the much discussed 'blue wave' of 2018. In Pennsylvania, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler. 
 
 A few months ago, Data for Progress put out a piece of US House Democrats fared on their '[Progressive above Replacement](https://www.dataforprogress.org/par-scores)' score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy. 
 
 Given the excitement about some of the far-left candidates for Pennsylvania's State House, I wanted to replicate this approach. 
 
-I also wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decieded not to run) in 2018. 
+I also wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018. 
 
 ## Methodology
 
+I used votes on the following key divisive bills to asses progressiveness:
+
+	- Bill 2154: rolling back regulations on oil and gas drilling
+	- Bill 97: charter school reform
+	- Bill 2060: taking away guns from domestic abusers
+	- Bill 178: allowing teachers to be laid off based on evaluations
+	- Bill 1419: expunging criminal records for those with minor offences
+	- Bill 27: shielding names of officers involved in shootings
+	- Bill 110: imposing limits on spending growth
+	- Bill 2017: overturning Department of Revenue ruling disallowing deduction of business expenses
+	- Bill 2477: funding medical marijuana research
+	- Bill 2138: work requirements for Medicaid
+	- Bill 2050: banning abortions for fetuses with Downs Syndrome 
+
+Each representative was given a progressive-ness score calculated as the average of the time they took the progressive position on each of the above bills. For example, if a representative voted 'yay' on bill 2154 'nay' on bill 97, their socre would be .5. 
+
+I regressed the progressive-ness score against the size of the representatives general election win. Following the methodology of the Data for Progress analysis, we would expect Democratic reps who won by greater margins to take more progressive positions. Vice versa for Republicans. 
+
+:# The scores
 
 
-```{r}
+# Impact on 2018 election
 
 
 
 
-```
 
 
 
-## The scores
-
-## Impact on 2018 election
