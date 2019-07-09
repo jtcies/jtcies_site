@@ -43,11 +43,51 @@ I used votes on the following key divisive bills to asses progressiveness:
 	- Bill 2138: work requirements for Medicaid
 	- Bill 2050: banning abortions for fetuses with Downs Syndrome 
 
-We'll use four different data sets for this analysis. Let's read in each one at a time and take a look. 
+We'll use four different data sets for this analysis. I scrpaed each from the web [add links] but saved each to my Github account. Let's read in each one at a time and take a look. 
 
 ```{r}
 
+election_results <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/election_results.csv")
 
+election_results
+
+```
+The first is the results from the 2016 PA House general election. I've already calculated the percent of votes that went for the Democrat. 
+
+```{r}
+
+bills <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/pa_house_bills_2017-18.csv")
+
+
+bills
+```
+
+This data shows the bills, the topic, and whether or not a vote for the bill would be considered perspective. Next is how the reps votes on each of those bills ...
+
+```{r}
+
+votes <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/bill_votes.csv")
+
+votes
+```
+
+... who won the 2018 election (so we can use this as an outcome) ...
+
+```{r}
+
+reps_2018 <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/reps_2018.csv")
+
+reps_2018
+```
+
+... and a data set with the different name formats so we can combine the election results with the legislative data. 
+
+```{r}
+
+name_recode <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/votes_names.csv")
+
+name_recode
 
 ```
 
+Phew, ok. Now we can start merging some of the data together. 
