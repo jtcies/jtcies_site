@@ -17,8 +17,6 @@ library(tidyverse)
 library(broom)
 library(jtcr)
 
-win_share_voting <- read_csv("https://raw.githubusercontent.com/jtcies/pa-par/master/data/pahouse2016_votes_by_win_share.csv")
-
 ```
 
 State legislatures were not immune to the much discussed 'blue wave' of 2018. In Pennsylvania, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler. 
@@ -45,18 +43,11 @@ I used votes on the following key divisive bills to asses progressiveness:
 	- Bill 2138: work requirements for Medicaid
 	- Bill 2050: banning abortions for fetuses with Downs Syndrome 
 
-Each representative was given a progressive-ness score calculated as the average of the time they took the progressive position on each of the above bills. For example, if a representative voted 'yay' on bill 2154 'nay' on bill 97, their socre would be .5. 
+We'll use four different data sets for this analysis. Let's read in each one at a time and take a look. 
 
-I regressed the progressive-ness score against the size of the representatives general election win. Following the methodology of the Data for Progress analysis, we would expect Democratic reps who won by greater margins to take more progressive positions. Vice versa for Republicans. 
-
-:# The scores
-
-
-# Impact on 2018 election
+```{r}
 
 
 
-
-
-
+```
 
