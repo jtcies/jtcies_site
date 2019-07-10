@@ -14,8 +14,9 @@ draft: true
 ```{r}
 
 library(tidyverse)
-library(broom)
-library(jtcr)
+library(scales)
+
+theme_set(theme_minimal())
 
 ```
 
@@ -42,6 +43,8 @@ I used votes on the following key divisive bills to asses progressiveness:
 	- Bill 2477: funding medical marijuana research
 	- Bill 2138: work requirements for Medicaid
 	- Bill 2050: banning abortions for fetuses with Downs Syndrome 
+
+### Data wrangling
 
 We'll use four different data sets for this analysis. I scrpaed each from the web [add links] but saved each to my Github account. Let's read in each one at a time and take a look. 
 
@@ -90,4 +93,108 @@ name_recode
 
 ```
 
-Phew, ok. Now we can start merging some of the data together. 
+Phew, ok. Now we can start merging some of the data together. The goal is create a data set that inlcude election results, voting record, and whether someone was still a rep in 2018. 
+
+First pull out the election winners. No independents won in 2016, so that makes this a little easier.
+
+```{r}
+
+election_winners <- election_results %>% 
+  mutate(
+    representative = case_when(
+      district == 142 ~ rep,
+      dem_votes > rep_votes ~ dem,
+      rep_votes > dem_votes ~ rep,
+      dem == "No candidate" ~ rep,
+      rep == "No candidate" ~ dem
+    ),
+    total_votes = dem_votes + rep_votes + indep_votes,
+    pct_for = if_else(representative == dem, dem_votes / total_votes, rep_votes / total_votes),
+    pct_against = if_else(representative == dem),
+    margin = if_else(is.na(margin), 1, margin),
+    party = if_else(representative == dem, "Democrat", "Republican")
+  ) %>% 
+  select(representative, party, district, margin)
+
+election_winners
+
+```
+
+Now we'll get a summary
+
+```{r}
+
+prog_summary <- votes %>% 
+   left_join(bills, by = "bill") %>%
+    left_join(name_recode, by = c("rep" = "vote_name")) %>% 
+    mutate(
+      progressive_vote = case_when(
+        progressive == 1 & vote == "yay" ~ 1,
+        progressive == -1 & vote == "yay" ~ 0,
+        progressive == 1 & vote == "nay" ~ 0,
+        progressive == -1 & vote == "nay" ~ 1
+      )
+    ) %>% 
+  filter(!is.na(election_name)) %>% 
+  group_by(representative = election_name) %>% 
+  summarise(progressive_avg = mean(progressive_vote))
+
+```
+
+
+```{r}
+
+pa_house_tidy <- election_winners %>% 
+  left_join(prog_summary, by = "representative") %>% 
+  left_join(reps_2018, by = c("representative" = "rep")) %>% 
+  replace_na(list(winner = 0))
+
+```
+
+
+## Visulizing
+
+First let's look at margin of victory by party. We should have 121 Repbublicans and 82 Democrats. 
+
+```{r}
+
+pa_house_tidy %>% 
+  count(party)
+
+```
+
+```{r}
+pa_house_tidy %>% 
+  ggplot(aes(margin, fill = party)) +
+    geom_histogram(binwidth = 0.01, show.legend = FALSE) +
+    facet_wrap(~party) +
+    scale_fill_manual(
+      values = c("Democrat" = "blue",
+                 "Republican" = "red")
+    ) +
+    scale_x_continuous(labels = percent_format(1))
+
+```
+
+It looks like both parties had an equal number of wins in uncontested districts, but Democrats had a greater percentage (because they held fewer seats).
+
+```{r}
+pa_house_tidy %>%
+  group_by(party) %>% 
+  summarise(
+    `count uncontested` = sum(margin == 1),
+    `percent uncontested` = percent(mean(margin ==1))
+  ) %>% 
+  knitr::kable()
+ 
+```
+
+### Progressiveness by win margin
+
+```{r}
+
+pa_house_tidy %>% 
+  ggplot(aes())
+
+```
+
