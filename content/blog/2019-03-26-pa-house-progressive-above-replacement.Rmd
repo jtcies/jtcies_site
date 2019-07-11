@@ -14,7 +14,8 @@ draft: true
 ```{r}
 
 library(tidyverse)
-library(scales)
+library(rvest)
+library(broom)
 
 theme_set(theme_minimal())
 
@@ -50,9 +51,17 @@ We'll use four different data sets for this analysis. I scrpaed each from the we
 
 ```{r}
 
-election_results <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/election_results.csv")
+election_2016_url <- "https://en.wikipedia.org/wiki/2016_Pennsylvania_House_of_Representatives_election"
 
-election_results
+election_results <- election_2016_url %>%
+    read_html() %>%
+    html_table(fill = TRUE) %>%
+    .[[19]] %>%
+    janitor::clean_names() %>%
+    tbl_df() %>%
+    select(-party, -party_2, -party_3) %>%
+    rename(party = party_4)
+
 
 ```
 The first is the results from the 2016 PA House general election. I've already calculated the percent of votes that went for the Democrat. 
@@ -99,25 +108,14 @@ First pull out the election winners. No independents won in 2016, so that makes 
 
 ```{r}
 
-election_winners <- election_results %>% 
-  mutate(
-    representative = case_when(
-      district == 142 ~ rep,
-      dem_votes > rep_votes ~ dem,
-      rep_votes > dem_votes ~ rep,
-      dem == "No candidate" ~ rep,
-      rep == "No candidate" ~ dem
-    ),
-    total_votes = dem_votes + rep_votes + indep_votes,
-    pct_for = if_else(representative == dem, dem_votes / total_votes, rep_votes / total_votes),
-    pct_against = if_else(representative == dem),
-    margin = if_else(is.na(margin), 1, margin),
-    party = if_else(representative == dem, "Democrat", "Republican")
-  ) %>% 
-  select(representative, party, district, margin)
-
-election_winners
-
+election_tidy <- election_results %>%
+    group_by(district) %>%
+    mutate(
+		win = percent == max(percent),
+		margin = percent - lead(percent, default = 0)
+	) %>%
+	filter(win)
+		
 ```
 
 Now we'll get a summary
@@ -125,8 +123,7 @@ Now we'll get a summary
 ```{r}
 
 prog_summary <- votes %>% 
-   left_join(bills, by = "bill") %>%
-    left_join(name_recode, by = c("rep" = "vote_name")) %>% 
+    left_join(bills, by = "bill") %>%
     mutate(
       progressive_vote = case_when(
         progressive == 1 & vote == "yay" ~ 1,
@@ -135,19 +132,46 @@ prog_summary <- votes %>%
         progressive == -1 & vote == "nay" ~ 1
       )
     ) %>% 
-  filter(!is.na(election_name)) %>% 
-  group_by(representative = election_name) %>% 
-  summarise(progressive_avg = mean(progressive_vote))
+  group_by(rep) %>% 
+  summarise(
+	progressive_avg = mean(progressive_vote),
+	votes_cast = n()
+	)
 
 ```
-
+Merge the data.
 
 ```{r}
 
-pa_house_tidy <- election_winners %>% 
-  left_join(prog_summary, by = "representative") %>% 
-  left_join(reps_2018, by = c("representative" = "rep")) %>% 
-  replace_na(list(winner = 0))
+election_merge <- election_tidy %>%
+	separate(candidate, into = c("first", "last", "suffix"), sep = " |-") %>%
+	mutate_at(vars(first, last, suffix), tolower) %>%
+	group_by(last) %>%
+	mutate(
+		merge_name = case_when(
+			!is.na(suffix) ~ suffix,
+			length(row_number()) > 1 ~ paste0(last, " ", str_sub(first, 1, 1)),
+			TRUE ~ last
+		),
+		merge_name = case_when(
+			merge_name == "keller m" ~ "keller mk",
+			merge_name == "keller b" ~ "keller w",
+			merge_name == "braneky" ~ "krueger",
+			merge_name == "quinn" & str_detect(last, "marguerite") ~ "quinn m",
+			merge_name == "quinn" ~ "quinn c",
+			merge_name == "day g" ~ "day",
+			TRUE ~ merge_name
+		)
+	) %>%
+	ungroup()
+
+
+prog_merge <- prog_summary %>%
+	mutate(rep = tolower(str_replace_all(rep, ",|\\.", "")))
+
+
+pa_house_tidy <- election_merge %>%
+	left_join(prog_merge, by = c("merge_name" = "rep"))
 
 ```
 
@@ -166,13 +190,12 @@ pa_house_tidy %>%
 ```{r}
 pa_house_tidy %>% 
   ggplot(aes(margin, fill = party)) +
-    geom_histogram(binwidth = 0.01, show.legend = FALSE) +
+    geom_histogram(binwidth = 2, show.legend = FALSE) +
     facet_wrap(~party) +
     scale_fill_manual(
-      values = c("Democrat" = "blue",
+      values = c("Democratic" = "blue",
                  "Republican" = "red")
-    ) +
-    scale_x_continuous(labels = percent_format(1))
+    )
 
 ```
 
@@ -182,8 +205,8 @@ It looks like both parties had an equal number of wins in uncontested districts,
 pa_house_tidy %>%
   group_by(party) %>% 
   summarise(
-    `count uncontested` = sum(margin == 1),
-    `percent uncontested` = percent(mean(margin ==1))
+    `count uncontested` = sum(margin == 100),
+    `percent uncontested` = percent(mean(margin == 100))
   ) %>% 
   knitr::kable()
  
@@ -193,8 +216,25 @@ pa_house_tidy %>%
 
 ```{r}
 
-pa_house_tidy %>% 
-  ggplot(aes())
+par_mod <- glm(
+	progressive_avg ~ margin:party, 
+	data = pa_house_tidy,
+	family = "binomial",
+	weights = votes_cast
+)
+
+augment(par_mod, type.predict = "response")	%>%
+	ggplot(aes(x = margin, color = party)) +
+		geom_point(aes(y = progressive_avg), size = 3) +
+		geom_line(aes(y = .fitted), linetype = 3, size = 2, show.legend = FALSE) +
+		scale_color_manual(
+			values = c("Democratic" = "blue",
+					   "Republican" = "red")
+		) +
+		labs(
+			x = "margin of victory - 2016 election",
+			y = "progressive avg",
+			color = ""	
+		)
 
 ```
-
