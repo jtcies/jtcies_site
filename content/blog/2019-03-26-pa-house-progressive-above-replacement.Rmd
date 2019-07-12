@@ -166,7 +166,8 @@ Merge the data.
 ```{r}
 
 election_merge <- election_both %>%
-	separate(representative_2016, into = c("first", "last", "suffix"), sep = " |-") %>%
+	separate(representative_2016, into = c("first", "last", "suffix"), sep = " |-",
+	         remove = FALSE) %>%
 	mutate_at(vars(first, last, suffix), tolower) %>%
 	group_by(last) %>%
 	mutate(
@@ -245,7 +246,8 @@ pa_house_tidy %>%
   summarise(
     `count incumbent win` = sum(representative_2016 == representative_2018),
     `count flipped party` = sum(party_2016 == party_2018)
-  )
+  ) %>% 
+  knitr::kable()
 
 ```
 
