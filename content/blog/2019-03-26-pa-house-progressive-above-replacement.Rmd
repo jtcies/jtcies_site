@@ -270,15 +270,22 @@ pa_house_tidy %>%
 ### Progressiveness by win margin
 
 ```{r}
-
 par_mod <- glm(
-	progressive_avg ~ margin_2016:party_2016, 
+	progressive_avg ~ margin_2016 * party_2016, 
 	data = pa_house_tidy,
 	family = "binomial",
 	weights = votes_cast
 )
 
-augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	%>%
+par_mod %>% 
+  tidy()
+```
+
+
+```{r}
+augmented <- augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	
+
+augmented %>%
 	ggplot(aes(x = margin_2016, color = party_2016)) +
     geom_point(
       data = pa_house_tidy[pa_house_tidy$same, ],
@@ -299,3 +306,46 @@ augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	%>%
 		)
 
 ```
+
+There is definitely a trend that shows Democrats as more progressive and Republicans as less progressive if they won their district by a greater margin. However, it's not a huge magnitude. A Democrat who won by less than one point is expeted to have about a .73 progressive average, compared to a Democrat winning uncontested, who is expected to vote progressive about 82% of the time. 
+
+However, it stands out to me that most Republicans who were re-elected in 2018 are less progressive than those who did not win re-election. 
+
+We can use the residuals from our inital model to determine if voting more or less progressive than the model expects has any relation to being elected then next year. 
+
+```{r}
+
+reelect_mod <- augmented %>% 
+  mutate(resid = progressive_avg - .fitted) %>% 
+  glm(same ~ resid * party_2016, data = ., family = "binomial")
+
+reelect_mod %>% 
+  tidy()
+
+```
+
+Legislators who were more partisan were more likley to be re-elected. This is espeically true for Repbulicans, which makes sense in a year where momentum was behind Democrats. However, the difference is not statistically signifcant. 
+
+## Legislators of interest.
+
+Let's take a look at two groups: Democrats in uncontested voes who are less progressive than expected, and those Republicans who were more progressive and only won by small margins and were not re-elected. 
+
+```{r}
+dems_less_progressive <- augmented %>% 
+  filter(
+    party_2016 == "Democratic", margin_2016 == 100,
+    progressive_avg < .fitted
+  )
+```
+
+There are `r nrow(dems_less_progressive)` Democrats in uncontested races who were less progressive than expected. Let's look at the top 10. 
+
+```{r}
+dems_less_progressive %>% 
+  arrange(progressive_avg) %>% 
+  slice(1:10) %>% 
+  select(district, party_2016, representative_2016, margin_2016,
+         progressive_avg, party_2018, representative_2018, margin_2018)
+
+```
+
