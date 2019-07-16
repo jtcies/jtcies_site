@@ -17,6 +17,7 @@ library(tidyverse)
 library(rvest)
 library(broom)
 library(scales)
+library(plotly)
 
 theme_set(theme_minimal())
 
@@ -100,13 +101,6 @@ votes
 ```
 
 ... who won the 2018 election (so we can use this as an outcome) ...
-
-```{r}
-
-reps_2018 <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/reps_2018.csv")
-
-reps_2018
-```
 
 ... and a data set with the different name formats so we can combine the election results with the legislative data. 
 
@@ -257,15 +251,32 @@ pa_house_tidy %>%
 
 pa_house_tidy %>% 
   ggplot(aes(margin_2016, margin_2018, color = party_2018)) +
-    geom_point(size = 3) +
+    geom_jitter(size = 3) +
     facet_wrap(~ party_2016, ncol = 1) +
      scale_color_manual(
       values = c("Democratic" = "blue",
                  "Republican" = "red")
-    ) 
+    ) +
+    labs(
+        color = "Party of district\nafter 2018 election",
+        x = "margin of victory - 2016 election",
+        y = "margin of victory - 2018 election"
+    )
+
 
 ```
+Here we can see some of the results of the 'blue wave'. Many districts that went solidly Republican in 2016 were closer in 2018 - those are seen along the right hand sand of the bottom half of the chart. Similary, many closely contest districts went entirely for Democrats in 2018 - those are along the top of the upper chart. You can alos see a clump of blue dots among the bottom half representing those districts that flipped from Republican to Democrat.
 
+Interestingly, one uncontested Democratic 2016 district flipped to Republican in 2018. That was District 48, where Tim O'Neal won via special election in early 2018, and the re-won election by 11.5 points later in the general later in the year. 
+
+```{r}
+
+pa_house_tidy %>%
+    filter(party_2016 == "Democratic", margin_2016 == 100,
+           party_2018 == "Republican") %>%
+    select(district, representative_2016, representative_2018, margin_2018)
+
+```
 
 ### Progressiveness by win margin
 
@@ -285,8 +296,11 @@ par_mod %>%
 ```{r}
 augmented <- augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	
 
-augmented %>%
-	ggplot(aes(x = margin_2016, color = party_2016)) +
+prog_plot <- augmented %>%
+	ggplot(aes(x = margin_2016, color = party_2016, group = party_2016,
+               text = paste0("district: ", district),
+               relected = same,
+               rep = representative_2016)) +
     geom_point(
       data = pa_house_tidy[pa_house_tidy$same, ],
       aes(y = progressive_avg),
@@ -294,16 +308,28 @@ augmented %>%
       color = "black"
     ) +
 		geom_point(aes(y = progressive_avg), size = 3) +
-  	geom_line(aes(y = .fitted), linetype = 3, size = 2, show.legend = FALSE) +
+      	geom_line(aes(y = .fitted), linetype = 3, size = 2, show.legend = FALSE) +
 		scale_color_manual(
 			values = c("Democratic" = "blue",
 					   "Republican" = "red")
 		) +
 		labs(
+            title = "Margin of victory in 2016 is associated with progressiveness in following legislative term",
+            subtitle = "Outlined points show representatives re-elected in 2018",
 			x = "margin of victory - 2016 election",
 			y = "progressive avg",
 			color = ""	
 		)
+
+
+
+prog_plotly <- ggplotly(prog_plot, 
+                        tooltip = c("x", "y", "text", "relected", "rep"))
+
+
+prog_plotly$x$data[[1]]$hoverinfo <- "none"
+
+htmlwidgets::saveWidget(prog_plotly, "plotly.html")
 
 ```
 
