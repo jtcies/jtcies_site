@@ -372,4 +372,3 @@ dems_less_progressive %>%
          progressive_avg, party_2018, representative_2018, margin_2018)
 
 ```
-
