@@ -79,9 +79,10 @@ election_results <- c(2016,  2018) %>%
   mutate(percent = votes / sum(votes)) %>% 
   ungroup()
 
-
 ```
 The first is the results from the 2016 PA House general election. I've already calculated the percent of votes that went for the Democrat. 
+
+
 
 ```{r}
 
@@ -151,7 +152,7 @@ prog_summary <- votes %>%
   summarise(
 	progressive_avg = mean(progressive_vote),
 	votes_cast = n()
-	)
+  )
 
 ```
 
