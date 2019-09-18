@@ -246,8 +246,6 @@ pa_house_tidy %>%
 
 ```
 
-
-
 ```{r}
 
 pa_house_tidy %>% 
@@ -287,8 +285,6 @@ par_mod %>%
 ```{r}
 
 augmented <- augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	
-
-
 prog_plot <- augmented %>%
     mutate(
         margin_2016 = round(margin_2016, 1),
@@ -302,6 +298,10 @@ prog_plot <- augmented %>%
         color = party_2016, 
         group = party_2016,
     )) +
+    annotate("rect",
+        xmin = 0, xmax = 31, ymin = .33, ymax = .65,
+        color = "grey", alpha = 0.2
+    ) +
     geom_point(
       data = pa_house_tidy[pa_house_tidy$same, ],
       aes(y = progressive_avg),
@@ -324,9 +324,9 @@ prog_plot <- augmented %>%
 prog_plotly <- ggplotly(prog_plot,
                         tooltip = c("text", "x", "y"))
 
-prog_plotly$x$data[[4]]$hoverinfo <- "none"
-prog_plotly$x$data[[1]]$hoverinfo <- "none"
-prog_plotly$x$data[[5]]$hoverinfo <- "none"
+#prog_plotly$x$data[[4]]$hoverinfo <- "none"
+#prog_plotly$x$data[[1]]$hoverinfo <- "none"
+#prog_plotly$x$data[[5]]$hoverinfo <- "none"
 
 htmlwidgets::saveWidget(prog_plotly, "plotly.html")
 
@@ -334,26 +334,25 @@ htmlwidgets::saveWidget(prog_plotly, "plotly.html")
 
 There is definitely a trend that shows Democrats as more progressive and Republicans as less progressive if they won their district by a greater margin. However, it's not a huge magnitude. A Democrat who won by less than one point is expeted to have about a .73 progressive average, compared to a Democrat winning uncontested, who is expected to vote progressive about 82% of the time. 
 
-However, it stands out to me that most Republicans who were re-elected in 2018 are less progressive than those who did not win re-election. 
-
-We can use the residuals from our inital model to determine if voting more or less progressive than the model expects has any relation to being elected then next year. 
+The part of the chart that stands out me is the Republicans who had a margin of victory below 50 points. The table below shows the 2018 outcome comparing Repulicans who had a higher progressive average than expected compared to those who voted less progressive than expected.
 
 ```{r}
 
-reelect_mod <- augmented %>% 
-  mutate(resid = progressive_avg - .fitted) %>% 
-  glm(same ~ resid * party_2016, data = ., family = "binomial")
-
-reelect_mod %>% 
-  tidy()
+ augmented %>% 
+     filter(party_2016 == "Republican", margin_2016 < 50) %>%
+     group_by(negative = .fitted < progressive_avg) %>%
+     count(status_2018) %>%
+     spread(negative, n, fill = 0)
 
 ```
 
-Legislators who were more partisan were more likley to be re-elected. This is espeically true for Repbulicans, which makes sense in a year where momentum was behind Democrats. However, the difference is not statistically signifcant. 
+Of the 24 Republicans who were more progressive than the model predicts, 8 were defeated and 8 retired. Of the 45 less progressive than predicted, just two retired and none were defeated. 
+
+We can use the residuals from our inital model to determine if voting more or less progressive than the model expects has any relation to being elected then next year. 
 
 ## Legislators of interest.
 
-Let's take a look at two groups: Democrats in uncontested voes who are less progressive than expected, and those Republicans who were more progressive and only won by small margins and were not re-elected. 
+Let's take a look at two groups: Democrats in uncontested voes who are less progressive than expected. 
 
 ```{r}
 dems_less_progressive <- augmented %>% 
@@ -363,7 +362,7 @@ dems_less_progressive <- augmented %>%
   )
 ```
 
-There are `r nrow(dems_less_progressive)` Democrats in uncontested races who were less progressive than expected. Let's look at the top 10. 
+There are `r nrow(dems_less_progressive)` Democrats who won uncontested in 2016 races who were less progressive than expected. Let's look at the top 10. 
 
 ```{r}
 dems_less_progressive %>% 
@@ -373,3 +372,7 @@ dems_less_progressive %>%
          progressive_avg, party_2018, representative_2018, margin_2018)
 
 ```
+
+According to this model, Chris Sainto and Tony DeLuca get the dubious honor of being the least progressive Democrats in fairly safe districts. 
+
+Chris Sainato has is the represenative for New Castle in Western PA and has been in office since 1995. However, he received a challenge from Republican in 2018 and won by only 13 points. 
