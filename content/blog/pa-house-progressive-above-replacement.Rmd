@@ -299,7 +299,7 @@ prog_plot <- augmented %>%
         group = party_2016,
     )) +
     annotate("rect",
-        xmin = 0, xmax = 31, ymin = .33, ymax = .65,
+        xmin = 0, xmax = 31, ymin = 0, ymax = .63,
         color = "grey", alpha = 0.2
     ) +
     geom_point(
@@ -332,25 +332,14 @@ htmlwidgets::saveWidget(prog_plotly, "plotly.html")
 
 ```
 
+I'll come back to the shaded part in a second. 
+
 There is definitely a trend that shows Democrats as more progressive and Republicans as less progressive if they won their district by a greater margin. However, it's not a huge magnitude. A Democrat who won by less than one point is expeted to have about a .73 progressive average, compared to a Democrat winning uncontested, who is expected to vote progressive about 82% of the time. 
 
-The part of the chart that stands out me is the Republicans who had a margin of victory below 50 points. The table below shows the 2018 outcome comparing Repulicans who had a higher progressive average than expected compared to those who voted less progressive than expected.
+## Whos is most and least progressive based on their margin of victory? 
 
-```{r}
+The original PAR article looked at Democrats who were less progressive than expected based on their margin of victory. So who are they in PA? 
 
- augmented %>% 
-     filter(party_2016 == "Republican", margin_2016 < 50) %>%
-     group_by(negative = .fitted < progressive_avg) %>%
-     count(status_2018, party_2018)
-```
-
-Of the 24 Republicans who were more progressive than the model predicts, 8 were defeated and 8 retired. Of the 45 less progressive than predicted, just two retired and none were defeated. 
-
-We can use the residuals from our inital model to determine if voting more or less progressive than the model expects has any relation to being elected then next year. 
-
-## Legislators of interest.
-
-Let's take a look at two groups: Democrats in uncontested voes who are less progressive than expected. 
 
 ```{r}
 dems_less_progressive <- augmented %>% 
@@ -360,7 +349,7 @@ dems_less_progressive <- augmented %>%
   )
 ```
 
-There are `r nrow(dems_less_progressive)` Democrats who won uncontested in 2016 races who were less progressive than expected. Let's look at the top 10. 
+There are `r nrow(dems_less_progressive)` Democrats who won uncontested in 2016 races who were less progressive than expected. Let's look at some of them. 
 
 ```{r}
 dems_less_progressive %>% 
@@ -371,14 +360,35 @@ dems_less_progressive %>%
 
 ```
 
-According to this model, Chris Sainto and Tony DeLuca won without a challenge to their seat.  
-
 Chris Sainato has is the represenative for New Castle in Western PA and has been in office since 1995. However, he received a challenge from Republican in 2018 and won by only 13 points. So perhaps he knew that this was coming. He also released an (op-ed)[https://www.ncnewsonline.com/opinion/columns/chris-sainato-restoring-civility-to-our-politics/article_9e82083d-e78d-58e2-8527-4957bc9710b0.html] about civility in politics, so he's definitely going all-in on the moderate Dem approach. 
 
 Tony DeLuca is has been in office since 1983 has been the subject of multiple investiagtions related to issues related to nepotism and fraud, was the subject of a recent BuzzFeed article about his relationship with insurance compaines. Safe to say he's not the most progressive guy in the House. 
 
+## What about the Republicans?
+
+Let's come back to that grey shaded area in the chart. This shows Republicans who had a margin of victory below 31 points. It looks like very few dots above the line are outlined in black - meaning those candidates were not re-elected - compared to below the line. The table below shows the breakdown of what happened to these representatives in the 2018 election. 
+
+```{r}
+ augmented %>% 
+     filter(party_2016 == "Republican", margin_2016 < 50) %>%
+     group_by(negative = if_else(.fitted < progressive_avg, 
+                                 "more progressive than expected", 
+                                 "less progressive than expected")) %>%
+     count(status_2018) %>%
+     spread(negative, n, fill = 0) %>%
+     rename(`2018 result` = status_2018)
+```
+
+Of the 24 Republicans who were more progressive than the model predicts, 8 were defeated and 8 retired. Of the 45 less progressive than predicted, just two retired and none were defeated. 
+
+This is farily staggering. Even in a year when things swung toward more liberal candidates, Republcians that showed some amount of moderation were heavily punished for it. 
+
+Perhaps this is another example of increased partisanship? I'm not sure. 
+
 ## Conclusions
 
-I set out to replicate the methodology used by Data for Progress. While not a perfect replicaiton, this analysis can tell something about voting behavior in relation to the level of partisanship in a particular district. 
+I set out to replicate the methodology used by Data for Progress. The goal of that analysis is to identify Democrats who could be pushed to support more progressive issues because they have little chance of being outsted. We that this is true for Pennsylvania as well, but we also saw examples of seats that seemed same become contested. 
 
-However, the most interesting thing to me here is the way in which Republicans who showwed any level of progressiveness were decimated in 2018. Perhaps this is related to the 'blue wave', and most of those vulnerable seats flipped; perhaps this is 
+However, I found the ways in which Repbulicans who showed even a little bit of progressiveism were punished to be the most interesting finding of this analysis. Perhaps this is just a symtpom of the 'blue wave' - those seats were vulnerable and Democrats pounced. It seems like it can't be just this though; when you look similarly contested seats, Republicans who were the least progressive were re-elected while those who were more progressive were not re-elected. 
+
+
