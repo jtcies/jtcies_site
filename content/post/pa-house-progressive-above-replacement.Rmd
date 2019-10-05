@@ -27,9 +27,7 @@ State legislatures were not immune to the much discussed 'blue wave' of 2018. In
 
 A few months ago, Data for Progress put out a piece of US House Democrats fared on their '[Progressive above Replacement](https://www.dataforprogress.org/par-scores)' score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy. 
 
-Given the excitement about some of the far-left candidates for Pennsylvania's State House, I wanted to replicate this approach. 
-
-I also wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018. 
+I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018. 
 
 ## Methodology
 
@@ -49,7 +47,7 @@ I used votes on the following key divisive bills to asses progressiveness:
 
 ### Data wrangling
 
-We'll use four different data sets for this analysis. I scrpaed each from the web [add links] but saved each to my Github account. Let's read in each one at a time and take a look. 
+First we'll scrape results from the 2016 and 2018 elections. 
 
 ```{r}
 
@@ -80,9 +78,8 @@ election_results <- c(2016,  2018) %>%
   ungroup()
 
 ```
-The first is the results from the 2016 PA House general election. I've already calculated the percent of votes that went for the Democrat. 
 
-
+Next we'll get the information on the bills ...
 
 ```{r}
 
@@ -92,7 +89,7 @@ bills <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/c
 bills
 ```
 
-This data shows the bills, the topic, and whether or not a vote for the bill would be considered perspective. Next is how the reps votes on each of those bills ...
+... and votes on those bills[^1].
 
 ```{r}
 
@@ -100,10 +97,6 @@ votes <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/c
 
 votes
 ```
-
-... who won the 2018 election (so we can use this as an outcome) ...
-
-... and a data set with the different name formats so we can combine the election results with the legislative data. 
 
 Phew, ok. Now we can start merging some of the data together. The goal is create a data set that inlcude election results, voting record, and whether someone was still a rep in 2018. 
 
@@ -134,7 +127,7 @@ election_both <- election_tidy %>%
 election_both
 ```
 
-Now we'll get a summary
+Next we'll create a summary of each representative's voting behavior by 
 
 ```{r}
 
@@ -193,8 +186,7 @@ pa_house_tidy <- election_merge %>%
 
 ```
 
-
-## Visulizing
+## Visualizing
 
 First let's look at margin of victory by party. We should have 121 Repbublicans and 82 Democrats. 
 
@@ -391,4 +383,4 @@ I set out to replicate the methodology used by Data for Progress. The goal of th
 
 However, I found the ways in which Repbulicans who showed even a little bit of progressiveism were punished to be the most interesting finding of this analysis. Perhaps this is just a symtpom of the 'blue wave' - those seats were vulnerable and Democrats pounced. It seems like it can't be just this though; when you look similarly contested seats, Republicans who were the least progressive were re-elected while those who were more progressive were not re-elected. 
 
-
+[^1]: If you want to see the code I used to scrape this data, it's [here](https://www.github.com/jtcies/pa-par)
