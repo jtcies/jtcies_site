@@ -1,5 +1,7 @@
 ---
 title: "Recruitment and Retention Programs to Increase Teacher Diversity"
+comments: false
+showDate: false
 ---
 
 ### Section from *The State of Teacher Diversity in America* (2015)

@@ -13,6 +13,9 @@ draft: true
 
 
 
+<p>State legislatures were not immune to the much discussed ‘blue wave’ of 2018. In Pennsylvania, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler.</p>
+<p>A few months ago, Data for Progress put out a piece of US House Democrats fared on their ‘<a href="https://www.dataforprogress.org/par-scores">Progressive above Replacement</a>’ score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy.</p>
+<p>I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## Registered S3 methods overwritten by &#39;ggplot2&#39;:
 ##   method         from 
@@ -63,9 +66,6 @@ library(scales)</code></pre>
 ## 
 ##     layout</code></pre>
 <pre class="r"><code>theme_set(theme_minimal())</code></pre>
-<p>State legislatures were not immune to the much discussed ‘blue wave’ of 2018. In Pennsylvania, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler.</p>
-<p>A few months ago, Data for Progress put out a piece of US House Democrats fared on their ‘<a href="https://www.dataforprogress.org/par-scores">Progressive above Replacement</a>’ score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy.</p>
-<p>I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018.</p>
 <div id="methodology" class="section level2">
 <h2>Methodology</h2>
 <p>I used votes on the following key divisive bills to asses progressiveness:</p>
@@ -268,7 +268,7 @@ pa_house_tidy &lt;- election_merge %&gt;%
     labs(
             x = &quot;margin of victory - 2016 election&quot;
     )</code></pre>
-<p><img src="/blog/pa-house-progressive-above-replacement_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="/post/pa-house-progressive-above-replacement_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <p>It looks like both parties had an equal number of wins in uncontested districts, but Democrats had a greater percentage (because they held fewer seats).</p>
 <pre class="r"><code>pa_house_tidy %&gt;%
   group_by(party_2016) %&gt;% 
@@ -339,7 +339,7 @@ pa_house_tidy &lt;- election_merge %&gt;%
         x = &quot;margin of victory - 2016 election&quot;,
         y = &quot;margin of victory - 2018 election&quot;
     )</code></pre>
-<p><img src="/blog/pa-house-progressive-above-replacement_files/figure-html/unnamed-chunk-12-1.png" width="672" />
+<p><img src="/post/pa-house-progressive-above-replacement_files/figure-html/unnamed-chunk-12-1.png" width="672" />
 Here we can see some of the results of the ‘blue wave’. Many districts that went solidly Republican in 2016 were closer in 2018 - those are seen along the right hand sand of the bottom half of the chart. Similary, many closely contest districts went entirely for Democrats in 2018 - those are along the top of the upper chart. You can alos see a clump of blue dots among the bottom half representing those districts that flipped from Republican to Democrat.</p>
 <div id="progressiveness-by-win-margin" class="section level3">
 <h3>Progressiveness by win margin</h3>

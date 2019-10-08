@@ -33,7 +33,7 @@ canonifyurls = true
 [author]
   name = "Joe Ciesielski"
   bio = ""
-  job = "Data analyst"
+  job = "data analyst"
   location = "Philadelphia"
   # Your Gravatar email. Overwrite `author.picture` everywhere in the blog
   gravatarEmail = "jtcies@gmail.com"
@@ -41,7 +41,7 @@ canonifyurls = true
   # Overwritten by your gravatar image if `author.gravatarEmail` is filled
 #  picture = "https://cdn1.iconfinder.com/data/icons/ninja-things-1/1772/ninja-simple-512.png"
   # Your Twitter username without the @. E.g : thibaudlepretre
-  # twitter = "thibaudlepretre"
+   twitter = "jtcies"
   # Your google plus profile id. E.g : +ThibaudLepretre or 114625208755123718311
   # googlePlus = "+ThibaudLepretre"
 
@@ -50,43 +50,50 @@ canonifyurls = true
   weight = 1
   identifier = "home"
   name = "Home"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-home\"></i>"
+  pre = "<i class=\"sidebar-button-icon \"></i>"
   url = "/"
 
 [[menu.main]]
   weight = 2
   identifier = "post"
   name = "Blog"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-book\"></i>"
+  pre = "<i class=\"sidebar-button-icon \"></i>"
   url = "/post"
 
 [[menu.main]]
   weight = 2
   identifier = "talks"
   name = "Talks"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-chalkboard\"></i>"
+  pre = "<i class=\"sidebar-button-icon\"></i>"
   url = "/talks"
 
 [[menu.main]]
   weight = 2
   identifier = "projects"
   name = "Projects"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-hammer\"></i>"
+  pre = "<i class=\"sidebar-button-icon \"></i>"
   url = "/projects"
 
 [[menu.main]]
   weight = 3
   identifier = "tags"
   name = "Tags"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-tags\"></i>"
+  pre = "<i class=\"sidebar-button-icon\"></i>"
   url = "/tags"
 
 [[menu.main]]
   weight = 5
   identifier = "about"
   name = "About"
-  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-question\"></i>"
+  pre = "<i class=\"sidebar-button-icon\"></i>"
   url = "/about"
+
+[[menu.links]]
+  weight = 1
+  identifier = "twitter"
+  name = "Twitter"
+  pre = "<i class=\"sidebar-button-icon fa fa-lg fa-twitter\"></i>"
+  url = "https://twitter.com/jtcies"
 
 [[menu.links]]
   weight = 1
@@ -95,8 +102,8 @@ canonifyurls = true
   pre = "<i class=\"sidebar-button-icon fa fa-lg fa-github\"></i>"
   url = "https://github.com/jtcies"
 
-[[menu.misc]]
-  weight = 1
+[[menu.links]]
+  weight = 2
   identifier = "rss"
   name = "RSS"
   pre = "<i class=\"sidebar-button-icon fa fa-lg fa-rss\"></i>"
@@ -180,7 +187,7 @@ canonifyurls = true
   # Custom CSS. Put here your custom CSS files. They are loaded after the theme CSS;
   # they have to be referred from static root. Example
   # [[params.customCSS]]
-  #   href = "css/mystyle.css"
+  #   href = "css/jtc_style.css"
 
   # Custom JS. Put here your custom JS files. They are loaded after the theme JS;
   # they have to be referred from static root. Example
@@ -210,11 +217,12 @@ canonifyurls = true
   # [params.sidebar.profile]
   #   url = "/#about"
 
-  # Customize copyright value "© 2017 <CUSTOMIZATION>. All Rights Reserved"
-  # [params.footer]
-  #   copyright = "<a href=\"https://github.com/kakawait\">kakawait</a>"
-  #
-  #
-  #
+#   Customize copyright value "© 2019 Joe Ciesielski. All Rights Reserved. Created using Hugo, Blogdown, and Tranquilpeak Theme"
+   [params.footer]
+      copyright = "Joe Ciesielski. Created using Hugo, Blogdown, and Tranquilpeak Theme."
+#     copyright = "<a href=\"https://github.com/kakawait\">kakawait</a>"
+  
+ 
+  
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
