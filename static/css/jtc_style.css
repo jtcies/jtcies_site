@@ -1,0 +1,32 @@
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+
+    font-family: 'Libre Baskerville'
+}
+
+body, p { font-family: 'Libre Franklin'}
+
+#sidebar .sidebar-profile .sidebar-profile-name
+{
+    font-family: 'Libre Franklin'
+}
+
+#sidebar .sidebar-buttons .sidebar-button .sidebar-button-link
+{
+    font-family: 'Libre Franklin'
+}
+
+.postShorten .postShorten-content, .postShorten .postShorten-excerpt
+{
+    font-family: 'Libre Franklin'
+}
+
+.font-merryweather
+{
+    font-family: 'Libre Franklin'
+}
+

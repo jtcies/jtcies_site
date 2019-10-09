@@ -1,0 +1,71 @@
+## Basic Configuration
+
+baseurl = "https://jtcies.com" 
+builddrafts = false
+canonifyurls = false
+languageCode = "en-US"
+
+contentdir = "content"
+layoutdir = "layouts"
+publishdir = "public"
+relativeurls = true
+
+author = "Joe Ciesielski"
+title = "jtcies"
+
+theme = "hugo-tranquilpeak-theme"
+
+## Hugo Built-in Features
+disqusShortname = "jtcies" # Comment out to disable Disqus.
+#googleAnalytics = "XYZ"
+enableRobotsTXT = true
+
+## Site Settings
+[params]
+author = "Joe Ciesielski"
+intro = ""
+description = ""
+authorimage = ""
+dateformat = "Jan 2, 2006"
+
+## Site Meta Settings
+[params.meta]
+description = ""
+keywords = ""
+
+## Social Accounts
+[params.social]
+github = "jtcies"
+twitter = "jtcies"
+email = "jtcies@gmail.com"
+linkedin = "joseph-ciesielski"
+
+## Extras
+[params.extra]
+copyright = "© 2019. Joseph Ciesielski. [Some Rights Reserved](http://creativecommons.org/licenses/by/3.0/)." 
+poweredby = true
+highlightjs = true
+
+## Main Menu
+[[menu.main]]
+    name = "blog"
+    weight = 100
+    identifier = "blog"
+    url = "/blog/"
+[[menu.main]]
+    name = "talks / publications"
+    identifier = "talks and publications"
+    weight = 200
+    url = "/talks/"
+[[menu.main]]
+    name = "projects"
+    identifier = "projects"
+    weight = 300
+    url = "/projects/"
+[[menu.main]]
+    name = "about"
+    identifier = "about"
+    weight = 400
+    url = "/about/"
+
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
