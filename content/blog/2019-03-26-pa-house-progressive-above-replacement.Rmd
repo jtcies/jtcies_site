@@ -349,3 +349,4 @@ dems_less_progressive %>%
 
 ```
 
+All were re-elected, and all but one had uncontested general elections in 2018 (although some may have been primaried). 
