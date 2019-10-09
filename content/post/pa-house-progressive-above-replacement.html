@@ -17,22 +17,14 @@ draft: true
 <p>A few months ago, Data for Progress put out a piece of US House Democrats fared on their ‘<a href="https://www.dataforprogress.org/par-scores">Progressive above Replacement</a>’ score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy.</p>
 <p>I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## Registered S3 methods overwritten by &#39;ggplot2&#39;:
-##   method         from 
-##   [.quosures     rlang
-##   c.quosures     rlang
-##   print.quosures rlang</code></pre>
-<pre><code>## Registered S3 method overwritten by &#39;rvest&#39;:
-##   method            from
-##   read_xml.response xml2</code></pre>
-<pre><code>## ── Attaching packages ────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
-<pre><code>## ✔ ggplot2 3.1.1     ✔ purrr   0.3.2
-## ✔ tibble  2.1.1     ✔ dplyr   0.8.1
-## ✔ tidyr   0.8.3     ✔ stringr 1.4.0
-## ✔ readr   1.3.1     ✔ forcats 0.4.0</code></pre>
-<pre><code>## ── Conflicts ───────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()</code></pre>
+<pre><code>## -- Attaching packages ----------------------------------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v ggplot2 3.2.1     v purrr   0.3.2
+## v tibble  2.1.3     v dplyr   0.8.3
+## v tidyr   0.8.3     v stringr 1.4.0
+## v readr   1.3.1     v forcats 0.4.0</code></pre>
+<pre><code>## -- Conflicts -------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>library(rvest)</code></pre>
 <pre><code>## Loading required package: xml2</code></pre>
 <pre><code>## 
@@ -122,17 +114,17 @@ election_results &lt;- c(2016,  2018) %&gt;%
 <pre><code>## # A tibble: 11 x 5
 ##     bill topic        progressive url                             vote_type
 ##    &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;                           &lt;chr&gt;    
-##  1  2154 environment           -1 https://www.legis.state.pa.us/… fp       
-##  2    97 education             -1 https://www.legis.state.pa.us/… fp       
-##  3  2060 gun control            1 https://www.legis.state.pa.us/… fp       
-##  4   178 education             -1 https://www.legis.state.pa.us/… amendment
-##  5  1419 criminal ju…           1 https://www.legis.state.pa.us/… fp       
-##  6    27 criminal ju…          -1 https://www.legis.state.pa.us/… fp       
-##  7   110 taxes                 -1 https://www.legis.state.pa.us/… fp       
-##  8  2017 taxes                 -1 https://www.legis.state.pa.us/… fp       
-##  9  2477 other                  1 https://www.legis.state.pa.us/… fp       
-## 10  2138 other                 -1 https://www.legis.state.pa.us/… fp       
-## 11  2050 other                 -1 https://www.legis.state.pa.us/… fp</code></pre>
+##  1  2154 environment           -1 https://www.legis.state.pa.us/~ fp       
+##  2    97 education             -1 https://www.legis.state.pa.us/~ fp       
+##  3  2060 gun control            1 https://www.legis.state.pa.us/~ fp       
+##  4   178 education             -1 https://www.legis.state.pa.us/~ amendment
+##  5  1419 criminal ju~           1 https://www.legis.state.pa.us/~ fp       
+##  6    27 criminal ju~          -1 https://www.legis.state.pa.us/~ fp       
+##  7   110 taxes                 -1 https://www.legis.state.pa.us/~ fp       
+##  8  2017 taxes                 -1 https://www.legis.state.pa.us/~ fp       
+##  9  2477 other                  1 https://www.legis.state.pa.us/~ fp       
+## 10  2138 other                 -1 https://www.legis.state.pa.us/~ fp       
+## 11  2050 other                 -1 https://www.legis.state.pa.us/~ fp</code></pre>
 <p>… and votes on those bills<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p>
 <pre class="r"><code>votes &lt;- read_csv(&quot;https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/pa-par/bill_votes.csv&quot;)</code></pre>
 <pre><code>## Parsed with column specification:
@@ -155,7 +147,7 @@ election_results &lt;- c(2016,  2018) %&gt;%
 ##  8  2154 CORR        yay  
 ##  9  2154 COX         yay  
 ## 10  2154 CULVER      yay  
-## # … with 2,098 more rows</code></pre>
+## # ... with 2,098 more rows</code></pre>
 <p>Phew, ok. Now we can start merging some of the data together. The goal is create a data set that inlcude election results, voting record, and whether someone was still a rep in 2018.</p>
 <p>First pull out the election winners. No independents won in 2016, so that makes this a little easier.</p>
 <pre class="r"><code>election_tidy &lt;- election_results %&gt;%
@@ -180,10 +172,10 @@ election_both &lt;- election_tidy %&gt;%
 
 election_both</code></pre>
 <pre><code>## # A tibble: 203 x 20
-##    district incumbent_2016 status_2016 party_2016 representative_…
+##    district incumbent_2016 status_2016 party_2016 representative_~
 ##       &lt;int&gt; &lt;chr&gt;          &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;           
 ##  1        1 Pat Harkins    Re-elected  Democratic Pat Harkins     
-##  2        2 Florindo Fabr… Re-elected  Democratic Florindo Fabriz…
+##  2        2 Florindo Fabr~ Re-elected  Democratic Florindo Fabriz~
 ##  3        3 Ryan Bizzarro  Re-elected  Democratic Ryan Bizzarro   
 ##  4        4 Curt Sonney    Re-elected  Republican Curt Sonney     
 ##  5        5 Barry Jozwiak  Re-elected  Republican Barry Jozwiak   
@@ -192,7 +184,7 @@ election_both</code></pre>
 ##  8        8 Tedd Nesbit    Re-elected  Republican Tedd Nesbit     
 ##  9        9 Chris Sainato  Re-elected  Democratic Chris Sainato   
 ## 10       10 Jaret Gibbons  Defeated    Republican Aaron Bernstine 
-## # … with 193 more rows, and 15 more variables: votes_2016 &lt;dbl&gt;,
+## # ... with 193 more rows, and 15 more variables: votes_2016 &lt;dbl&gt;,
 ## #   year_2016 &lt;dbl&gt;, percent_2016 &lt;dbl&gt;, win_2016 &lt;lgl&gt;,
 ## #   margin_2016 &lt;dbl&gt;, incumbent_2018 &lt;chr&gt;, status_2018 &lt;chr&gt;,
 ## #   party_2018 &lt;chr&gt;, representative_2018 &lt;chr&gt;, votes_2018 &lt;dbl&gt;,
@@ -423,7 +415,7 @@ htmlwidgets::saveWidget(prog_plotly, &quot;plotly.html&quot;)</code></pre>
   select(district, party_2016, representative_2016, margin_2016,
          progressive_avg, party_2018, representative_2018, margin_2018)</code></pre>
 <pre><code>## # A tibble: 10 x 8
-##    district party_2016 representative_… margin_2016 progressive_avg
+##    district party_2016 representative_~ margin_2016 progressive_avg
 ##       &lt;int&gt; &lt;chr&gt;      &lt;chr&gt;                  &lt;dbl&gt;           &lt;dbl&gt;
 ##  1        9 Democratic Chris Sainato            100           0.545
 ##  2       32 Democratic Tony DeLuca              100           0.556
@@ -433,10 +425,11 @@ htmlwidgets::saveWidget(prog_plotly, &quot;plotly.html&quot;)</code></pre>
 ##  6      140 Democratic John Galloway            100           0.7  
 ##  7       27 Democratic Dan Deasy                100           0.727
 ##  8       34 Democratic Paul Costa               100           0.727
-##  9       45 Democratic Anita Astorino …         100           0.727
+##  9       45 Democratic Anita Astorino ~         100           0.727
 ## 10       77 Democratic Scott Conklin            100           0.727
-## # … with 3 more variables: party_2018 &lt;chr&gt;, representative_2018 &lt;chr&gt;,
+## # ... with 3 more variables: party_2018 &lt;chr&gt;, representative_2018 &lt;chr&gt;,
 ## #   margin_2018 &lt;dbl&gt;</code></pre>
+<p>All were re-elected, and all but one had uncontested general elections in 2018 (although some may have been primaried).</p>
 <p>Chris Sainato has is the represenative for New Castle in Western PA and has been in office since 1995. However, he received a challenge from Republican in 2018 and won by only 13 points. So perhaps he knew that this was coming. He also released an (op-ed)[<a href="https://www.ncnewsonline.com/opinion/columns/chris-sainato-restoring-civility-to-our-politics/article_9e82083d-e78d-58e2-8527-4957bc9710b0.html" class="uri">https://www.ncnewsonline.com/opinion/columns/chris-sainato-restoring-civility-to-our-politics/article_9e82083d-e78d-58e2-8527-4957bc9710b0.html</a>] about civility in politics, so he’s definitely going all-in on the moderate Dem approach.</p>
 <p>Tony DeLuca is has been in office since 1983 has been the subject of multiple investiagtions related to issues related to nepotism and fraud, was the subject of a recent BuzzFeed article about his relationship with insurance compaines. Safe to say he’s not the most progressive guy in the House.</p>
 </div>
@@ -452,12 +445,12 @@ htmlwidgets::saveWidget(prog_plotly, &quot;plotly.html&quot;)</code></pre>
      spread(negative, n, fill = 0) %&gt;%
      rename(`2018 result` = status_2018)</code></pre>
 <pre><code>## # A tibble: 6 x 3
-##   `2018 result`      `less progressive than exp… `more progressive than ex…
+##   `2018 result`      `less progressive than exp~ `more progressive than ex~
 ##   &lt;chr&gt;                                    &lt;dbl&gt;                      &lt;dbl&gt;
 ## 1 Defeated                                     0                          8
 ## 2 Ran for Congress                             2                          0
-## 3 Ran for State Sen…                           0                          1
-## 4 Ran for U.S. Sena…                           1                          0
+## 3 Ran for State Sen~                           0                          1
+## 4 Ran for U.S. Sena~                           1                          0
 ## 5 Re-elected                                  40                          7
 ## 6 Retired                                      2                          8</code></pre>
 <p>Of the 24 Republicans who were more progressive than the model predicts, 8 were defeated and 8 retired. Of the 45 less progressive than predicted, just two retired and none were defeated.</p>
