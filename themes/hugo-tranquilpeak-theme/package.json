@@ -49,6 +49,7 @@
     "node-sass": "^4.12.0"
   },
   "dependencies": {
+    "grunt-exec": "^3.0.0",
     "semver": "^6.3.0"
   },
   "engines": {
