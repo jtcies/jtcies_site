@@ -1,5 +1,8 @@
 ---
 title: "Using Reminders to Encourage Philly Youth to Apply for Summer Jobs"
+comments: false
+showDate: false
+
 ---
 
 ### [Phiadelphia Behavior Science Initiative Conference - May 2017](http://phillybsi.org/)
