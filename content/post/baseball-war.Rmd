@@ -1,0 +1,159 @@
+---
+draft: true
+---
+
+```{r setup}
+
+library(tidyverse)
+library(rethinking)
+library(jtcr)
+
+url <- "https://www.baseball-reference.com/data/war_archive-2019-10-03.zip" 
+
+temp <- tempfile()
+download.file(url, temp)
+
+batting <- read_csv(unz(temp, "war_daily_bat.txt"), guess_max = 15000,
+                    na = c("", "NA", "NULL")) %>%
+    janitor::clean_names() 
+
+pitching <- read_csv(unz(temp, "war_daily_pitch.txt"), guess_max = 20000,
+                     na = c("", "NA", "NULL")) %>%
+    janitor::clean_names() 
+
+unlink(temp)
+
+```
+
+
+```{r allstar}
+
+batting %>%
+    filter(year_id == 2019, pitcher == "N") %>%
+    ggplot(aes(salary, war)) + 
+        geom_point() +
+        geom_text(aes(label = name_common), check_overlap = TRUE) +
+        theme_jtc() 
+
+```
+
+```{r altuve}
+
+batting %>%
+    filter(name_common == "Jose Altuve") %>%
+    ggplot(aes(factor(year_id), war, group = 1)) +
+        geom_line() + 
+        ylim(c(0, NA)) +
+        theme_jtc() +
+        labs(x = "year")
+
+```
+
+Altuve is a 2019 All-Star who will be 30 years old next season. He's the 2017 AL MVP whose production has declined somewhat in the past few years, but is still an elite player. 
+
+```{r luciano}
+
+pitching %>%
+    filter(year_id == 2019, age < 22) 
+
+```
+
+
+## Model specifcation
+
+```{r}
+
+process_data <- function(df) {
+   
+    df %>%
+    group_by(player_id) %>%
+    filter(min(year_id) >= 1990) %>%
+    mutate(
+        player_year = year_id - min(year_id) + 1,
+    ) %>%  
+    ungroup() %>%
+    complete(nesting(player_id, position),
+             player_year, fill = list(war = -0.5)) %>%
+    group_by(player_id) %>%
+    arrange(player_year) %>%
+    mutate(
+        prev_war = lag(war, default = -0.5),
+        keep = if_else(min(year_id, na.rm = TRUE) + player_year - 1 > 2019, FALSE, TRUE), 
+        lg_id = as.integer(as.factor(lg_id))
+    ) %>%
+    ungroup() %>%
+    arrange(player_id, player_year) %>%
+    fill(lg_id) %>%
+    filter(keep) %>%
+    select(player_id, position, lg_id, player_year, war, prev_war)
+
+}
+
+
+war_hist <- bind_rows(
+
+    batting %>%
+        mutate(position = 1) %>%
+        filter(pitcher == "N") %>%
+        process_data(),
+
+    pitching %>% 
+        mutate(position = 2) %>%
+        process_data() 
+
+) 
+
+```
+
+```{r waryear}
+library(lme4)
+
+war_hist %>%
+    ggplot(aes(player_year, war, group = player_id)) +
+        geom_line(alpha = 0.05)
+
+```
+
+
+## Model specification 
+
+```{r model}
+library(splines)
+library(broom)
+
+test_players <- sample(unique(war_hist$player_id), 10)
+
+war_hist_processed <- war_hist %>%
+    mutate(
+        player_index = as.integer(as.factor(player_id)),
+        position = as.integer(position),
+        player_year = as.integer(player_year)
+    ) %>%
+    filter(player_id %in% test_players)
+
+
+fit_lm <- function(df) {
+    lm(war ~ poly(player_year, 3), data = df)
+}
+
+fit_splines <- function(df) {
+    lm(war ~ ns(player_year, 3), data = df)
+}
+
+
+modeled <- war_hist_processed %>%
+    nest(-player_id) %>%
+    mutate(
+        linear_mod = purrr::map(data, fit_lm),
+        splines_mod = purrr::map(data, fit_splines),
+        fitted_lm = purrr::map2(linear_mod, data, ~augment(.x, newdata = .y)),
+        fitted_splines = purrr::map2(splines_mod, data, ~augment(.x, newdata = .y))
+    )
+
+modeled %>%
+    slice(1) %>%
+    select(player_id, linear_mod) %>%
+    unnest(tidy(linear_mod))
+
+```
+
