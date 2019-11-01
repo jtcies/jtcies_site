@@ -118,42 +118,42 @@ war_hist %>%
 ## Model specification 
 
 ```{r model}
-library(splines)
-library(broom)
-
-test_players <- sample(unique(war_hist$player_id), 10)
-
-war_hist_processed <- war_hist %>%
-    mutate(
-        player_index = as.integer(as.factor(player_id)),
-        position = as.integer(position),
-        player_year = as.integer(player_year)
-    ) %>%
-    filter(player_id %in% test_players)
-
-
-fit_lm <- function(df) {
-    lm(war ~ poly(player_year, 3), data = df)
-}
-
-fit_splines <- function(df) {
-    lm(war ~ ns(player_year, 3), data = df)
-}
-
-
-modeled <- war_hist_processed %>%
-    nest(-player_id) %>%
-    mutate(
-        linear_mod = purrr::map(data, fit_lm),
-        splines_mod = purrr::map(data, fit_splines),
-        fitted_lm = purrr::map2(linear_mod, data, ~augment(.x, newdata = .y)),
-        fitted_splines = purrr::map2(splines_mod, data, ~augment(.x, newdata = .y))
-    )
-
-modeled %>%
-    slice(1) %>%
-    select(player_id, linear_mod) %>%
-    unnest(tidy(linear_mod))
-
+# library(splines)
+# library(broom)
+# 
+# test_players <- sample(unique(war_hist$player_id), 10)
+# 
+# war_hist_processed <- war_hist %>%
+#     mutate(
+#         player_index = as.integer(as.factor(player_id)),
+#         position = as.integer(position),
+#         player_year = as.integer(player_year)
+#     ) %>%
+#     filter(player_id %in% test_players)
+# 
+# 
+# fit_lm <- function(df) {
+#     lm(war ~ poly(player_year, 3), data = df)
+# }
+# 
+# fit_splines <- function(df) {
+#     lm(war ~ ns(player_year, 3), data = df)
+# }
+# 
+# 
+# modeled <- war_hist_processed %>%
+#     nest(-player_id) %>%
+#     mutate(
+#         linear_mod = purrr::map(data, fit_lm),
+#         splines_mod = purrr::map(data, fit_splines),
+#         fitted_lm = purrr::map2(linear_mod, data, ~augment(.x, newdata = .y)),
+#         fitted_splines = purrr::map2(splines_mod, data, ~augment(.x, newdata = .y))
+#     )
+# 
+# modeled %>%
+#     slice(1) %>%
+#     select(player_id, linear_mod) %>%
+#     unnest(tidy(linear_mod))
+# 
 ```
 
