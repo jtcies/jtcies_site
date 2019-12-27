@@ -1,0 +1,96 @@
+---
+draft: true
+---
+
+```{r setup}
+
+library(tidyverse)
+library(nbastatR)
+
+games <- game_logs(seasons = 2019)
+
+game_1  <- games$idGame[[1]]
+
+game_1_pbp <- play_by_play_v2(game_1)
+
+game_1_pbp %>%
+    View()
+
+```
+```{r g1firstaction}
+
+game_1_first_action <- game_1_pbp %>%
+    select(namePlayer1, namePlayer2, minuteGame, numberPeriod) %>%
+    gather(drop, player, 1:2) %>%
+    select(-drop) %>%
+    group_by(player) %>%
+    filter(minuteGame == min(minuteGame), !is.na(player)) %>%
+    arrange(minuteGame) 
+
+game_1_first_action %>%
+    as.data.frame()
+```
+```{ri g1gt}
+
+game_1_pbp %>% 
+    fill(scoreAway, scoreHome, marginScore) %>%
+    filter(minuteGame == 46.55) %>%
+    select(scoreAway, scoreHome, marginScore)  %>%
+    distinct()
+
+```
+
+```{r gtfun}
+
+get_garbage_time_score <- function(game_id,
+                                   # when to start looking for gt
+                                   # default is start of the 4th quarter
+                                   gt_start = 36 
+                                   ) {
+
+    pbp <- play_by_play_v2(game_id)
+
+    after_gt_start <- pbp %>%
+        select(namePlayer1, namePlayer2, minuteGame) %>%
+        gather(drop, player, 1:2) %>%
+        select(-drop) %>%
+        group_by(player) %>%
+       filter(minuteGame == min(minuteGame), !is.na(player), minuteGame >= gt_start)
+
+    gt <- unique(min(after_gt_start[["minuteGame"]]))
+
+    pbp %>%
+        fill(marginScore) %>%
+        filter(minuteGame == gt) %>%
+        distinct(idGame, marginScore, minuteGame)
+
+}
+
+get_garbage_time_score(game_1)
+```
+
+```{r getgt}
+set.seed(2019)
+
+sample_games <- sample(games$idGame, 100)
+
+garbage_time <- map_dfr(sample_games, get_garbage_time_score)
+```
+
+```{r gtplot}
+
+garbage_time %>%
+    mutate(marginScore = abs(marginScore)) %>%
+    filter(minuteGame <= 48) %>%
+    ggplot(aes(minuteGame, marginScore)) +
+        geom_point()
+
+```
+
+## Other questions?
+
+- What are other ways to define garbage time start (than a player's first aciton)? 
+- How do coaches differ in whether or not they go into garbage time mode? 
+- Has the boundry for garbage time changed over time? 
+- How close does the score have to get for a coach to put their starters back in?
+
