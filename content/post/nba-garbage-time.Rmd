@@ -42,50 +42,89 @@ game_1_pbp %>%
 
 ```{r gtfun}
 
-get_garbage_time_score <- function(game_id,
+get_garbage_time_score <- function(game_pbp,
                                    # when to start looking for gt
                                    # default is start of the 4th quarter
-                                   gt_start = 36 
+                                   gt_start = 36,
+                                   # number of players who first appearnce is after 
+                                   # gt start
+                                   n_players = 4
                                    ) {
 
-    pbp <- play_by_play_v2(game_id)
+    # excludes OT
 
-    after_gt_start <- pbp %>%
+    after_gt_start <- game_pbp %>%
         select(namePlayer1, namePlayer2, minuteGame) %>%
         gather(drop, player, 1:2) %>%
         select(-drop) %>%
         group_by(player) %>%
-       filter(minuteGame == min(minuteGame), !is.na(player), minuteGame >= gt_start)
+        filter(minuteGame == min(minuteGame), !is.na(player),
+               minuteGame >= gt_start,
+               minuteGame <= 48) %>%
+        ungroup() %>%
+        filter(row_number() >= n_players)
 
-    gt <- unique(min(after_gt_start[["minuteGame"]]))
+    if (nrow(after_gt_start) > 0) {
 
-    pbp %>%
-        fill(marginScore) %>%
-        filter(minuteGame == gt) %>%
-        distinct(idGame, marginScore, minuteGame)
+        gt <- unique(min(after_gt_start[["minuteGame"]]))
+
+    } else {
+
+        gt <- 48
+
+    }
+ 
+    gt_score <- game_pbp %>%
+         fill(marginScore) %>%
+         filter(minuteGame == gt) %>%
+         distinct(idGame, marginScore, minuteGame) %>%
+         mutate(n_players = n_players)
+ 
+     gt_score
 
 }
 
-get_garbage_time_score(game_1)
+get_garbage_time_score(game_1_pbp)
 ```
 
 ```{r getgt}
 set.seed(2019)
 
-sample_games <- sample(games$idGame, 100)
+sample_games <- sample(games$idGame, 20)
 
-garbage_time <- map_dfr(sample_games, get_garbage_time_score)
+games_pbp <- map(sample_games, play_by_play_v2)
+
+garbage_time <- map_dfr(games_pbp, get_garbage_time_score)
 ```
 
 ```{r gtplot}
 
 garbage_time %>%
     mutate(marginScore = abs(marginScore)) %>%
-    filter(minuteGame <= 48) %>%
     ggplot(aes(minuteGame, marginScore)) +
         geom_point()
+```
+
+```{r cutoff}
+
+n_players_max <- 6
+
+n_players_list  <- rep(1:n_players_max, length(games_pbp))
+
+games_rep_list <- rep(games_pbp, each = n_players_max)
+
+mult_garbage_time <- map2_dfr(games_rep_list, n_players_list, ~ get_garbage_time_score(.x, n_players = .y))
+
+mult_garbage_time %>%
+    ggplot(aes(minuteGame, abs(marginScore), color = factor(n_players))) +
+        geom_point() +
+        facet_wrap(~idGame)
 
 ```
+
+It looks like keeping it at least two players whose first action is in the fourth quarter gets us a pretty good defintion of garbage time. 
+
+
 
 ## Other questions?
 
@@ -93,4 +132,5 @@ garbage_time %>%
 - How do coaches differ in whether or not they go into garbage time mode? 
 - Has the boundry for garbage time changed over time? 
 - How close does the score have to get for a coach to put their starters back in?
+- How to factor in games going to overtime? 
 
