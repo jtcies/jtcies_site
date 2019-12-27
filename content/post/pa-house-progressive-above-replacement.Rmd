@@ -1,7 +1,7 @@
 ---
 title: PA House - Progressive Above Replacement
 author: Joseph Ciesielski
-date: '2019-03-26'
+date: '2019-10-21'
 slug: pa-house-progressive-above-replacement
 categories: []
 tags: []
@@ -13,7 +13,7 @@ draft: true
 
 State legislatures were not immune to the much discussed 'blue wave' of 2018. In Pennsylvania, a number of candidates ran on progressive and far left platfroms and won including Sara Innamoroto, Summer Lee, and Elizabeth Fiedler. 
 
-A few months ago, Data for Progress put out a piece of US House Democrats fared on their '[Progressive above Replacement](https://www.dataforprogress.org/par-scores)' score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy. 
+Earlier this year, Data for Progress put out a piece of US House Democrats fared on their '[Progressive above Replacement](https://www.dataforprogress.org/par-scores)' score. They predicted how progressive a Democrat should be based on characteristics of their district; progressive-ness was rated based on votes and co-sponsorships of bills in key progressive issues including public housing, tuition-free college, and renewable energy. 
 
 I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018. 
 
@@ -23,6 +23,7 @@ library(tidyverse)
 library(rvest)
 library(broom)
 library(scales)
+library(rethinking)
 library(plotly)
 
 theme_set(theme_minimal())
@@ -143,6 +144,7 @@ prog_summary <- votes %>%
     ) %>% 
   group_by(rep) %>% 
   summarise(
+    progressive_votes = sum(progressive_vote),
 	progressive_avg = mean(progressive_vote),
 	votes_cast = n()
   )
@@ -261,68 +263,53 @@ Here we can see some of the results of the 'blue wave'. Many districts that went
 
 ### Progressiveness by win margin
 
-```{r}
-par_mod <- glm(
-	progressive_avg ~ margin_2016 * party_2016, 
-	data = pa_house_tidy,
-	family = "binomial",
-	weights = votes_cast
+```{r mod}
+pa_house_tidy <- pa_house_tidy %>%
+    filter(!is.na(progressive_avg))
+
+model_dat <- list(
+    votes = pa_house_tidy$votes_cast,
+    progressive_votes = as.integer(pa_house_tidy$progressive_votes),
+    party = as.integer(as.factor(pa_house_tidy$party_2016)),
+    margin = scale(pa_house_tidy$margin_2016)[,1]
 )
 
-par_mod %>% 
-  tidy()
+glmod <- ulam(
+    alist(
+        progressive_votes ~ dbinom(votes, p),
+        logit(p) <- a[party] + b[party] * margin,
+        a[party] ~ dnorm(a_bar, a_sigma),
+        a_bar ~ dnorm(0, 1.5),
+        a_sigma ~ dexp(1),
+        b[party] ~ dnorm(0, b_sigma),
+        b_sigma ~ dexp(1)
+    ), data = model_dat,
+    chains = 4, cores = 4, log_lik = TRUE
+)
+
+
+precis(glmod, depth = 2)
+
+pairs(glmod)
 ```
 
+```{r modpredplot}
 
-```{r}
+post <- extract.samples(glmod)
 
-augmented <- augment(par_mod, type.predict = "response", newdata = pa_house_tidy)	
-prog_plot <- augmented %>%
-    mutate(
-        margin_2016 = round(margin_2016, 1),
-        progressive_avg = round(progressive_avg, 3),
-    ) %>%
-    ggplot(aes(
-        text = paste0("district: ", district, "\n",
-                      "rep: ", representative_2016, "\n",
-                      "re-elected: ", same),
-        x = margin_2016,
-        color = party_2016, 
-        group = party_2016,
-    )) +
-    annotate("rect",
-        xmin = 0, xmax = 31, ymin = 0, ymax = .63,
-        color = "grey", alpha = 0.2
-    ) +
-    geom_point(
-      data = pa_house_tidy[pa_house_tidy$same, ],
-      aes(y = progressive_avg),
-      size = 5,
-      color = "black"
-    ) +
-    geom_point(aes(y = progressive_avg), size = 3) +
-    geom_line(aes(y = .fitted), linetype = 3, size = 2, show.legend = FALSE) +
-    scale_color_manual(
-        values = c("Democratic" = "blue",
-		           "Republican" = "red")
-    ) +
-    labs(
-        title = "Margin of victory in 2016 is associated with progressiveness in following legislative term\nOutlined points show representatives re-elected in 2018",
-        x = "margin of victory - 2016 election",
-	    y = "progressive avg",
-	    color = ""	
-    )
+apply_preds <- function(margin, party) {
 
-prog_plotly <- ggplotly(prog_plot,
-                        tooltip = c("text", "x", "y"))
+    post$a[, party] + post$b * margin
 
-#prog_plotly$x$data[[4]]$hoverinfo <- "none"
-#prog_plotly$x$data[[1]]$hoverinfo <- "none"
-#prog_plotly$x$data[[5]]$hoverinfo <- "none"
 
-htmlwidgets::saveWidget(prog_plotly, "plotly.html")
+} 
 
+possible <- crossing(margin = seq(-1, 1, length.out = 100),
+         party = c(1, 2))
+
+preds <- purrr::map2(possible$margin, possible$party, apply_preds)
 ```
+
 
 I'll come back to the shaded part in a second. 
 

@@ -8,6 +8,8 @@ library(tidyverse)
 library(rethinking)
 library(jtcr)
 
+theme_set(theme_jtc())
+
 url <- "https://www.baseball-reference.com/data/war_archive-2019-10-03.zip" 
 
 temp <- tempfile()
@@ -36,30 +38,6 @@ batting %>%
         theme_jtc() 
 
 ```
-
-```{r altuve}
-
-batting %>%
-    filter(name_common == "Jose Altuve") %>%
-    ggplot(aes(factor(year_id), war, group = 1)) +
-        geom_line() + 
-        ylim(c(0, NA)) +
-        theme_jtc() +
-        labs(x = "year")
-
-```
-
-Altuve is a 2019 All-Star who will be 30 years old next season. He's the 2017 AL MVP whose production has declined somewhat in the past few years, but is still an elite player. 
-
-```{r luciano}
-
-pitching %>%
-    filter(year_id == 2019, age < 22) 
-
-```
-
-
-## Model specifcation
 
 ```{r}
 
@@ -118,10 +96,8 @@ war_hist %>%
 ## Model specification 
 
 ```{r model}
-library(splines)
-library(broom)
 
-test_players <- sample(unique(war_hist$player_id), 10)
+test_players <- sample(unique(war_hist$player_id), 30)
 
 war_hist_processed <- war_hist %>%
     mutate(
@@ -132,28 +108,69 @@ war_hist_processed <- war_hist %>%
     filter(player_id %in% test_players)
 
 
-fit_lm <- function(df) {
-    lm(war ~ poly(player_year, 3), data = df)
-}
+war_dat <- list(
+    player = as.integer(as.factor(war_hist_processed$player_id)),
+    player_year = war_hist_processed$player_year,
+    war = war_hist_processed$war
+)
 
-fit_splines <- function(df) {
-    lm(war ~ ns(player_year, 3), data = df)
-}
+war_hist_processed %>%
+    ggplot(aes(player_year, war, color = player_id)) +
+        geom_point(show.legend = FALSE) 
 
-
-modeled <- war_hist_processed %>%
-    nest(-player_id) %>%
-    mutate(
-        linear_mod = purrr::map(data, fit_lm),
-        splines_mod = purrr::map(data, fit_splines),
-        fitted_lm = purrr::map2(linear_mod, data, ~augment(.x, newdata = .y)),
-        fitted_splines = purrr::map2(splines_mod, data, ~augment(.x, newdata = .y))
-    )
-
-modeled %>%
-    slice(1) %>%
-    select(player_id, linear_mod) %>%
-    unnest(tidy(linear_mod))
 
 ```
+```{r lm}
+
+lm(war ~ poly(player_year, 3), 
+   data = war_hist_processed) %>%
+    broom::augment(newdata = war_hist_processed) %>%
+    ggplot(aes(player_year, .fitted)) +
+        geom_line()
+
+
+```
+
+
+
+
+```{r}
+
+model1 <- ulam(
+    alist(
+        war ~ dnorm(mu, sigma),
+        mu <- a[player] + 
+            b * player_year +
+            b2 * player_year^2 +
+            b3 * player_year^3,
+        a[player] ~ dnorm(mu_player, sigma_player),
+        mu_player ~ dnorm(2, 1),
+        sigma_player ~ dexp(1),
+        b ~ dnorm(0, 4),
+        b2 ~ dnorm(0, 1),
+        b3 ~ dnorm(0, 0.5),
+        sigma ~ dexp(1)
+    ),
+    data = war_dat
+)
+
+precis(model1, depth = 2)
+
+preds <- t(link(model1)) %>%
+    cbind(war_hist_processed) %>%
+    gather(sample, est, 1:500) %>%
+    tbl_df()
+
+preds %>%
+    ggplot(aes(player_year, war)) +
+        geom_point(color = "red") +
+        geom_line(aes(
+            x = player_year, y = est, 
+            group = sample
+        ), alpha = 0.01) +
+        facet_wrap(~player_id)
+
+
+```
+
 
