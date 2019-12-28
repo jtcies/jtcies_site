@@ -6,8 +6,10 @@ draft: true
 
 library(tidyverse)
 library(nbastatR)
+library(rethinking)
 
-games <- game_logs(seasons = 2019)
+games <- game_logs(seasons = 2019) %>%
+    distinct(idGame)
 
 game_1  <- games$idGame[[1]]
 
@@ -48,7 +50,7 @@ get_garbage_time_score <- function(game_pbp,
                                    gt_start = 36,
                                    # number of players who first appearnce is after 
                                    # gt start
-                                   n_players = 4
+                                   n_players = 2
                                    ) {
 
     # excludes OT
@@ -77,8 +79,13 @@ get_garbage_time_score <- function(game_pbp,
     gt_score <- game_pbp %>%
          fill(marginScore) %>%
          filter(minuteGame == gt) %>%
-         distinct(idGame, marginScore, minuteGame) %>%
-         mutate(n_players = n_players)
+         arrange(desc(abs(marginScore))) %>%
+         distinct(idGame, minuteGame, .keep_all = TRUE) %>%
+         select(idGame, minuteGame, marginScore) %>%
+         mutate(
+            n_players = n_players,
+            garbage = if_else(minuteGame < 48, 1L, 0L)
+        )
  
      gt_score
 
@@ -87,42 +94,48 @@ get_garbage_time_score <- function(game_pbp,
 get_garbage_time_score(game_1_pbp)
 ```
 
-```{r getgt}
+```{r getgtsample}
 set.seed(2019)
 
 sample_games <- sample(games$idGame, 20)
 
-games_pbp <- map(sample_games, play_by_play_v2)
-
-garbage_time <- map_dfr(games_pbp, get_garbage_time_score)
-```
-
-```{r gtplot}
-
-garbage_time %>%
-    mutate(marginScore = abs(marginScore)) %>%
-    ggplot(aes(minuteGame, marginScore)) +
-        geom_point()
-```
-
-```{r cutoff}
+sample_games_pbp <- purrr::map(sample_games, play_by_play_v2)
 
 n_players_max <- 6
 
-n_players_list  <- rep(1:n_players_max, length(games_pbp))
+n_players_list  <- rep(1:n_players_max, length(sample_games_pbp))
 
-games_rep_list <- rep(games_pbp, each = n_players_max)
+games_rep_list <- rep(sample_games_pbp, each = n_players_max)
 
-mult_garbage_time <- map2_dfr(games_rep_list, n_players_list, ~ get_garbage_time_score(.x, n_players = .y))
+mult_garbage_time <- map2_dfr(
+    games_rep_list, n_players_list, 
+    ~ get_garbage_time_score(.x, n_players = .y)
+)
 
 mult_garbage_time %>%
-    ggplot(aes(minuteGame, abs(marginScore), color = factor(n_players))) +
-        geom_point() +
-        facet_wrap(~idGame)
+    filter(garbage == 1) %>%
+    ggplot(aes(minuteGame, abs(marginScore), 
+               group = idGame,
+               color = factor(n_players))) +
+        geom_point(size = 2) +
+        geom_line(show.legend = FALSE)
 
 ```
 
-It looks like keeping it at least two players whose first action is in the fourth quarter gets us a pretty good defintion of garbage time. 
+Occasionally a team will bring in a player for their first action in the first quarter for tactical reasons. But it looks like by the time a second player sees their first action in the fourth quarter, we can consider garbage time to have offically started. The margin can increase after garbage time starts, so we don't want to overestimate the point at which garbage time starts. 
+
+```{r getgt}
+
+game_ids <- games$idGame
+
+games_pbp <- purrr::map(game_ids, play_by_play_v2)
+
+games_pbp <- bind_rows(games_pbp)
+
+write_csv(games_pbp, here::here("content/data/nba_pbp_2019.csv"))
+
+```
+
 
 
 
