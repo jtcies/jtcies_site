@@ -96,6 +96,7 @@ war_hist %>%
 ## Model specification 
 
 ```{r model}
+<<<<<<< HEAD
 
 test_players <- sample(unique(war_hist$player_id), 30)
 
@@ -170,7 +171,4 @@ preds %>%
         ), alpha = 0.01) +
         facet_wrap(~player_id)
 
-
 ```
-
-
