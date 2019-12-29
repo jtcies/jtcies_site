@@ -7,6 +7,7 @@ draft: true
 library(tidyverse)
 library(nbastatR)
 library(rethinking)
+library(googledrive)
 
 games <- game_logs(seasons = 2019) %>%
     distinct(idGame)
@@ -126,18 +127,32 @@ Occasionally a team will bring in a player for their first action in the first q
 
 ```{r getgt}
 
-game_ids <- games$idGame
+#game_ids <- games$idGame
 
-games_pbp <- purrr::map(game_ids, play_by_play_v2)
+# games_pbp <- purrr::map_dfr(game_ids, play_by_play_v2)
 
-games_pbp <- bind_rows(games_pbp)
+temp_dir <- tempdir()
 
-write_csv(games_pbp, here::here("content/data/nba_pbp_2019.csv"))
+drive_download(
+    file = as_id("1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8"),
+   path = file.path(temp_dir, "nba_pbp_2019.csv")
+)
 
+games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
+
+games_gt <- games_pbp %>% 
+    split(.$idGame) %>% 
+    map_dfr(get_garbage_time_score, n_players = 2)
 ```
 
+```{r}
 
+games_gt %>%
+    filter(minuteGame < 48) %>% 
+    ggplot(aes(minuteGame, abs(marginScore))) +
+        geom_point()
 
+```
 
 ## Other questions?
 
