@@ -9,12 +9,15 @@ library(nbastatR)
 library(rethinking)
 library(googledrive)
 
-games <- game_logs(seasons = 2019) %>%
-    distinct(idGame)
+games <- game_logs(seasons = 2019, parse_boxscores = TRUE)
 
-game_1  <- games$idGame[[1]]
+game_ids <- distinct(games, idGame)
 
-game_1_pbp <- play_by_play_v2(game_1)
+game_1  <- game_ids[[1]]
+
+game_1_pbp <- play_by_play_v2(game_1, return_message = FALSE)
+```
+```{r game1pbp}
 
 game_1_pbp %>%
     View()
@@ -45,91 +48,44 @@ game_1_pbp %>%
 
 ```{r gtfun}
 
-get_garbage_time_score <- function(game_pbp,
-                                   # when to start looking for gt
-                                   # default is start of the 4th quarter
-                                   gt_start = 36,
-                                   # number of players who first appearnce is after 
-                                   # gt start
-                                   n_players = 2
-                                   ) {
+get_garbage_time_score <- function(game_pbp) {
 
     # excludes OT
 
-    after_gt_start <- game_pbp %>%
-        select(namePlayer1, namePlayer2, minuteGame) %>%
+    player_starts <- game_pbp %>%
+        fill(marginScore) %>%
+        filter(!is.na(namePlayer1), !is.na(namePlayer2)) %>%
+        mutate(player1 = paste0(slugTeamPlayer1, "_", namePlayer1),
+               player2 = paste0(slugTeamPlayer2, "_", namePlayer2)) %>%
+        select(player1, player2, minuteGame, marginScore, idGame) %>%
         gather(drop, player, 1:2) %>%
+        separate(player, into = c("team", "player"), sep = "_") %>%
         select(-drop) %>%
         group_by(player) %>%
-        filter(minuteGame == min(minuteGame), !is.na(player),
-               minuteGame >= gt_start,
-               minuteGame <= 48) %>%
+        filter(minuteGame == min(minuteGame), !is.na(player)) %>%
         ungroup() %>%
-        filter(row_number() >= n_players)
+        group_by(team) %>%
+        arrange(minuteGame) %>%
+        mutate(n_player = row_number()) %>% 
+        ungroup() %>%
+        replace_na(list(marginScore = 0)) %>% as.data.frame
 
-    if (nrow(after_gt_start) > 0) {
-
-        gt <- unique(min(after_gt_start[["minuteGame"]]))
-
-    } else {
-
-        gt <- 48
-
-    }
- 
-    gt_score <- game_pbp %>%
-         fill(marginScore) %>%
-         filter(minuteGame == gt) %>%
-         arrange(desc(abs(marginScore))) %>%
-         distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-         select(idGame, minuteGame, marginScore) %>%
-         mutate(
-            n_players = n_players,
-            garbage = if_else(minuteGame < 48, 1L, 0L)
-        )
- 
-     gt_score
+    player_starts
 
 }
 
 get_garbage_time_score(game_1_pbp)
 ```
 
-```{r getgtsample}
-set.seed(2019)
-
-sample_games <- sample(games$idGame, 20)
-
-sample_games_pbp <- purrr::map(sample_games, play_by_play_v2)
-
-n_players_max <- 6
-
-n_players_list  <- rep(1:n_players_max, length(sample_games_pbp))
-
-games_rep_list <- rep(sample_games_pbp, each = n_players_max)
-
-mult_garbage_time <- map2_dfr(
-    games_rep_list, n_players_list, 
-    ~ get_garbage_time_score(.x, n_players = .y)
-)
-
-mult_garbage_time %>%
-    filter(garbage == 1) %>%
-    ggplot(aes(minuteGame, abs(marginScore), 
-               group = idGame,
-               color = factor(n_players))) +
-        geom_point(size = 2) +
-        geom_line(show.legend = FALSE)
-
-```
-
-Occasionally a team will bring in a player for their first action in the first quarter for tactical reasons. But it looks like by the time a second player sees their first action in the fourth quarter, we can consider garbage time to have offically started. The margin can increase after garbage time starts, so we don't want to overestimate the point at which garbage time starts. 
-
 ```{r getgt}
 
+# if you want to download yourself, you can use this code
 #game_ids <- games$idGame
 
 # games_pbp <- purrr::map_dfr(game_ids, play_by_play_v2)
+
+# i've already uploaded the full play by play for 2019 to my google drive. 
+# you can access here: https://drive.google.com/open?id=1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8
 
 temp_dir <- tempdir()
 
@@ -142,17 +98,34 @@ games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
 
 games_gt <- games_pbp %>% 
     split(.$idGame) %>% 
-    map_dfr(get_garbage_time_score, n_players = 2)
+    map_dfr(get_garbage_time_score)
 ```
 
 ```{r}
 
 games_gt %>%
-    filter(minuteGame < 48) %>% 
+    filter(minuteGame < 48,
+           n_player > 5) %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
-        geom_point()
+        geom_jitter() +
+        facet_wrap(~n_player) +
+        xlim(c(0, 48)) +
+        annotate("rect", xmin = 36, ymin = 10, xmax = 48, ymax = Inf,
+                  alpha = 0.2, fill = "red") +
+        annotate("rect", xmin = 45, ymin = 0, xmax = 48, ymax = Inf,
+                  alpha = 0.2, fill = "blue")
 
 ```
+
+```{r}
+
+games_gt %>%
+    filter(n_player >= 13) %>% 
+    distinct(idGame)
+
+games
+```
+
 
 ## Other questions?
 
