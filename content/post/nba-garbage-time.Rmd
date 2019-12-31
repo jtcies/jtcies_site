@@ -70,20 +70,7 @@ get_garbage_time_score <- function(game_pbp) {
         ungroup() %>%
         replace_na(list(marginScore = 0)) %>% as.data.frame
 
-    }
- 
-    gt_score <- game_pbp %>%
-         fill(marginScore) %>%
-         filter(minuteGame == gt) %>%
-         arrange(desc(abs(marginScore))) %>%
-         distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-         select(idGame, minuteGame, marginScore) %>%
-         mutate(
-            n_players = n_players,
-            garbage = if_else(minuteGame < 48, 1L, 0L)
-        )
- 
-    gt_score
+    player_starts 
 
 }
 
@@ -120,7 +107,6 @@ games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
 
 games_gt <- games_pbp %>% 
     split(.$idGame) %>% 
-
     map_dfr(get_garbage_time_score)
 ```
 
@@ -140,13 +126,44 @@ games_gt %>%
 
 ```
 
+For these purposes, it looks like we pretty confidently say that it's garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. 
+
+
 ```{r}
 
-games_gt %>%
-    filter(n_player >= 13) %>% 
-    distinct(idGame)
+garbage_time_start <- games_gt %>%
+    filter(minuteGame < 48) %>%
+    mutate(
+        gt = if_else(
+            (n_player >= 10 & minuteGame >= 36 & abs(marginScore) >= 10) |
+                (n_player >= 10 & minuteGame >= 45),
+            1L, 0L
+        )
+    ) %>%
+    group_by(idGame) %>%
+    mutate(
+        keep = if_else(
+            any(gt) == 1
 
-games
+
+
+    select(minuteGame, marginScore, idGame, gt, n_player) 
+
+garbage_time_start %>%
+    ggplot(aes(minuteGame, abs(marginScore))) +
+        geom_point()
+```
+
+
+```{r gtmod}
+
+gt_start_list <- list(
+    minute = garbage_time_start$minuteGame,
+    maring = abs(garbage_time_start$marginScore)
+)
+
+
+
 ```
 
 
