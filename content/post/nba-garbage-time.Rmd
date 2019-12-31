@@ -9,20 +9,17 @@ library(nbastatR)
 library(rethinking)
 library(googledrive)
 
-games <- game_logs(seasons = 2019, parse_boxscores = TRUE)
+games <- seasons_schedule(seasons = 2019, parse_boxscores = TRUE, nest_data = TRUE)
 
-game_ids <- distinct(games, idGame)
+game_ids <- games$idGame
 
 game_1  <- game_ids[[1]]
 
-game_1_pbp <- play_by_play_v2(game_1, return_message = FALSE)
+game_1_pbp <- play_by_play_v2(game_1)
 ```
-```{r game1pbp}
 
-game_1_pbp %>%
-    View()
 
-```
+
 ```{r g1firstaction}
 
 game_1_first_action <- game_1_pbp %>%
@@ -68,9 +65,16 @@ get_garbage_time_score <- function(game_pbp) {
         arrange(minuteGame) %>%
         mutate(n_player = row_number()) %>% 
         ungroup() %>%
-        replace_na(list(marginScore = 0)) %>% as.data.frame
-
-    player_starts 
+        replace_na(list(marginScore = 0)) 
+        
+    final_margin <- game_pbp %>%
+        filter(minuteGame <= 48, !is.na(marginScore)) %>% 
+        arrange(desc(minuteGame)) %>%
+        slice(1) %>%
+        pull("marginScore")
+        
+    player_starts %>%
+        mutate(final_margin = final_margin)
 
 }
 
@@ -97,7 +101,7 @@ temp_dir <- tempdir()
 
 drive_download(
     file = as_id("1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8"),
-   path = file.path(temp_dir, "nba_pbp_2019.csv")
+    path = file.path(temp_dir, "nba_pbp_2019.csv")
 )
 
 games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
@@ -132,7 +136,7 @@ For these purposes, it looks like we pretty confidently say that it's garbage ti
 ```{r}
 
 garbage_time_start <- games_gt %>%
-    filter(minuteGame < 48) %>%
+    filter(minuteGame <= 48) %>%
     mutate(
         gt = if_else(
             (n_player >= 10 & minuteGame >= 36 & abs(marginScore) >= 10) |
@@ -140,18 +144,26 @@ garbage_time_start <- games_gt %>%
             1L, 0L
         )
     ) %>%
-    group_by(idGame) %>%
-    mutate(
-        keep = if_else(
-            any(gt) == 1
+    filter(gt == 1) %>% 
+    arrange(minuteGame, desc(marginScore)) %>%
+    distinct(idGame, .keep_all = TRUE) %>%
+    select(-team, -player, -n_player)
 
+no_gt <- games_gt %>%
+    anti_join(garbage_time_start, by = "idGame") %>% 
+    group_by(idGame) %>% 
+    mutate(marginScore = final_margin,
+           minuteGame = 48,
+           gt = 0L)  %>% 
+    arrange(desc(n_player)) %>% 
+    distinct(idGame, .keep_all = TRUE) %>% 
+    select(-team, -player, -n_player)
 
+all_gt <- bind_rows(garbage_time_start, no_gt)
 
-    select(minuteGame, marginScore, idGame, gt, n_player) 
-
-garbage_time_start %>%
+all_gt %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
-        geom_point()
+        geom_jitter()
 ```
 
 
@@ -159,11 +171,19 @@ garbage_time_start %>%
 
 gt_start_list <- list(
     minute = garbage_time_start$minuteGame,
-    maring = abs(garbage_time_start$marginScore)
+    margin = abs(garbage_time_start$marginScore)
 )
 
 
-
+gt_mod <- ulam(
+    alist(
+        minute ~ exponential(lambda),
+        lambda <- 1.0 / mu,
+        log(mu) <- alpha * margin,
+        alpha ~ normal(0, 1)
+    ),
+    data = gt_start_list
+)
 ```
 
 
