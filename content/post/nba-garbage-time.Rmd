@@ -167,6 +167,28 @@ all_gt %>%
 ```
 
 
+```{r priorsim}
+
+N <- 100
+
+minute <- seq(36, 48, by = 0.1)
+
+beta_sim <- rnorm(N, .5, .02)
+
+alpha <- rnorm(N, 10, 2)
+
+crossing(beta_sim, alpha, minute) %>% 
+    mutate(margin = alpha - exp(beta_sim * minute)) %>% 
+    group_by(minute) %>% 
+    summarise(mean = mean(margin),
+              sd = sd(margin)) %>% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2)
+
+```
+
+
 ```{r gtmod}
 
 gt_start_list <- list(
@@ -174,22 +196,48 @@ gt_start_list <- list(
     margin = abs(garbage_time_start$marginScore)
 )
 
-
 gt_mod <- ulam(
     alist(
-        minute ~ exponential(lambda),
-        lambda <- 1.0 / mu,
-        log(mu) <- alpha * margin,
-        alpha ~ normal(0, 1)
+        margin ~ lognormal(mu, sigma),
+        mu <- a + exp(b * minute),
+        a ~ normal(10, 2),
+        b ~ normal(.5, 0.2),
+        sigma ~ exponential(1)
     ),
     data = gt_start_list
 )
+
+sim_dat <- tibble(
+    minute = seq(36, 48, by = 0.1)
+)
+
+preds <- exp(link(gt_mod, data = sim_dat)) %>% 
+    t() %>%
+    as_tibble() %>% 
+    bind_cols(sim_dat) %>% 
+    gather(var, val, 1:500) %>% 
+    select(-var)
+
+
+actual_plot <- garbage_time_start %>% 
+    select(minute = minuteGame, margin = marginScore)  %>% 
+    mutate(margin = abs(margin))
+
+preds %>% 
+    group_by(minute) %>% 
+    summarise(mean = mean(val), 
+              sd = sd(val)) %>% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
+        geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE)
+
 ```
 
 
 ## Other questions?
 
-- What are other ways to define garbage time start (than a player's first aciton)? 
+- What are other ways to define garbage time start (than a player's first action)? 
 - How do coaches differ in whether or not they go into garbage time mode? 
 - Has the boundry for garbage time changed over time? 
 - How close does the score have to get for a coach to put their starters back in?
