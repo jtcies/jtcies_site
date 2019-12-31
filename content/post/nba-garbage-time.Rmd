@@ -88,7 +88,7 @@ get_garbage_time_score <- function(game_pbp,
             garbage = if_else(minuteGame < 48, 1L, 0L)
         )
  
-     gt_score
+    gt_score
 
 }
 
@@ -126,10 +126,14 @@ mult_garbage_time %>%
 Occasionally a team will bring in a player for their first action in the first quarter for tactical reasons. But it looks like by the time a second player sees their first action in the fourth quarter, we can consider garbage time to have offically started. The margin can increase after garbage time starts, so we don't want to overestimate the point at which garbage time starts. 
 
 ```{r getgt}
+# you can use this below to download yourself
+# it's a big file so I've uploaded it to my google drive 
 
-#game_ids <- games$idGame
+# game_ids <- games$idGame
 
 # games_pbp <- purrr::map_dfr(game_ids, play_by_play_v2)
+
+# missing three games 
 
 temp_dir <- tempdir()
 
@@ -140,9 +144,13 @@ drive_download(
 
 games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
 
+# length(unique(games_pbp$idGame))
+# [1] 1227 -  missing three games
+
 games_gt <- games_pbp %>% 
     split(.$idGame) %>% 
     map_dfr(get_garbage_time_score, n_players = 2)
+
 ```
 
 ```{r}
@@ -161,4 +169,5 @@ games_gt %>%
 - Has the boundry for garbage time changed over time? 
 - How close does the score have to get for a coach to put their starters back in?
 - How to factor in games going to overtime? 
+- When should garbage time actually kick in (i.e. when should a game be considered decided)? 
 
