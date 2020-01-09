@@ -256,14 +256,18 @@ fourth_qtr_w_final <- fourth_qtr_scores %>%
            winning_team_ahead = home_win == home_winning)
 
 fourth_qtr_w_final %>%
-    filter(winning_team_ahead) %>%
-    group_by(idGame) %>%
-    filter(idGame == min(idGame)) %>%
-    group_by(minuteGame) %>%
-    summarise(avg_margin = mean(abs(marginScore))) %>%
-    ggplot(aes(minuteGame, avg_margin)) +
+    group_by(minute = round(minuteGame, 0), margin = abs(marginScore)) %>%
+    summarise(win_rate = mean(winning_team_ahead)) %>%
+    mutate(
+        pct75 = win_rate > .75,
+        pct90 = win_rate > .9,
+        pct95 = win_rate > .95,
+        pct99 = win_rate > .99
+    ) %>%
+    gather(metric, val, pct75:pct99) %>%
+    filter(val) %>%
+    ggplot(aes(minute, margin, color = metric)) +
         geom_line()
-
 
 
 
