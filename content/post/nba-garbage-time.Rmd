@@ -9,7 +9,7 @@ library(nbastatR)
 library(rethinking)
 library(googledrive)
 
-games <- seasons_schedule(seasons = 2019, parse_boxscores = TRUE, nest_data = TRUE)
+games <- seasons_schedule(seasons = 2019)
 
 game_ids <- games$idGame
 
@@ -231,6 +231,41 @@ preds %>%
         geom_line() +
         geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
         geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE)
+
+```
+
+## When is a game decided? 
+
+```{r}
+
+fourth_qtr_scores <- games_pbp %>%
+    group_by(idGame) %>%
+    fill(marginScore) %>%
+    arrange(minuteGame, desc(marginScore)) %>%
+    distinct(idGame, minuteGame, marginScore) %>%
+    filter(minuteGame >= 36, minuteGame <= 48)
+
+final_scores <- fourth_qtr_scores %>%
+    filter(minuteGame == max(minuteGame)) %>%
+    select(idGame, final_score = marginScore)
+
+fourth_qtr_w_final <- fourth_qtr_scores %>%
+    inner_join(final_scores, by = "idGame") %>%
+    mutate(home_win = final_score > 0,
+           home_winning = marginScore > 0,
+           winning_team_ahead = home_win == home_winning)
+
+fourth_qtr_w_final %>%
+    filter(winning_team_ahead) %>%
+    group_by(idGame) %>%
+    filter(idGame == min(idGame)) %>%
+    group_by(minuteGame) %>%
+    summarise(avg_margin = mean(abs(marginScore))) %>%
+    ggplot(aes(minuteGame, avg_margin)) +
+        geom_line()
+
+
+
 
 ```
 
