@@ -234,6 +234,45 @@ preds %>%
 
 ```
 
+## When is a game decided? 
+
+```{r}
+
+fourth_qtr_scores <- games_pbp %>%
+    group_by(idGame) %>%
+    fill(marginScore) %>%
+    arrange(minuteGame, desc(marginScore)) %>%
+    distinct(idGame, minuteGame, marginScore) %>%
+    filter(minuteGame >= 36, minuteGame <= 48)
+
+final_scores <- fourth_qtr_scores %>%
+    filter(minuteGame == max(minuteGame)) %>%
+    select(idGame, final_score = marginScore)
+
+fourth_qtr_w_final <- fourth_qtr_scores %>%
+    inner_join(final_scores, by = "idGame") %>%
+    mutate(home_win = final_score > 0,
+           home_winning = marginScore > 0,
+           winning_team_ahead = home_win == home_winning)
+
+fourth_qtr_w_final %>%
+    group_by(minute = round(minuteGame, 0), margin = abs(marginScore)) %>%
+    summarise(win_rate = mean(winning_team_ahead)) %>%
+    mutate(
+        pct75 = win_rate > .75,
+        pct90 = win_rate > .9,
+        pct95 = win_rate > .95,
+        pct99 = win_rate > .99
+    ) %>%
+    gather(metric, val, pct75:pct99) %>%
+    filter(val) %>%
+    ggplot(aes(minute, margin, color = metric)) +
+        geom_line()
+
+
+
+```
+
 
 ## Other questions?
 
