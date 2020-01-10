@@ -9,7 +9,7 @@ library(nbastatR)
 library(rethinking)
 library(googledrive)
 
-games <- seasons_schedule(seasons = 2019, parse_boxscores = TRUE, nest_data = TRUE)
+games <- seasons_schedule(seasons = 2019)
 
 game_ids <- games$idGame
 
@@ -171,20 +171,17 @@ all_gt %>%
 
 N <- 100
 
-minute <- seq(36, 48, by = 0.1)
+minute <- seq(0, 12, by = 0.1)
 
-beta_sim <- rnorm(N, .5, .02)
+beta_sim <- rnorm(N, 0, 2)
 
-alpha <- rnorm(N, 10, 2)
+alpha <- rnorm(N, 0, 2)
 
-crossing(beta_sim, alpha, minute) %>% 
-    mutate(margin = alpha - exp(beta_sim * minute)) %>% 
-    group_by(minute) %>% 
-    summarise(mean = mean(margin),
-              sd = sd(margin)) %>% 
-    ggplot(aes(minute, mean)) +
-        geom_line() +
-        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2)
+
+tibble(minute) %>%
+    mutate(margin = 25 - exp(.002 * minute ^ 3)) %>% 
+    ggplot(aes(minute, margin)) +
+        geom_line()
 
 ```
 
@@ -192,26 +189,28 @@ crossing(beta_sim, alpha, minute) %>%
 ```{r gtmod}
 
 gt_start_list <- list(
-    minute = garbage_time_start$minuteGame,
+    minute = garbage_time_start$minuteGame - 36,
     margin = abs(garbage_time_start$marginScore)
 )
 
 gt_mod <- ulam(
     alist(
-        margin ~ lognormal(mu, sigma),
-        mu <- a + exp(b * minute),
-        a ~ normal(10, 2),
-        b ~ normal(.5, 0.2),
+        margin ~ normal(mu, sigma),
+        mu <- a - exp(b * minute ^ 3), 
+        a ~ normal(25, 5),
+        b ~ normal(0.001, 0.0001),
         sigma ~ exponential(1)
     ),
     data = gt_start_list
 )
 
+precis(gt_mod)
+
 sim_dat <- tibble(
-    minute = seq(36, 48, by = 0.1)
+    minute = seq(0, 12, by = 0.1)
 )
 
-preds <- exp(link(gt_mod, data = sim_dat)) %>% 
+preds <- link(gt_mod, data = sim_dat) %>% 
     t() %>%
     as_tibble() %>% 
     bind_cols(sim_dat) %>% 
@@ -221,7 +220,8 @@ preds <- exp(link(gt_mod, data = sim_dat)) %>%
 
 actual_plot <- garbage_time_start %>% 
     select(minute = minuteGame, margin = marginScore)  %>% 
-    mutate(margin = abs(margin))
+    mutate(margin = abs(margin),
+           minute = minute - 36)
 
 preds %>% 
     group_by(minute) %>% 
