@@ -2,12 +2,36 @@
 draft: true
 ---
 
+The 76ers recent Christmas Day game agains the Milwaukee Bucks got me thinking about garbage time. The Sixers held a fairly substantial lead for the whole game, but let it get close at the end (they were outscored by 15 points in the fourth quarter). 
+
+I started to wonder, "When does garbage time start"? According to Wikipedia:
+
+> Garbage time is a term used to refer to the period toward the end of a timed sports competition that has become a blowout when the outcome of the game has already been decided, and the coaches of one or both teams will decide to replace their best players with substitutes.
+
+There's two questions in there. First, when is the outcome of the game decided? Second, when do coaches decide to replace their best players with substitute?
+
+I'll take a look at these questions using the `tidyverse` for data manipulation, `nbastatR` for getting play-by-play data from the 2018-19 NBA regular season, and the `rethinking` package (which provides and interface to Stan) for modeling. 
+
+## Setup
+
 ```{r setup}
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+                      fig.align = "center", fig.width = 8, fig.asp = 0.618)
 
 library(tidyverse)
 library(nbastatR)
 library(rethinking)
 library(googledrive)
+#devtools::instal_github("jtcies/jtcr")
+library(jtcr)
+
+theme_set(theme_jtc())
+```
+
+First we'll take grab the play-by-play for the first game from the 2018-19 regular seaons. 
+
+```{r}
 
 games <- seasons_schedule(seasons = 2019)
 
@@ -16,32 +40,53 @@ game_ids <- games$idGame
 game_1  <- game_ids[[1]]
 
 game_1_pbp <- play_by_play_v2(game_1)
+
+game_1_pbp
+
 ```
 
+Ah yes, I remember this game - Sixers lost to the Celtics. 
 
+The first question we'll look is when does the coach decides to put in their substitutes, presumably because the outcome of the game has been decided and they want their less experienced players to get experience. To analyze this, we should take look at when a  
 
 ```{r g1firstaction}
 
 game_1_first_action <- game_1_pbp %>%
-    select(namePlayer1, namePlayer2, minuteGame, numberPeriod) %>%
+    filter(!is.na(namePlayer1), !is.na(namePlayer2)) %>%
+    mutate(player1 = paste0(slugTeamPlayer1, "_", namePlayer1),
+           player2 = paste0(slugTeamPlayer2, "_", namePlayer2)) %>%
+    select(player1, player2, minuteGame, numberPeriod) %>%
     gather(drop, player, 1:2) %>%
     select(-drop) %>%
     group_by(player) %>%
     filter(minuteGame == min(minuteGame), !is.na(player)) %>%
-    arrange(minuteGame) 
+    arrange(minuteGame) %>%
+    group_by(team = str_sub(player, 1, 3)) %>%
+    mutate(player_count = row_number(),
+           player = str_replace(player, "^[A-Z]{3}_", "")) %>%
+    arrange(team)
 
-game_1_first_action %>%
-    as.data.frame()
+knitr::kable(game_1_first_action)
 ```
+
+Philadedelphia played 11 unique players, while Boston played 13 (a team can have up to 14). For Philly, the 9 players played in the first half, but 10 and 11 came in in the last two minutes of the game. For Boston, 9 also played in the first half, one showed up on the 3rd quarter, and 3 came in right at the end. How did the game end again? 
+
 ```{ri g1gt}
 
 game_1_pbp %>% 
     fill(scoreAway, scoreHome, marginScore) %>%
     filter(minuteGame == 46.55) %>%
     select(scoreAway, scoreHome, marginScore)  %>%
-    distinct()
+    distinct() %>%
+    knitr::kable()
 
 ```
+
+Right... 
+
+Ok, so I think there's a few things we need to figure out. First, how far in list of available players does a coach have to go before we consider them to resigned the outcome the of game. And once we figure out that number, what is the combination of score margin and time left that coaches typically reach that far in their bench. 
+
+Below is function that gets the time of first appearance for each player, the running total of unique players that each substitute represents, and the score margin when they checked in. 
 
 ```{r gtfun}
 
@@ -78,8 +123,11 @@ get_garbage_time_score <- function(game_pbp) {
 
 }
 
-get_garbage_time_score(game_1_pbp)
+get_garbage_time_score(game_1_pbp) %>%
+    knitr::kable()
 ```
+
+Whena applying that function to the first game, we can see that garbage time started when the 10th Philadelphia and 11th Boston player came in - about a minute and half left and Boston up by 16. Now that we know it works, we can apply to it each gmae of the season. 
 
 ```{r getgt}
 # you can use this below to download yourself
@@ -101,7 +149,8 @@ temp_dir <- tempdir()
 
 drive_download(
     file = as_id("1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8"),
-    path = file.path(temp_dir, "nba_pbp_2019.csv")
+    path = file.path(temp_dir, "nba_pbp_2019.csv"),
+    overwrite = TRUE
 )
 
 games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
@@ -126,12 +175,18 @@ games_gt %>%
         annotate("rect", xmin = 36, ymin = 10, xmax = 48, ymax = Inf,
                   alpha = 0.2, fill = "red") +
         annotate("rect", xmin = 45, ymin = 0, xmax = 48, ymax = Inf,
-                  alpha = 0.2, fill = "blue")
+                  alpha = 0.2, fill = "blue") +
+        labs(y = "Score margin",
+             x = "minute",
+             title = "First appearance of teams substitutes")
 
 ```
 
-For these purposes, it looks like we pretty confidently say that it's garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. 
+The chart above shows the first appearance of each teams 6th through 14th players. The red block shows the last quarter and margin of at least 10, and the blue shows the last three minutes. These are just to highlight the most conservative estimates of garbage time. 
 
+For these purposes, it looks like we say that it's garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. If we just went with the 10th player, we'd capture too many games where the 10th player checks in during the first half, which would never be considered garbage time. If we went with the 13th or 14th player, we'd miss a whole bunch of games that never saw that many unique players. So combination is required. 
+
+Let's apply that definition to all of the games to see when garbage time starts. 
 
 ```{r}
 
@@ -149,42 +204,18 @@ garbage_time_start <- games_gt %>%
     distinct(idGame, .keep_all = TRUE) %>%
     select(-team, -player, -n_player)
 
-no_gt <- games_gt %>%
-    anti_join(garbage_time_start, by = "idGame") %>% 
-    group_by(idGame) %>% 
-    mutate(marginScore = final_margin,
-           minuteGame = 48,
-           gt = 0L)  %>% 
-    arrange(desc(n_player)) %>% 
-    distinct(idGame, .keep_all = TRUE) %>% 
-    select(-team, -player, -n_player)
-
-all_gt <- bind_rows(garbage_time_start, no_gt)
-
-all_gt %>%
+garbage_time_start %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
-        geom_jitter()
+        geom_jitter() +
+        labs(x = "minute",
+             y = "score margin",
+             title = "When does garbage time start?",
+             subtitle = "based on 10th player making appearance in 4th quarter")
 ```
 
+This looks like it is consistent with my prior that the lead would have to be 25 or 30 points in the beginning of the fourth quarter but moves closer to zero as the game gets closer to the end. 
 
-```{r priorsim}
-
-N <- 100
-
-minute <- seq(0, 12, by = 0.1)
-
-beta_sim <- rnorm(N, 0, 2)
-
-alpha <- rnorm(N, 0, 2)
-
-
-tibble(minute) %>%
-    mutate(margin = 25 - exp(.002 * minute ^ 3)) %>% 
-    ggplot(aes(minute, margin)) +
-        geom_line()
-
-```
-
+Below we'll use the 'rethinking' package to model this trend. We'll build a few models and choose the one that fits best. 
 
 ```{r gtmod}
 
@@ -193,7 +224,31 @@ gt_start_list <- list(
     margin = abs(garbage_time_start$marginScore)
 )
 
-gt_mod <- ulam(
+gt_mod1 <- ulam(
+    alist(
+        margin ~ normal(mu, sigma),
+        mu <- a - exp(b * minute), 
+        a ~ normal(25, 5),
+        b ~ normal(0.001, 0.01),
+        sigma ~ exponential(1)
+    ),
+    data = gt_start_list,
+    log_lik = TRUE
+)
+
+gt_mod2 <- ulam(
+    alist(
+        margin ~ normal(mu, sigma),
+        mu <- a - exp(b * minute ^ 2), 
+        a ~ normal(25, 5),
+        b ~ normal(0.001, 0.001),
+        sigma ~ exponential(1)
+    ),
+    data = gt_start_list,
+    log_lik = TRUE
+)
+
+gt_mod3 <- ulam(
     alist(
         margin ~ normal(mu, sigma),
         mu <- a - exp(b * minute ^ 3), 
@@ -201,10 +256,15 @@ gt_mod <- ulam(
         b ~ normal(0.001, 0.0001),
         sigma ~ exponential(1)
     ),
-    data = gt_start_list
+    data = gt_start_list,
+    log_lik = TRUE
 )
 
-precis(gt_mod)
+rethinking::compare(gt_mod1, gt_mod2)
+```
+
+```{r}
+
 
 sim_dat <- tibble(
     minute = seq(0, 12, by = 0.1)
@@ -239,6 +299,8 @@ preds %>%
 ```{r}
 
 fourth_qtr_scores <- games_pbp %>%
+    mutate(minuteGame = round(minuteGame, 1)) %>%
+    complete(idGame, minuteGame = seq(36, 47, by = 0.1)) %>%
     group_by(idGame) %>%
     fill(marginScore) %>%
     arrange(minuteGame, desc(marginScore)) %>%
@@ -255,8 +317,8 @@ fourth_qtr_w_final <- fourth_qtr_scores %>%
            home_winning = marginScore > 0,
            winning_team_ahead = home_win == home_winning)
 
-fourth_qtr_w_final %>%
-    group_by(minute = round(minuteGame, 0), margin = abs(marginScore)) %>%
+percent_decided <- fourth_qtr_w_final %>%
+    group_by(minuteGame, margin = abs(marginScore)) %>%
     summarise(win_rate = mean(winning_team_ahead)) %>%
     mutate(
         pct75 = win_rate > .75,
@@ -266,11 +328,19 @@ fourth_qtr_w_final %>%
     ) %>%
     gather(metric, val, pct75:pct99) %>%
     filter(val) %>%
-    ggplot(aes(minute, margin, color = metric)) +
-        geom_line()
+    group_by(minuteGame, metric) %>%
+    filter(margin == min(margin)) 
 
-
-
+preds %>% 
+    group_by(minute = minute + 36) %>% 
+    summarise(
+        mean = mean(val), 
+        sd = sd(val)
+    ) %>% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
+        geom_line(data = percent_decided, aes(minuteGame, margin, color = metric)) 
 ```
 
 
