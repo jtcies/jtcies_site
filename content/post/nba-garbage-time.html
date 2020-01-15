@@ -1,0 +1,819 @@
+---
+draft: true
+title: When does garbage time start? 
+author: Joe Ciesielski
+date: '2020-01-14'
+tags:
+  - R
+  - NBA
+output: html_document
+---
+
+
+
+<p>The 76ers recent Christmas Day game agains the Milwaukee Bucks got me thinking about garbage time. The Sixers held a fairly substantial lead for the whole game, but let it get close at the end (they were outscored by 15 points in the fourth quarter).</p>
+<p>I started to wonder, “When does garbage time start”? According to Wikipedia:</p>
+<blockquote>
+<p>Garbage time is a term used to refer to the period toward the end of a timed sports competition that has become a blowout when the outcome of the game has already been decided, and the coaches of one or both teams will decide to replace their best players with substitutes.</p>
+</blockquote>
+<p>There’s two questions in there. First, when is the outcome of the game decided? Second, when do coaches decide to replace their best players with substitute?</p>
+<p>I’ll take a look at these questions using the <code>tidyverse</code> for data manipulation, <code>nbastatR</code> for getting play-by-play data from the 2018-19 NBA regular season, and the <code>rethinking</code> package (which provides and interface to Stan) for modeling.</p>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+                      fig.align = &quot;center&quot;, fig.width = 8, fig.asp = 0.618)
+
+library(tidyverse)
+library(nbastatR)
+library(rethinking)
+library(googledrive)
+#devtools::instal_github(&quot;jtcies/jtcr&quot;)
+library(jtcr)
+
+theme_set(theme_jtc())</code></pre>
+<p>First we’ll take grab the play-by-play for the first game from the 2018-19 regular seaons.</p>
+<pre class="r"><code>games &lt;- seasons_schedule(seasons = 2019)</code></pre>
+<pre><code>## Acquiring NBA basic team game logs for the 2018-19 Regular Season</code></pre>
+<pre class="r"><code>game_ids &lt;- games$idGame
+
+game_1  &lt;- game_ids[[1]]
+
+game_1_pbp &lt;- play_by_play_v2(game_1)</code></pre>
+<pre><code>## Getting play by play for game 21800001</code></pre>
+<pre class="r"><code>game_1_pbp</code></pre>
+<pre><code>## # A tibble: 492 x 40
+##    slugScore namePlayer1 teamNamePlayer1 slugTeamPlayer1 namePlayer2
+##    &lt;chr&gt;     &lt;chr&gt;       &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;      
+##  1 &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;       
+##  2 &lt;NA&gt;      Al Horford  Celtics         BOS             Joel Embiid
+##  3 &lt;NA&gt;      Robert Cov… 76ers           PHI             &lt;NA&gt;       
+##  4 &lt;NA&gt;      &lt;NA&gt;        &lt;NA&gt;            &lt;NA&gt;            &lt;NA&gt;       
+##  5 &lt;NA&gt;      Jayson Tat… Celtics         BOS             &lt;NA&gt;       
+##  6 &lt;NA&gt;      Dario Saric 76ers           PHI             &lt;NA&gt;       
+##  7 &lt;NA&gt;      Ben Simmons 76ers           PHI             Gordon Hay…
+##  8 &lt;NA&gt;      Jaylen Bro… Celtics         BOS             &lt;NA&gt;       
+##  9 &lt;NA&gt;      Ben Simmons 76ers           PHI             &lt;NA&gt;       
+## 10 2 - 0     Joel Embiid 76ers           PHI             Ben Simmons
+## # … with 482 more rows, and 35 more variables: teamNamePlayer2 &lt;chr&gt;,
+## #   slugTeamPlayer2 &lt;chr&gt;, namePlayer3 &lt;chr&gt;, teamNamePlayer3 &lt;chr&gt;,
+## #   slugTeamPlayer3 &lt;chr&gt;, slugTeamLeading &lt;chr&gt;, idGame &lt;dbl&gt;,
+## #   numberEvent &lt;dbl&gt;, numberEventMessageType &lt;dbl&gt;,
+## #   numberEventActionType &lt;dbl&gt;, numberPeriod &lt;dbl&gt;, idPersonType1 &lt;dbl&gt;,
+## #   idPlayerNBA1 &lt;dbl&gt;, idTeamPlayer1 &lt;dbl&gt;, idPersonType2 &lt;dbl&gt;,
+## #   idPlayerNBA2 &lt;dbl&gt;, idTeamPlayer2 &lt;dbl&gt;, idPersonType3 &lt;dbl&gt;,
+## #   idPlayerNBA3 &lt;dbl&gt;, idTeamPlayer3 &lt;dbl&gt;, hasVideo &lt;lgl&gt;,
+## #   timeStringWC &lt;chr&gt;, timeQuarter &lt;chr&gt;, descriptionPlayHome &lt;chr&gt;,
+## #   descriptionPlayVisitor &lt;chr&gt;, cityTeamPlayer1 &lt;chr&gt;,
+## #   cityTeamPlayer2 &lt;chr&gt;, cityTeamPlayer3 &lt;chr&gt;, minuteGame &lt;dbl&gt;,
+## #   timeRemaining &lt;dbl&gt;, minuteRemainingQuarter &lt;dbl&gt;,
+## #   secondsRemainingQuarter &lt;dbl&gt;, scoreAway &lt;dbl&gt;, scoreHome &lt;dbl&gt;,
+## #   marginScore &lt;dbl&gt;</code></pre>
+<p>Ah yes, I remember this game - Sixers lost to the Celtics.</p>
+<p>The first question we’ll look is when does the coach decides to put in their substitutes, presumably because the outcome of the game has been decided and they want their less experienced players to get experience. To analyze this, we should take look at when a</p>
+<pre class="r"><code>game_1_first_action &lt;- game_1_pbp %&gt;%
+    filter(!is.na(namePlayer1), !is.na(namePlayer2)) %&gt;%
+    mutate(player1 = paste0(slugTeamPlayer1, &quot;_&quot;, namePlayer1),
+           player2 = paste0(slugTeamPlayer2, &quot;_&quot;, namePlayer2)) %&gt;%
+    select(player1, player2, minuteGame, numberPeriod) %&gt;%
+    gather(drop, player, 1:2) %&gt;%
+    select(-drop) %&gt;%
+    group_by(player) %&gt;%
+    filter(minuteGame == min(minuteGame), !is.na(player)) %&gt;%
+    arrange(minuteGame) %&gt;%
+    group_by(team = str_sub(player, 1, 3)) %&gt;%
+    mutate(player_count = row_number(),
+           player = str_replace(player, &quot;^[A-Z]{3}_&quot;, &quot;&quot;)) %&gt;%
+    arrange(team)
+
+knitr::kable(game_1_first_action)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">minuteGame</th>
+<th align="right">numberPeriod</th>
+<th align="left">player</th>
+<th align="left">team</th>
+<th align="right">player_count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.0000000</td>
+<td align="right">1</td>
+<td align="left">Al Horford</td>
+<td align="left">BOS</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">0.8666667</td>
+<td align="right">1</td>
+<td align="left">Gordon Hayward</td>
+<td align="left">BOS</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">2.6833333</td>
+<td align="right">1</td>
+<td align="left">Jayson Tatum</td>
+<td align="left">BOS</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">2.6833333</td>
+<td align="right">1</td>
+<td align="left">Kyrie Irving</td>
+<td align="left">BOS</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">2.8500000</td>
+<td align="right">1</td>
+<td align="left">Jaylen Brown</td>
+<td align="left">BOS</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="right">6.0166667</td>
+<td align="right">1</td>
+<td align="left">Marcus Morris Sr.</td>
+<td align="left">BOS</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="right">6.0166667</td>
+<td align="right">1</td>
+<td align="left">Terry Rozier</td>
+<td align="left">BOS</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="right">8.2166667</td>
+<td align="right">1</td>
+<td align="left">Marcus Smart</td>
+<td align="left">BOS</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="right">9.1166667</td>
+<td align="right">1</td>
+<td align="left">Aron Baynes</td>
+<td align="left">BOS</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="right">32.1000000</td>
+<td align="right">3</td>
+<td align="left">Daniel Theis</td>
+<td align="left">BOS</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="right">46.5500000</td>
+<td align="right">4</td>
+<td align="left">Semi Ojeleye</td>
+<td align="left">BOS</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">46.5500000</td>
+<td align="right">4</td>
+<td align="left">Guerschon Yabusele</td>
+<td align="left">BOS</td>
+<td align="right">12</td>
+</tr>
+<tr class="odd">
+<td align="right">47.1833333</td>
+<td align="right">4</td>
+<td align="left">Brad Wanamaker</td>
+<td align="left">BOS</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="right">0.0000000</td>
+<td align="right">1</td>
+<td align="left">Joel Embiid</td>
+<td align="left">PHI</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="right">0.8666667</td>
+<td align="right">1</td>
+<td align="left">Ben Simmons</td>
+<td align="left">PHI</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">2.8500000</td>
+<td align="right">1</td>
+<td align="left">Dario Saric</td>
+<td align="left">PHI</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="right">5.1500000</td>
+<td align="right">1</td>
+<td align="left">Amir Johnson</td>
+<td align="left">PHI</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="right">5.1500000</td>
+<td align="right">1</td>
+<td align="left">JJ Redick</td>
+<td align="left">PHI</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="right">5.3000000</td>
+<td align="right">1</td>
+<td align="left">Robert Covington</td>
+<td align="left">PHI</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="right">7.5500000</td>
+<td align="right">1</td>
+<td align="left">T.J. McConnell</td>
+<td align="left">PHI</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="right">9.1166667</td>
+<td align="right">1</td>
+<td align="left">Markelle Fultz</td>
+<td align="left">PHI</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="right">14.5666667</td>
+<td align="right">2</td>
+<td align="left">Landry Shamet</td>
+<td align="left">PHI</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="right">46.5500000</td>
+<td align="right">4</td>
+<td align="left">Jonah Bolden</td>
+<td align="left">PHI</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="right">46.5500000</td>
+<td align="right">4</td>
+<td align="left">Furkan Korkmaz</td>
+<td align="left">PHI</td>
+<td align="right">11</td>
+</tr>
+</tbody>
+</table>
+<p>Philadedelphia played 11 unique players, while Boston played 13 (a team can have up to 14). For Philly, the 9 players played in the first half, but 10 and 11 came in in the last two minutes of the game. For Boston, 9 also played in the first half, one showed up on the 3rd quarter, and 3 came in right at the end. How did the game end again?</p>
+<pre class="ri"><code>
+game_1_pbp %&gt;% 
+    fill(scoreAway, scoreHome, marginScore) %&gt;%
+    filter(minuteGame == 46.55) %&gt;%
+    select(scoreAway, scoreHome, marginScore)  %&gt;%
+    distinct() %&gt;%
+    knitr::kable()
+</code></pre>
+<p>Right…</p>
+<p>Ok, so I think there’s a few things we need to figure out. First, how far in list of available players does a coach have to go before we consider them to resigned the outcome the of game. And once we figure out that number, what is the combination of score margin and time left that coaches typically reach that far in their bench.</p>
+<p>Below is function that gets the time of first appearance for each player, the running total of unique players that each substitute represents, and the score margin when they checked in.</p>
+<pre class="r"><code>get_garbage_time_score &lt;- function(game_pbp) {
+
+    # excludes OT
+
+    player_starts &lt;- game_pbp %&gt;%
+        fill(marginScore) %&gt;%
+        filter(!is.na(namePlayer1), !is.na(namePlayer2)) %&gt;%
+        mutate(player1 = paste0(slugTeamPlayer1, &quot;_&quot;, namePlayer1),
+               player2 = paste0(slugTeamPlayer2, &quot;_&quot;, namePlayer2)) %&gt;%
+        select(player1, player2, minuteGame, marginScore, idGame) %&gt;%
+        gather(drop, player, 1:2) %&gt;%
+        separate(player, into = c(&quot;team&quot;, &quot;player&quot;), sep = &quot;_&quot;) %&gt;%
+        select(-drop) %&gt;%
+        group_by(player) %&gt;%
+        filter(minuteGame == min(minuteGame), !is.na(player)) %&gt;%
+        ungroup() %&gt;%
+        group_by(team) %&gt;%
+        arrange(minuteGame) %&gt;%
+        mutate(n_player = row_number()) %&gt;% 
+        ungroup() %&gt;%
+        replace_na(list(marginScore = 0)) 
+        
+    final_margin &lt;- game_pbp %&gt;%
+        filter(minuteGame &lt;= 48, !is.na(marginScore)) %&gt;% 
+        arrange(desc(minuteGame)) %&gt;%
+        slice(1) %&gt;%
+        pull(&quot;marginScore&quot;)
+        
+    player_starts %&gt;%
+        mutate(final_margin = final_margin)
+
+}
+
+get_garbage_time_score(game_1_pbp) %&gt;%
+    knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">minuteGame</th>
+<th align="right">marginScore</th>
+<th align="right">idGame</th>
+<th align="left">team</th>
+<th align="left">player</th>
+<th align="right">n_player</th>
+<th align="right">final_margin</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.0000000</td>
+<td align="right">0</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Al Horford</td>
+<td align="right">1</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">0.0000000</td>
+<td align="right">0</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Joel Embiid</td>
+<td align="right">1</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">0.8666667</td>
+<td align="right">0</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Ben Simmons</td>
+<td align="right">2</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">0.8666667</td>
+<td align="right">0</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Gordon Hayward</td>
+<td align="right">2</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2.6833333</td>
+<td align="right">-2</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Jayson Tatum</td>
+<td align="right">3</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">2.6833333</td>
+<td align="right">-2</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Kyrie Irving</td>
+<td align="right">4</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">2.8500000</td>
+<td align="right">-2</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Jaylen Brown</td>
+<td align="right">5</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">2.8500000</td>
+<td align="right">-2</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Dario Saric</td>
+<td align="right">3</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">5.1500000</td>
+<td align="right">-1</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Amir Johnson</td>
+<td align="right">4</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">5.1500000</td>
+<td align="right">-1</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">JJ Redick</td>
+<td align="right">5</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">5.3000000</td>
+<td align="right">-1</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Robert Covington</td>
+<td align="right">6</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">6.0166667</td>
+<td align="right">3</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Marcus Morris Sr.</td>
+<td align="right">6</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">6.0166667</td>
+<td align="right">3</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Terry Rozier</td>
+<td align="right">7</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">7.5500000</td>
+<td align="right">4</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">T.J. McConnell</td>
+<td align="right">7</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">8.2166667</td>
+<td align="right">7</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Marcus Smart</td>
+<td align="right">8</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">9.1166667</td>
+<td align="right">7</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Markelle Fultz</td>
+<td align="right">8</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">9.1166667</td>
+<td align="right">7</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Aron Baynes</td>
+<td align="right">9</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">14.5666667</td>
+<td align="right">9</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Landry Shamet</td>
+<td align="right">9</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">32.1000000</td>
+<td align="right">5</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Daniel Theis</td>
+<td align="right">10</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">46.5500000</td>
+<td align="right">16</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Semi Ojeleye</td>
+<td align="right">11</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">46.5500000</td>
+<td align="right">16</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Guerschon Yabusele</td>
+<td align="right">12</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">46.5500000</td>
+<td align="right">16</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Jonah Bolden</td>
+<td align="right">10</td>
+<td align="right">18</td>
+</tr>
+<tr class="odd">
+<td align="right">46.5500000</td>
+<td align="right">16</td>
+<td align="right">21800001</td>
+<td align="left">PHI</td>
+<td align="left">Furkan Korkmaz</td>
+<td align="right">11</td>
+<td align="right">18</td>
+</tr>
+<tr class="even">
+<td align="right">47.1833333</td>
+<td align="right">16</td>
+<td align="right">21800001</td>
+<td align="left">BOS</td>
+<td align="left">Brad Wanamaker</td>
+<td align="right">13</td>
+<td align="right">18</td>
+</tr>
+</tbody>
+</table>
+<p>Whena applying that function to the first game, we can see that garbage time started when the 10th Philadelphia and 11th Boston player came in - about a minute and half left and Boston up by 16. Now that we know it works, we can apply to it each gmae of the season.</p>
+<pre class="r"><code># you can use this below to download yourself
+# it&#39;s a big file so I&#39;ve uploaded it to my google drive 
+
+# game_ids &lt;- games$idGame
+
+# games_pbp &lt;- purrr::map_dfr(game_ids, play_by_play_v2)
+
+# if you want to download yourself, you can use this code
+#game_ids &lt;- games$idGame
+
+# games_pbp &lt;- purrr::map_dfr(game_ids, play_by_play_v2)
+
+# i&#39;ve already uploaded the full play by play for 2019 to my google drive. 
+# you can access here: https://drive.google.com/open?id=1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8
+
+temp_dir &lt;- tempdir()
+
+drive_download(
+    file = as_id(&quot;1J4oHD-8ILt9nOAVgw8GoEyBtct8BO4y8&quot;),
+    path = file.path(temp_dir, &quot;nba_pbp_2019.csv&quot;),
+    overwrite = TRUE
+)</code></pre>
+<pre><code>## Using an auto-discovered, cached token.
+## To suppress this message, modify your code or options to clearly consent to the use of a cached token.
+## See gargle&#39;s &quot;Non-interactive auth&quot; vignette for more details:
+## https://gargle.r-lib.org/articles/non-interactive-auth.html
+## The googledrive package is using a cached token for jtcies@gmail.com.</code></pre>
+<pre class="r"><code>games_pbp &lt;- read_csv(file.path(temp_dir, &quot;nba_pbp_2019.csv&quot;))
+
+# length(unique(games_pbp$idGame))
+# [1] 1227 -  missing three games
+
+games_gt &lt;- games_pbp %&gt;% 
+    split(.$idGame) %&gt;% 
+    map_dfr(get_garbage_time_score)</code></pre>
+<pre class="r"><code>games_gt %&gt;%
+    filter(minuteGame &lt; 48,
+           n_player &gt; 5) %&gt;%
+    ggplot(aes(minuteGame, abs(marginScore))) +
+        geom_jitter() +
+        facet_wrap(~n_player) +
+        xlim(c(0, 48)) +
+        annotate(&quot;rect&quot;, xmin = 36, ymin = 10, xmax = 48, ymax = Inf,
+                  alpha = 0.2, fill = &quot;red&quot;) +
+        annotate(&quot;rect&quot;, xmin = 45, ymin = 0, xmax = 48, ymax = Inf,
+                  alpha = 0.2, fill = &quot;blue&quot;) +
+        labs(y = &quot;Score margin&quot;,
+             x = &quot;minute&quot;,
+             title = &quot;First appearance of teams substitutes&quot;)</code></pre>
+<p><img src="/post/nba-garbage-time_files/figure-html/unnamed-chunk-2-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>The chart above shows the first appearance of each teams 6th through 14th players. The red block shows the last quarter and margin of at least 10, and the blue shows the last three minutes. These are just to highlight the most conservative estimates of garbage time.</p>
+<p>For these purposes, it looks like we say that it’s garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. If we just went with the 10th player, we’d capture too many games where the 10th player checks in during the first half, which would never be considered garbage time. If we went with the 13th or 14th player, we’d miss a whole bunch of games that never saw that many unique players. So combination is required.</p>
+<p>Let’s apply that definition to all of the games to see when garbage time starts.</p>
+<pre class="r"><code>garbage_time_start &lt;- games_gt %&gt;%
+    filter(minuteGame &lt;= 48) %&gt;%
+    mutate(
+        gt = if_else(
+            (n_player &gt;= 10 &amp; minuteGame &gt;= 36 &amp; abs(marginScore) &gt;= 10) |
+                (n_player &gt;= 10 &amp; minuteGame &gt;= 45),
+            1L, 0L
+        )
+    ) %&gt;%
+    filter(gt == 1) %&gt;% 
+    arrange(minuteGame, desc(marginScore)) %&gt;%
+    distinct(idGame, .keep_all = TRUE) %&gt;%
+    select(-team, -player, -n_player)
+
+garbage_time_start %&gt;%
+    ggplot(aes(minuteGame, abs(marginScore))) +
+        geom_jitter() +
+        labs(x = &quot;minute&quot;,
+             y = &quot;score margin&quot;,
+             title = &quot;When does garbage time start?&quot;,
+             subtitle = &quot;based on 10th player making appearance in 4th quarter&quot;)</code></pre>
+<p><img src="/post/nba-garbage-time_files/figure-html/unnamed-chunk-3-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>This looks like it is consistent with my prior that the lead would have to be 25 or 30 points in the beginning of the fourth quarter but moves closer to zero as the game gets closer to the end.</p>
+<p>Below we’ll use the ‘rethinking’ package to model this trend. We’ll build a few models and choose the one that fits best.</p>
+<pre class="r"><code>gt_start_list &lt;- list(
+    minute = garbage_time_start$minuteGame - 36, # start at 0 minutes
+    margin = abs(garbage_time_start$marginScore)
+)
+
+gt_mod &lt;- ulam(
+    alist(
+        margin ~ normal(mu, sigma),
+        mu &lt;- a - exp(b * minute ^ 3), 
+        a ~ normal(25, 5),
+        b ~ normal(0.001, 0.0001),
+        sigma ~ exponential(1)
+    ),
+    data = gt_start_list,
+    log_lik = TRUE
+)</code></pre>
+<pre><code>## 
+## SAMPLING FOR MODEL &#39;8061d7673ea304362ed5bfcea432787f&#39; NOW (CHAIN 1).
+## Chain 1: 
+## Chain 1: Gradient evaluation took 0.000146 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.46 seconds.
+## Chain 1: Adjust your expectations accordingly!
+## Chain 1: 
+## Chain 1: 
+## Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+## Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+## Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+## Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+## Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+## Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+## Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+## Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+## Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+## Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+## Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+## Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+## Chain 1: 
+## Chain 1:  Elapsed Time: 1.47623 seconds (Warm-up)
+## Chain 1:                0.524054 seconds (Sampling)
+## Chain 1:                2.00029 seconds (Total)
+## Chain 1:</code></pre>
+<pre class="r"><code>sim_dat &lt;- tibble(
+    minute = seq(0, 12, by = 0.1)
+)
+
+preds &lt;- link(gt_mod, data = sim_dat) %&gt;% 
+    t() %&gt;%
+    as_tibble() %&gt;% 
+    bind_cols(sim_dat) %&gt;% 
+    gather(var, val, 1:500) %&gt;% 
+    select(-var)
+
+
+actual_plot &lt;- garbage_time_start %&gt;% 
+    select(minute = minuteGame, margin = marginScore)  %&gt;% 
+    mutate(margin = abs(margin),
+           minute = minute - 36)
+
+preds %&gt;% 
+    group_by(minute) %&gt;% 
+    summarise(mean = mean(val), 
+              sd = sd(val)) %&gt;% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
+        geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE) +
+        labs(
+            title = &quot;Garbage time start&quot;,
+            subtitle = &quot;Based on when 10th player enters game in foruth quarter&quot;,
+            x = &quot;minute of fourth quarter&quot;,
+            y = &quot;score margin&quot;
+        ) +
+        scale_x_continuous(breaks = seq(0, 12, by = 2))</code></pre>
+<p><img src="/post/nba-garbage-time_files/figure-html/gtmod-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Plotting the posterior shows that, according to the model, coaches keep their main players in if the margin is less than 20 points. With less than 2 mintues to go, it moves quickly to but never quite reaches zero.</p>
+</div>
+<div id="when-is-a-game-decided" class="section level2">
+<h2>When is a game decided?</h2>
+<p>The other way to look at garbage time is to examine at what point the outcome is already decided. Below I calculate the margin above which a percentage of games end with the leading team winning. I use a 90%, 95%, and 99% threshold.</p>
+<pre class="r"><code>fourth_qtr_scores &lt;- games_pbp %&gt;%
+    mutate(minuteGame = round(minuteGame, 1)) %&gt;%
+    complete(idGame, minuteGame = seq(36, 48, by = 0.1)) %&gt;%
+    group_by(idGame) %&gt;%
+    fill(marginScore) %&gt;%
+    arrange(minuteGame, desc(marginScore)) %&gt;%
+    distinct(idGame, minuteGame, marginScore) %&gt;%
+    filter(minuteGame &gt;= 36, minuteGame &lt;= 48)
+
+final_scores &lt;- fourth_qtr_scores %&gt;%
+    filter(minuteGame == max(minuteGame)) %&gt;%
+    select(idGame, final_score = marginScore)
+
+fourth_qtr_w_final &lt;- fourth_qtr_scores %&gt;%
+    inner_join(final_scores, by = &quot;idGame&quot;) %&gt;%
+    mutate(home_win = final_score &gt; 0,
+           home_winning = marginScore &gt; 0,
+           winning_team_ahead = home_win == home_winning)
+
+percent_decided &lt;- fourth_qtr_w_final %&gt;%
+    group_by(minuteGame, margin = abs(marginScore)) %&gt;%
+    summarise(win_rate = mean(winning_team_ahead)) %&gt;%
+    mutate(
+        pct90 = win_rate &gt; .9,
+        pct95 = win_rate &gt; .95,
+        pct99 = win_rate &gt; .99
+    ) %&gt;%
+    gather(metric, val, pct90:pct99) %&gt;%
+    filter(val) %&gt;%
+    group_by(minuteGame, metric) %&gt;%
+    filter(margin == min(margin)) 
+
+preds %&gt;% 
+    group_by(minute = minute + 36) %&gt;% 
+    summarise(
+        mean = mean(val), 
+        sd = sd(val)
+    ) %&gt;% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
+        geom_line(data = percent_decided, aes(minuteGame, margin, color = metric))</code></pre>
+<p><img src="/post/nba-garbage-time_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>   servr::server_config</code></pre>
+<pre><code>## function (dir = &quot;.&quot;, host = getOption(&quot;servr.host&quot;, &quot;127.0.0.1&quot;), 
+##     port, browser, daemon, interval = getOption(&quot;servr.interval&quot;, 
+##         1), baseurl = &quot;&quot;, initpath = &quot;&quot;, verbose = TRUE) 
+## {
+##     cargs = commandArgs(TRUE)
+##     if (missing(browser)) 
+##         browser = interactive() || &quot;-b&quot; %in% cargs || is_rstudio()
+##     if (missing(port)) 
+##         port = if (length(port &lt;- grep(&quot;^-p[0-9]{4,}$&quot;, cargs, 
+##             value = TRUE)) == 1) {
+##             sub(&quot;^-p&quot;, &quot;&quot;, port)
+##         }
+##         else {
+##             port = Sys.getenv(&quot;R_SERVR_PORT&quot;, NA)
+##             if (is.na(port)) 
+##                 getOption(&quot;servr.port&quot;, random_port())
+##             else port
+##         }
+##     port = as.integer(port)
+##     if (missing(daemon)) 
+##         daemon = getOption(&quot;servr.daemon&quot;, (&quot;-d&quot; %in% cargs) || 
+##             interactive())
+##     url = sprintf(&quot;http://%s:%d&quot;, if (host == &quot;0.0.0.0&quot; &amp;&amp; is_rstudio()) 
+##         &quot;127.0.0.1&quot;
+##     else host, port)
+##     if (baseurl != &quot;&quot;) 
+##         url = paste(url, baseurl, sep = &quot;&quot;)
+##     url = paste0(url, if (initpath != &quot;&quot; &amp;&amp; !grepl(&quot;^/&quot;, initpath)) 
+##         &quot;/&quot;, initpath)
+##     browsed = FALSE
+##     servrEnv$browse = browse = function(reopen = FALSE) {
+##         if (browsed &amp;&amp; !reopen) 
+##             return(invisible(url))
+##         if (browser || reopen) 
+##             browseURL(url, browser = get_browser())
+##         browsed &lt;&lt;- TRUE
+##         if (verbose &amp;&amp; !reopen) 
+##             message(&quot;Serving the directory &quot;, dir, &quot; at &quot;, url)
+##     }
+##     server = NULL
+##     list(host = host, port = port, interval = interval, url = url, 
+##         start_server = function(app) {
+##             id = startServer(host, port, app)
+##             if (verbose &amp;&amp; daemon) daemon_hint(id)
+##             browse()
+##             server &lt;&lt;- id
+##             if (!daemon) while (TRUE) {
+##                 httpuv::service()
+##                 Sys.sleep(0.001)
+##             }
+##             invisible(id)
+##         }, stop_server = function() {
+##             if (is.null(server)) stop(&quot;The server has not been started yet.&quot;)
+##             stopServer(server)
+##         }, browse = browse)
+## }
+## &lt;bytecode: 0x56efde1d0960&gt;
+## &lt;environment: namespace:servr&gt;</code></pre>
+<p>Unsuprisingly coaches are more conversative about starting garbage time than the percentages indicate that the game has already been decided.</p>
+</div>
+<div id="other-questions" class="section level2">
+<h2>Other questions?</h2>
+<ul>
+<li>What are other ways to define garbage time start (than a player’s first action)?</li>
+<li>How do coaches differ in whether or not they go into garbage time mode?</li>
+<li>Has the boundry for garbage time changed over time?</li>
+<li>How close does the score have to get for a coach to put their starters back in?</li>
+<li>How to factor in games going to overtime?</li>
+<li>When should garbage time actually kick in (i.e. when should a game be considered decided)?</li>
+</ul>
+</div>

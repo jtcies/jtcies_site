@@ -1,5 +1,12 @@
 ---
 draft: true
+title: When does garbage time start? 
+author: Joe Ciesielski
+date: '2020-01-14'
+tags:
+  - R
+  - NBA
+output: html_document
 ---
 
 The 76ers recent Christmas Day game agains the Milwaukee Bucks got me thinking about garbage time. The Sixers held a fairly substantial lead for the whole game, but let it get close at the end (they were outscored by 15 points in the fourth quarter). 
@@ -14,7 +21,7 @@ I'll take a look at these questions using the `tidyverse` for data manipulation,
 
 ## Setup
 
-```{r setup}
+```{r setup, message = FALSE, warning = FALSE}
 
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
                       fig.align = "center", fig.width = 8, fig.asp = 0.618)
@@ -217,38 +224,16 @@ This looks like it is consistent with my prior that the lead would have to be 25
 
 Below we'll use the 'rethinking' package to model this trend. We'll build a few models and choose the one that fits best. 
 
+
+
 ```{r gtmod}
 
 gt_start_list <- list(
-    minute = garbage_time_start$minuteGame - 36,
+    minute = garbage_time_start$minuteGame - 36, # start at 0 minutes
     margin = abs(garbage_time_start$marginScore)
 )
 
-gt_mod1 <- ulam(
-    alist(
-        margin ~ normal(mu, sigma),
-        mu <- a - exp(b * minute), 
-        a ~ normal(25, 5),
-        b ~ normal(0.001, 0.01),
-        sigma ~ exponential(1)
-    ),
-    data = gt_start_list,
-    log_lik = TRUE
-)
-
-gt_mod2 <- ulam(
-    alist(
-        margin ~ normal(mu, sigma),
-        mu <- a - exp(b * minute ^ 2), 
-        a ~ normal(25, 5),
-        b ~ normal(0.001, 0.001),
-        sigma ~ exponential(1)
-    ),
-    data = gt_start_list,
-    log_lik = TRUE
-)
-
-gt_mod3 <- ulam(
+gt_mod <- ulam(
     alist(
         margin ~ normal(mu, sigma),
         mu <- a - exp(b * minute ^ 3), 
@@ -259,12 +244,6 @@ gt_mod3 <- ulam(
     data = gt_start_list,
     log_lik = TRUE
 )
-
-rethinking::compare(gt_mod1, gt_mod2)
-```
-
-```{r}
-
 
 sim_dat <- tibble(
     minute = seq(0, 12, by = 0.1)
@@ -290,17 +269,28 @@ preds %>%
     ggplot(aes(minute, mean)) +
         geom_line() +
         geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
-        geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE)
+        geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE) +
+        labs(
+            title = "Garbage time start",
+            subtitle = "Based on when 10th player enters game in foruth quarter",
+            x = "minute of fourth quarter",
+            y = "score margin"
+        ) +
+        scale_x_continuous(breaks = seq(0, 12, by = 2))
 
 ```
 
+Plotting the posterior shows that, according to the model, coaches keep their main players in if the margin is less than 20 points. With less than 2 mintues to go, it moves quickly to but never quite reaches zero. 
+
 ## When is a game decided? 
+
+The other way to look at garbage time is to examine at what point the outcome is already decided. Below I calculate the margin above which a percentage of games end with the leading team winning. I use a 90%, 95%, and 99% threshold.
 
 ```{r}
 
 fourth_qtr_scores <- games_pbp %>%
     mutate(minuteGame = round(minuteGame, 1)) %>%
-    complete(idGame, minuteGame = seq(36, 47, by = 0.1)) %>%
+    complete(idGame, minuteGame = seq(36, 48, by = 0.1)) %>%
     group_by(idGame) %>%
     fill(marginScore) %>%
     arrange(minuteGame, desc(marginScore)) %>%
@@ -321,12 +311,11 @@ percent_decided <- fourth_qtr_w_final %>%
     group_by(minuteGame, margin = abs(marginScore)) %>%
     summarise(win_rate = mean(winning_team_ahead)) %>%
     mutate(
-        pct75 = win_rate > .75,
         pct90 = win_rate > .9,
         pct95 = win_rate > .95,
         pct99 = win_rate > .99
     ) %>%
-    gather(metric, val, pct75:pct99) %>%
+    gather(metric, val, pct90:pct99) %>%
     filter(val) %>%
     group_by(minuteGame, metric) %>%
     filter(margin == min(margin)) 
@@ -340,9 +329,13 @@ preds %>%
     ggplot(aes(minute, mean)) +
         geom_line() +
         geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
-        geom_line(data = percent_decided, aes(minuteGame, margin, color = metric)) 
+        geom_line(data = percent_decided, aes(minuteGame, margin, color = metric))
+
+   servr::server_config
+
 ```
 
+Unsuprisingly coaches are more conversative about starting garbage time than the percentages indicate that the game has already been decided. 
 
 ## Other questions?
 
