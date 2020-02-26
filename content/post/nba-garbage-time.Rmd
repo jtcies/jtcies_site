@@ -30,6 +30,7 @@ library(tidyverse)
 library(nbastatR)
 library(rethinking)
 library(googledrive)
+library(survival)
 #devtools::instal_github("jtcies/jtcr")
 library(jtcr)
 
@@ -193,36 +194,92 @@ The chart above shows the first appearance of each teams 6th through 14th player
 
 For these purposes, it looks like we say that it's garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. If we just went with the 10th player, we'd capture too many games where the 10th player checks in during the first half, which would never be considered garbage time. If we went with the 13th or 14th player, we'd miss a whole bunch of games that never saw that many unique players. So combination is required. 
 
-Let's apply that definition to all of the games to see when garbage time starts. 
+Let's apply that definition to all of the games to see when garbage time starts or what the final margin was if it didn't happen. 
 
 ```{r}
 
-garbage_time_start <- games_gt %>%
-    filter(minuteGame <= 48) %>%
+# there's probably a more elegant way to do this. 
+# Please let me know if you think of one. 
+
+# only games with no overtime
+
+no_ot <- games_gt %>% 
+    group_by(idGame) %>% 
+    filter(max(minuteGame) <= 48) %>% 
+    ungroup() 
+
+gt <- no_ot %>%
     mutate(
         gt = if_else(
             (n_player >= 10 & minuteGame >= 36 & abs(marginScore) >= 10) |
                 (n_player >= 10 & minuteGame >= 45),
             1L, 0L
-        )
-    ) %>%
-    filter(gt == 1) %>% 
-    arrange(minuteGame, desc(marginScore)) %>%
-    distinct(idGame, .keep_all = TRUE) %>%
-    select(-team, -player, -n_player)
+        ),
+        # just time into fourth quarter
+        minuteGame = minuteGame - 36
+    ) 
 
-garbage_time_start %>%
+# point at which gt kicked in
+gt_yes <- gt %>% 
+    filter(gt == 1) %>% 
+    arrange(minuteGame, desc(marginScore)) %>% 
+    distinct(idGame, .keep_all = TRUE) %>% 
+    select(idGame, minuteGame, marginScore, gt)
+
+# games with no gt
+gt_no <- gt %>% 
+    anti_join(gt_yes, by = "idGame") %>% 
+    distinct(idGame, .keep_all = TRUE) %>% 
+    mutate(marginScore = final_margin,
+           minuteGame = 48) %>% 
+    select(idGame, marginScore, minuteGame, gt)
+    
+all_gt <- bind_rows(gt_yes, gt_no)
+
+all_gt %>%
+    filter(gt == 1) %>% 
     ggplot(aes(minuteGame, abs(marginScore))) +
         geom_jitter() +
         labs(x = "minute",
              y = "score margin",
              title = "When does garbage time start?",
              subtitle = "based on 10th player making appearance in 4th quarter")
+
 ```
+
 
 This looks like it is consistent with my prior that the lead would have to be 25 or 30 points in the beginning of the fourth quarter but moves closer to zero as the game gets closer to the end. 
 
-Below we'll use the 'rethinking' package to model this trend. We'll build a few models and choose the one that fits best. 
+What is the distribution of final scores for games with no garbage time? 
+
+```{r}
+
+all_gt %>% 
+    filter(gt == 0) %>% 
+    ggplot(aes(abs(marginScore))) +
+        geom_histogram(binwidth = 1, fill = jtc_primary[2]) +
+        labs(
+            x = "final margin",
+            title = "Distribution of final score margin for games with no garbage time"
+        )
+
+```
+
+Anything less than 10 makes sense. I'm somewhat skeptical that games with a greater than 20 point margin never went into garbage time, but it's probably just a limitation of our definition. We'll keep them in for now.
+
+
+# Fitting a model
+
+We're going to use a Cox Proportional Hazard[link] surival model for this. First we will use the `surival package` and then we will try a Bayesian approach. 
+
+```{r}
+
+cox_fit <- coxph(Surv(minuteGame, gt) ~ marginScore, data = all_gt)
+
+cox_beta <- coef(cox_fit)
+
+```
+
 
 
 
@@ -272,11 +329,12 @@ preds %>%
         geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE) +
         labs(
             title = "Garbage time start",
-            subtitle = "Based on when 10th player enters game in foruth quarter",
+            subtitle = "Based on when 10th player enters game in fourth quarter",
             x = "minute of fourth quarter",
             y = "score margin"
         ) +
-        scale_x_continuous(breaks = seq(0, 12, by = 2))
+        scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+        scale_y_continuous(limits = c(0, 40))
 
 ```
 
@@ -331,7 +389,6 @@ preds %>%
         geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
         geom_line(data = percent_decided, aes(minuteGame, margin, color = metric))
 
-   servr::server_config
 
 ```
 
