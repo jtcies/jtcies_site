@@ -276,7 +276,22 @@ We're going to use a Cox Proportional Hazard[link] surival model for this. First
 
 cox_fit <- coxph(Surv(minuteGame, gt) ~ marginScore, data = all_gt)
 
-cox_beta <- coef(cox_fit)
+mean_gt <- all_gt %>% 
+  group_by(marginScore = abs(marginScore)) %>% 
+  summarise(avg = mean(gt))
+
+cox_sim <- crossing(
+  minuteGame = seq(36, 48, length.out = 100),
+  marginScore = seq(0, 30, by = 5)
+)
+
+cox_pred <- survfit(cox_fit, newdata = cox_sim)
+
+cox_sim %>% 
+  mutate(surv = apply(cox_pred$surv, 2, median)) %>% 
+  ggplot(aes(minuteGame, surv, color = factor(marginScore))) +
+    geom_line()
+
 
 ```
 
