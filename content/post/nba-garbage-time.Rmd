@@ -209,15 +209,7 @@ no_ot <- games_gt %>%
     ungroup() 
 
 gt <- no_ot %>%
-    mutate(
-        gt = if_else(
-            (n_player >= 10 & minuteGame >= 36 & abs(marginScore) >= 10) |
-                (n_player >= 10 & minuteGame >= 45),
-            1L, 0L
-        ),
-        # just time into fourth quarter
-        minuteGame = minuteGame - 36
-    ) 
+    mutate(gt = if_else(n_player >= 12 & minuteGame >= 36, 1L, 0L)) 
 
 # point at which gt kicked in
 gt_yes <- gt %>% 
@@ -235,6 +227,10 @@ gt_no <- gt %>%
     select(idGame, marginScore, minuteGame, gt)
     
 all_gt <- bind_rows(gt_yes, gt_no)
+
+# what percent of games have garbage time? 
+mean(all_gt$gt)
+# [1] 0.3388023
 
 all_gt %>%
     filter(gt == 1) %>% 
@@ -274,82 +270,40 @@ We're going to use a Cox Proportional Hazard[link] surival model for this. First
 
 ```{r}
 
-cox_fit <- coxph(Surv(minuteGame, gt) ~ marginScore, data = all_gt)
+cox_fit <- coxph(Surv(minuteGame, gt) ~ log(marginScore + 0.000001), data = all_gt)
 
 mean_gt <- all_gt %>% 
   group_by(marginScore = abs(marginScore)) %>% 
   summarise(avg = mean(gt))
 
 cox_sim <- crossing(
-  minuteGame = seq(36, 48, length.out = 100),
-  marginScore = seq(0, 30, by = 5)
+  marginScore = log(seq(0.000001, 30, by = 5))
 )
 
 cox_pred <- survfit(cox_fit, newdata = cox_sim)
 
-cox_sim %>% 
-  mutate(surv = apply(cox_pred$surv, 2, median)) %>% 
-  ggplot(aes(minuteGame, surv, color = factor(marginScore))) +
-    geom_line()
+cox_df <- as_tibble(cox_pred$cumhaz)
 
+colnames(cox_df) <- cox_sim$marginScore
+
+surv_preds <- cox_df %>%
+    mutate(minuteGame = cox_pred$time) %>%
+    gather(marginScore, surv_prob, -minuteGame)
+
+surv_preds %>%
+    ggplot(aes(minuteGame, surv_prob, color = factor(marginScore))) +
+        geom_line() +
+        expand_limits(y = 0)
 
 ```
 
-
-
-
 ```{r gtmod}
 
-gt_start_list <- list(
-    minute = garbage_time_start$minuteGame - 36, # start at 0 minutes
-    margin = abs(garbage_time_start$marginScore)
+gt_list <- list(
+    minuteGame = all_gt$minuteGame,
+    marginScore = abs(all_gt$marginScore),
+
 )
-
-gt_mod <- ulam(
-    alist(
-        margin ~ normal(mu, sigma),
-        mu <- a - exp(b * minute ^ 3), 
-        a ~ normal(25, 5),
-        b ~ normal(0.001, 0.0001),
-        sigma ~ exponential(1)
-    ),
-    data = gt_start_list,
-    log_lik = TRUE
-)
-
-sim_dat <- tibble(
-    minute = seq(0, 12, by = 0.1)
-)
-
-preds <- link(gt_mod, data = sim_dat) %>% 
-    t() %>%
-    as_tibble() %>% 
-    bind_cols(sim_dat) %>% 
-    gather(var, val, 1:500) %>% 
-    select(-var)
-
-
-actual_plot <- garbage_time_start %>% 
-    select(minute = minuteGame, margin = marginScore)  %>% 
-    mutate(margin = abs(margin),
-           minute = minute - 36)
-
-preds %>% 
-    group_by(minute) %>% 
-    summarise(mean = mean(val), 
-              sd = sd(val)) %>% 
-    ggplot(aes(minute, mean)) +
-        geom_line() +
-        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
-        geom_point(data = actual_plot, aes(x = minute, y = margin), inherit.aes = FALSE) +
-        labs(
-            title = "Garbage time start",
-            subtitle = "Based on when 10th player enters game in fourth quarter",
-            x = "minute of fourth quarter",
-            y = "score margin"
-        ) +
-        scale_x_continuous(breaks = seq(0, 12, by = 2)) +
-        scale_y_continuous(limits = c(0, 40))
 
 ```
 
