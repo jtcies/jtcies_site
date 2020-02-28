@@ -270,19 +270,19 @@ We're going to use a Cox Proportional Hazard[link] surival model for this. First
 
 ```{r}
 
-cox_fit <- coxph(Surv(minuteGame, gt) ~ log(marginScore + 0.000001), data = all_gt)
+cox_fit <- coxph(Surv(minuteGame, gt) ~ poly(marginScore, 2), data = all_gt)
 
 mean_gt <- all_gt %>% 
   group_by(marginScore = abs(marginScore)) %>% 
   summarise(avg = mean(gt))
 
 cox_sim <- crossing(
-  marginScore = log(seq(0.000001, 30, by = 5))
+  marginScore = seq(0, 30, by = 5)
 )
 
 cox_pred <- survfit(cox_fit, newdata = cox_sim)
 
-cox_df <- as_tibble(cox_pred$cumhaz)
+cox_df <- as_tibble(cox_pred$surv)
 
 colnames(cox_df) <- cox_sim$marginScore
 
