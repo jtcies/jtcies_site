@@ -152,14 +152,14 @@ games_pbp <- read_csv(file.path(temp_dir, "nba_pbp_2019.csv"))
 # length(unique(games_pbp$idGame))
 # [1] 1227 -  missing three games
 
-player_starts <- games_pbp %>% 
+games_gt <- games_pbp %>% 
     split(.$idGame) %>% 
-    map_dfr(get_player_starts)
+    map_dfr(get_garbage_time_score)
 ```
 
 ```{r}
 
-player_starts %>%
+games_gt %>%
     filter(minuteGame < 48,
            n_player > 5) %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
@@ -183,265 +183,80 @@ For these purposes, it looks like we say that it's garbage time if the 10th play
 Let's apply that definition to all of the games to see when garbage time starts or what the final margin was if it didn't happen. 
 
 ```{r}
-gt_start <- player_starts %>%
-    group_by(idGame) %>%
-    filter(n_player == 12, 
-           max(minuteGame) <= 48, # no ot
-           minuteGame >= 36) %>%
-    filter(minuteGame == min(minuteGame)) %>%
-    ungroup() %>%
-    distinct(minuteGame, idGame, marginScore) %>%
-    select(idGame, gt_start = minuteGame, gt_margin = marginScore)
 
-fill_margin <- function(dat){
+# there's probably a more elegant way to do this. 
+# Please let me know if you think of one. 
 
-    dat %>%
-        fill(marginScore) %>%
-        replace_na(list(marginScore = 0))
-    
-}
+# only games with no overtime
 
-pbp_gt <- games_pbp %>%
-    group_by(idGame) %>%
-    filter(max(minuteGame) <= 48) %>%
-    ungroup() %>%
-    split(.$idGame) %>%
-    map_dfr(fill_margin) %>%
-    left_join(gt_start, by = "idGame") %>%
-    mutate(
-        gt = case_when(
-            is.na(gt_start) ~ 0L,
-            minuteGame >= gt_start ~ 1L,
-            TRUE ~ 0L
-        )
-    )
+no_ot <- games_gt %>% 
+    group_by(idGame) %>% 
+    filter(max(minuteGame) <= 48) %>% 
+    ungroup() 
 
-```
+gt <- no_ot %>%
+    mutate(gt = if_else(n_player >= 12 & minuteGame >= 36, 1L, 0L)) %>%
+    arrange(minuteGame)
 
-Now we have play-by-play for each game and whether garbage time had kicked in. 
+no_gt <- no_ot %>%
+    anti_join(gt, by = "idGame")
 
-What is was the score margin and time when garbage time began? 
-
-```{r}
-
-pbp_gt %>%
+gt %>%
     filter(gt == 1) %>%
-    group_by(idGame) %>%
-    arrange(minuteGame, desc(marginScore)) %>%
-    distinct(idGame, .keep_all = TRUE) %>%
-    select(idGame, marginScore, minuteGame) %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
         geom_point()
 
 ```
 
-What percent of games go into garbage time? 
-
-```{r}
-
-pbp_gt %>%
-    mutate(minuteGame = round(minuteGame, 1)) %>%
-    arrange(minuteGame, desc(gt)) %>%
-    distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-    complete(idGame, minuteGame)  %>%
-    fill(gt) %>%
-    replace_na(list(gt = 0)) %>%
-    group_by(minuteGame) %>%
-    summarise(pct = mean(gt)) %>%
-    ggplot(aes(minuteGame, pct)) +
-        geom_line()
-
-```
-
-## Modeling
-
-We'll approach this modeling in three different ways. 
-
-1. Survival analysis: what percent of games have not yet entered garbage time given the score? 
-2. Regression: what is the relationship between game time and score margin when garbage time starts? 
-3. When is a game decided (how likely is that the the team ahead at a given point and score margin will finish the game as the winner)? 
-
-### Survival analysis
-
-First, we will create a data frame the keeps a record of each j
-
-```{r}
-
-surv_df <- pbp_gt %>%
-    mutate(minuteGame = round(minuteGame, 1)) %>%
-    arrange(minuteGame, desc(gt)) %>%
-    distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-    complete(idGame, minuteGame)  %>%
-    fill(gt, marginScore) %>%
-    replace_na(list(gt = 0, marginScore = 0)) %>%
-    group_by(idGame, gt) %>%
-    mutate(
-        keep = case_when(
-            gt == 0 & minuteGame == 48 ~ 1, 
-            gt == 1 & minuteGame == min(minuteGame) ~ 1,
-            TRUE ~ 0
-        )
-    ) %>%
-    filter(keep == 1) %>%
-    ungroup() %>%
-    select(idGame, minuteGame, marginScore, gt)
-
-
-cox_fit <- coxph(Surv(minuteGame, gt) ~ poly(marginScore, 3), data = surv_df)
-
-cox_sim <- crossing(
-  marginScore = seq(0, 30, by = 5)
-)
-
-cox_pred <- survfit(cox_fit, newdata = cox_sim)
-
-cox_df <- as_tibble(cox_pred$surv)
-
-colnames(cox_df) <- cox_sim$marginScore
-
-surv_preds <- cox_df %>%
-    mutate(minuteGame = cox_pred$time) %>%
-    gather(marginScore, surv_prob, -minuteGame)
-
-surv_preds %>%
-    mutate(marginScore = fct_inorder(marginScore)) %>%
-    ggplot(aes(minuteGame, surv_prob, color = marginScore)) +
-        geom_line() +
-        scale_y_continuous(limits = c(0, NA), labels = scales::percent) +
-        labs(
-            title = "Surivival curves for garbage time based on Cox Hazard model of score margins",
-            y = "probability of not entering garbage time",
-            x = "minute in game",
-            color = "score margin"
-        )
-
-```
-
-While this works, it seems to overestimate the probability low scoring games have garbage time. A game with 0 score margin should never enter garbage time. Let's try a different technique. 
-
-## Regression model
-
-```{r}
-
-reg_df <- pbp_gt %>%
-    group_by(idGame) %>%
-    filter(gt == 1) %>%
-    arrange(minuteGame) %>%
-    distinct(idGame, .keep_all = TRUE) %>%
-    select(idGame, minuteGame, marginScore, gt) %>%
-    mutate(marginScore = abs(marginScore))
-
-reg_list <- list(
-    t = reg_df$minuteGame,
-    m = reg_df$marginScore
-)
-
-set.seed(2020)
-    
-reg_mod <- ulam(
-    alist(
-        m ~ normal(mu, sigma),
-        mu <- a + -exp(t * b1),
-        sigma ~ exponential(1),
-        b1 ~ normal(0, 0.01),
-        a ~ exponential(1)
-    ),
-    data = reg_list,
-    chains = 4,
-    cores = parallel::detectCores()
-)
-
-precis(reg_mod)
-
-```
-
-```{r}
-
-pred_df <- tibble(t = seq(0, 48, by = 0.1))
-
-reg_preds <- link(reg_mod, pred_df)
-
-pred_mean <- apply(reg_preds, 2, mean)
-pred_ci <- apply(reg_preds, 2, PI)
-
-pred_df %>%
-    mutate(
-        mean = pred_mean,
-        low = pred_ci[1, ],
-        high = pred_ci[2, ]
-    ) %>%
-    ggplot(aes(t, mean)) +
-        geom_line() +
-        geom_point(data = reg_df, aes(minuteGame, marginScore)) +
-        geom_ribbon(aes(ymin = low, ymax = high), alpha = 0.2) +
-        scale_x_continuous(limits = c(36, 48)) +
-        labs(
-            x = "game minute",
-            y = "score margin",
-            title = "Predicted score margin of entering garbage time"
-        )
-
-```
-
-
-### When is a game decided? 
+## When is a game decided? 
 
 The other way to look at garbage time is to examine at what point the outcome is already decided. Below I calculate the margin above which a percentage of games end with the leading team winning. I use a 90%, 95%, and 99% threshold.
 
 ```{r}
 
-scores_df <- games_pbp %>%
+fourth_qtr_scores <- games_pbp %>%
     mutate(minuteGame = round(minuteGame, 1)) %>%
-    complete(idGame, minuteGame = seq(0, 48, by = 0.1)) %>%
+    complete(idGame, minuteGame = seq(36, 48, by = 0.1)) %>%
     group_by(idGame) %>%
     fill(marginScore) %>%
-    replace_na(list(marginScore = 0)) %>%
     arrange(minuteGame, desc(marginScore)) %>%
-    distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-    select(idGame, minuteGame, marginScore) %>%
-    filter(minuteGame <= 48) %>%
-    ungroup()
+    distinct(idGame, minuteGame, marginScore) %>%
+    filter(minuteGame >= 36, minuteGame <= 48)
 
-final_scores <- scores_df %>%
-    group_by(idGame) %>%
+final_scores <- fourth_qtr_scores %>%
     filter(minuteGame == max(minuteGame)) %>%
-    distinct(idGame, .keep_all = TRUE) %>% 
     select(idGame, final_score = marginScore)
 
-scores_w_final <- scores_df %>%
+fourth_qtr_w_final <- fourth_qtr_scores %>%
     inner_join(final_scores, by = "idGame") %>%
-    transmute(
-        home_margin = marginScore,
-        away_margin = -marginScore,
-        home_final = final_score,
-        away_final = -final_score,
-        idGame,
-        minuteGame
-    ) %>%
-    gather(metric, margin, -idGame, -minuteGame) %>%
-    separate(metric, c("team", "type")) %>%
-    spread(type, margin) %>% 
+    mutate(home_win = final_score > 0,
+           home_winning = marginScore > 0,
+           winning_team_ahead = home_win == home_winning)
+
+percent_decided <- fourth_qtr_w_final %>%
+    group_by(minuteGame, margin = abs(marginScore)) %>%
+    summarise(win_rate = mean(winning_team_ahead)) %>%
     mutate(
-        win = final > 0
+        pct90 = win_rate > .9,
+        pct95 = win_rate > .95,
+        pct99 = win_rate > .99
     ) %>%
-    filter(margin >= 0)
+    gather(metric, val, pct90:pct99) %>%
+    filter(val) %>%
+    group_by(minuteGame, metric) %>%
+    filter(margin == min(margin)) 
 
-win_mod <- glm(
-    win ~ exp(margin) + margin:minuteGame + minuteGame:team + team,
-    data = scores_w_final,
-    family = "binomial"
-)
+preds %>% 
+    group_by(minute = minute + 36) %>% 
+    summarise(
+        mean = mean(val), 
+        sd = sd(val)
+    ) %>% 
+    ggplot(aes(minute, mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = mean - 2 * sd, ymax = mean + 2 * sd), alpha = 0.2) +
+        geom_line(data = percent_decided, aes(minuteGame, margin, color = metric))
 
-win_preds <- crossing(
-    minuteGame = seq(0, 48, by = 0.1),
-    margin = seq(0, 30, by = 5),
-    team = c("home", "away")
-) %>%
-    broom::augment(win_mod, newdata = ., type.predict = "response")
-
-win_preds %>%
-    ggplot(aes(minuteGame, .fitted, color = factor(margin), linetype = team)) +
-        geom_line()
 
 ```
 
