@@ -2,3 +2,5 @@
 public
 .Rhistory
 .DS_store
+.httr-oauth
+drive-token.rds

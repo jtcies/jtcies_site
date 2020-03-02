@@ -35,6 +35,10 @@ library(survival)
 library(jtcr)
 
 theme_set(theme_jtc())
+
+# your email address
+drive_auth(email = "jtcies@gmail.com")
+
 ```
 
 First we'll take grab the play-by-play for the first game from the 2018-19 regular seaons. 
@@ -440,19 +444,39 @@ win_preds <- crossing(
     broom::augment(win_mod, newdata = ., type.predict = "response")
 
 win_preds %>%
+    mutate(margin = fct_rev(factor(margin))) %>%
     ggplot(aes(minuteGame, .fitted, color = factor(margin), linetype = team)) +
-        geom_line()
+        geom_line(size = 1.5) +
+        scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+        labs(
+            title = "Probability that games the winning team at time will win game",
+            y = "probability of winning",
+            x = "game minute",
+            color = "current margin",
+            linetype = ""
+        )
 
 ```
 
-Unsuprisingly coaches are more conversative about starting garbage time than the percentages indicate that the game has already been decided. 
+There are a few interesting things happening here. You can see the home team's advantage diminishing over time. Games with a 30 point margin are basically decided at half time, and overcoming a 20 point deficit in the 4th quarter is quite rare. However, there are a few issues with this model. I belive the home and away margin should converge at the end of regulation and that all other margins should be at 1 at minute 48. These are limitations of how we defined our model. 
 
-## Other questions?
+## Other questions
+
+There are a number of other questions that would be interesting to explore in this problem. 
 
 - What are other ways to define garbage time start (than a player's first action)? 
 - How do coaches differ in whether or not they go into garbage time mode? 
+- How does the time of season factor in? 
 - Has the boundry for garbage time changed over time? 
-- How close does the score have to get for a coach to put their starters back in?
+- How close does the score have to get for a coach to put their starters back in? 
 - How to factor in games going to overtime? 
-- When should garbage time actually kick in (i.e. when should a game be considered decided)? 
+
+## Conclusion
+
+I set out here to examine the question of when garbage time does and should start. As I went along, I became interested in how the different problem definitions led to different modeling choices. Each of the models we created is imperfect in some way and could be improved. However, it is important to understand how each model represents a different formulation of the question, and ultimately that formulation should be driven by the decision that needs to be made. 
+
+
+
+
+
 
