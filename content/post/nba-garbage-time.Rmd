@@ -1,30 +1,27 @@
 ---
-draft: true
-title: When does garbage time start? 
+title: 'When does "garbage time" start?'
 author: Joe Ciesielski
-date: '2020-01-14'
+date: '2020-03-02'
 tags:
   - R
   - NBA
 output: html_document
 ---
 
-The 76ers recent Christmas Day game agains the Milwaukee Bucks got me thinking about garbage time. The Sixers held a fairly substantial lead for the whole game, but let it get close at the end (they were outscored by 15 points in the fourth quarter). 
+The 76ers recent Christmas Day game against the Milwaukee Bucks got me thinking about garbage time. The Sixers held a fairly substantial lead for the whole game, but let it get close at the end (they were outscored by 15 points in the fourth quarter). 
 
 I started to wonder, "When does garbage time start"? According to Wikipedia:
 
 > Garbage time is a term used to refer to the period toward the end of a timed sports competition that has become a blowout when the outcome of the game has already been decided, and the coaches of one or both teams will decide to replace their best players with substitutes.
 
-There's two questions in there. First, when is the outcome of the game decided? Second, when do coaches decide to replace their best players with substitute?
-
-I'll take a look at these questions using the `tidyverse` for data manipulation, `nbastatR` for getting play-by-play data from the 2018-19 NBA regular season, and the `rethinking` package (which provides and interface to Stan) for modeling. 
+We'll examine this question using a couple different models. Below I'll work through how different framings lead to different modeling choices. 
 
 ## Setup
 
 ```{r setup, message = FALSE, warning = FALSE}
 
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
-                      fig.align = "center", fig.width = 8, fig.asp = 0.618)
+                      fig.align = "center", fig.width = 10, fig.asp = 0.618)
 
 library(tidyverse)
 library(nbastatR)
@@ -41,7 +38,7 @@ drive_auth(email = "jtcies@gmail.com")
 
 ```
 
-First we'll take grab the play-by-play for the first game from the 2018-19 regular seaons. 
+We'll use the data from the full 2018-19 season. Let's grab the play-by-play for the first game from that season. 
 
 ```{r}
 
@@ -65,8 +62,10 @@ The first question we'll look is when does the coach decides to put in their sub
 
 game_1_first_action <- game_1_pbp %>%
     filter(!is.na(namePlayer1), !is.na(namePlayer2)) %>%
-    mutate(player1 = paste0(slugTeamPlayer1, "_", namePlayer1),
-           player2 = paste0(slugTeamPlayer2, "_", namePlayer2)) %>%
+    mutate(
+        player1 = paste0(slugTeamPlayer1, "_", namePlayer1),
+        player2 = paste0(slugTeamPlayer2, "_", namePlayer2)
+    ) %>%
     select(player1, player2, minuteGame, numberPeriod) %>%
     gather(drop, player, 1:2) %>%
     select(-drop) %>%
@@ -74,29 +73,17 @@ game_1_first_action <- game_1_pbp %>%
     filter(minuteGame == min(minuteGame), !is.na(player)) %>%
     arrange(minuteGame) %>%
     group_by(team = str_sub(player, 1, 3)) %>%
-    mutate(player_count = row_number(),
-           player = str_replace(player, "^[A-Z]{3}_", "")) %>%
+    mutate(
+        player_count = row_number(),
+        player = str_replace(player, "^[A-Z]{3}_", ""),
+        minuteGame = round(minuteGame, 3)
+    ) %>%
     arrange(team)
 
 knitr::kable(game_1_first_action)
 ```
 
-Philadedelphia played 11 unique players, while Boston played 13 (a team can have up to 14). For Philly, the 9 players played in the first half, but 10 and 11 came in in the last two minutes of the game. For Boston, 9 also played in the first half, one showed up on the 3rd quarter, and 3 came in right at the end. How did the game end again? 
-
-```{ri g1gt}
-
-game_1_pbp %>% 
-    fill(scoreAway, scoreHome, marginScore) %>%
-    filter(minuteGame == 46.55) %>%
-    select(scoreAway, scoreHome, marginScore)  %>%
-    distinct() %>%
-    knitr::kable()
-
-```
-
-Right... 
-
-Ok, so I think there's a few things we need to figure out. First, how far in list of available players does a coach have to go before we consider them to resigned the outcome the of game. And once we figure out that number, what is the combination of score margin and time left that coaches typically reach that far in their bench. 
+Philadelphia played 11 unique players, while Boston played 13 (a team can have up to 14). For Philly, the 9 players played in the first half, but 10 and 11 came in in the last two minutes of the game. For Boston, 9 also played in the first half, one showed up on the 3rd quarter, and 3 came in right at the end. This represents one thing we have to deal with: each team has a different rotation depth, so one team's garbage time team might start with their 11th player while another might start with their 14th. 
 
 Below is function that gets the time of first appearance for each player, the running total of unique players that each substitute represents, and the score margin when they checked in. 
 
@@ -122,10 +109,11 @@ get_player_starts <- function(game_pbp) {
 }
 
 get_player_starts(game_1_pbp) %>%
+    mutate(minuteGame = round(minuteGame, 3)) %>%
     knitr::kable()
 ```
 
-Whena applying that function to the first game, we can see that garbage time started when the 10th Philadelphia and 11th Boston player came in - about a minute and half left and Boston up by 16. Now that we know it works, we can apply to it each gmae of the season. 
+When applying that function to the first game, we can see that garbage time started when the 10th Philadelphia and 11th Boston player came in - about a minute and half left and Boston up by 16. Now that we know it works, we can apply to it each game of the season. 
 
 ```{r getgt}
 # you can use this below to download yourself
@@ -161,28 +149,28 @@ player_starts <- games_pbp %>%
     map_dfr(get_player_starts)
 ```
 
+The chart below shows the first appearance of each player in the rotation, with the 4th quarter highlighted in red. 
+
 ```{r}
 
 player_starts %>%
-    filter(minuteGame < 48,
-           n_player > 5) %>%
+    filter(
+        minuteGame < 48,
+        n_player > 5
+    ) %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
         geom_jitter() +
         facet_wrap(~n_player) +
         xlim(c(0, 48)) +
-        annotate("rect", xmin = 36, ymin = 10, xmax = 48, ymax = Inf,
+        annotate("rect", xmin = 36, ymin = 0, xmax = 48, ymax = Inf,
                   alpha = 0.2, fill = "red") +
-        annotate("rect", xmin = 45, ymin = 0, xmax = 48, ymax = Inf,
-                  alpha = 0.2, fill = "blue") +
-        labs(y = "Score margin",
+        labs(y = "score margin",
              x = "minute",
              title = "First appearance of teams substitutes")
 
 ```
 
-The chart above shows the first appearance of each teams 6th through 14th players. The red block shows the last quarter and margin of at least 10, and the blue shows the last three minutes. These are just to highlight the most conservative estimates of garbage time. 
-
-For these purposes, it looks like we say that it's garbage time if the 10th player sees their first action in the fourth quarter with a margin of at least 10 points or if the 10th player sees their first action with less than three minutes left in the game. If we just went with the 10th player, we'd capture too many games where the 10th player checks in during the first half, which would never be considered garbage time. If we went with the 13th or 14th player, we'd miss a whole bunch of games that never saw that many unique players. So combination is required. 
+Based on this chart, I think we can be fairly safe if we say that garbage time starts when the 12th player enters in the 4th quarter. 
 
 Let's apply that definition to all of the games to see when garbage time starts or what the final margin was if it didn't happen. 
 
@@ -224,6 +212,19 @@ pbp_gt <- games_pbp %>%
 
 Now we have play-by-play for each game and whether garbage time had kicked in. 
 
+How many games went to garbage time? 
+
+```{r}
+
+pbp_gt %>%
+    arrange(desc(gt)) %>%
+    distinct(idGame, .keep_all = TRUE) %>%
+    summarise(mean_gt = scales::percent(mean(gt)))
+
+```
+
+That sounds about right to me. 
+
 What is was the score margin and time when garbage time began? 
 
 ```{r}
@@ -235,37 +236,23 @@ pbp_gt %>%
     distinct(idGame, .keep_all = TRUE) %>%
     select(idGame, marginScore, minuteGame) %>%
     ggplot(aes(minuteGame, abs(marginScore))) +
-        geom_point()
-
-```
-
-What percent of games go into garbage time? 
-
-```{r}
-
-pbp_gt %>%
-    mutate(minuteGame = round(minuteGame, 1)) %>%
-    arrange(minuteGame, desc(gt)) %>%
-    distinct(idGame, minuteGame, .keep_all = TRUE) %>%
-    complete(idGame, minuteGame)  %>%
-    fill(gt) %>%
-    replace_na(list(gt = 0)) %>%
-    group_by(minuteGame) %>%
-    summarise(pct = mean(gt)) %>%
-    ggplot(aes(minuteGame, pct)) +
-        geom_line()
+        geom_point() 
 
 ```
 
 ## Modeling
 
-We'll approach this modeling in three different ways. 
+There's a few different ways to define this problem that will influence our modeling choices moving forward. 
 
-1. Survival analysis: what percent of games have not yet entered garbage time given the score? 
-2. Regression: what is the relationship between game time and score margin when garbage time starts? 
-3. When is a game decided (how likely is that the the team ahead at a given point and score margin will finish the game as the winner)? 
+1. What is the relationship between game time and score margin when garbage time starts? (regression)
+2. What is the probability of a game having entered garbage time at a given time and score margin? (survival analysis) 
+3. When is a game decided (how likely is that the team ahead at a given point and score margin will finish the game as the winner)? (logisitc regression)
 
-## Regression model
+The first two represent how coaches make the decision to put in their deepest bench players while the last question has to do with the probability of the outcome.
+
+### Regression model
+
+Here we'll examine the relationship between score margin and game time. I use the `rethinking` package that provides an interface to Stan for estimating Bayesian posterior distributions. 
 
 ```{r}
 
@@ -278,7 +265,7 @@ reg_df <- pbp_gt %>%
     mutate(marginScore = abs(marginScore))
 
 reg_list <- list(
-    t = reg_df$minuteGame,
+    t = reg_df$minuteGame - 36,
     m = reg_df$marginScore
 )
 
@@ -287,40 +274,37 @@ set.seed(2020)
 reg_mod <- ulam(
     alist(
         m ~ normal(mu, sigma),
-        mu <- a + -exp(t * b1),
+        mu <-  -exp(b1 * t) + a,
         sigma ~ exponential(1),
-        b1 ~ normal(0, 0.01),
-        a ~ exponential(1)
+        b1 ~ normal(0.25, 0.01),
+        a ~ normal(35, 7)
     ),
     data = reg_list,
     chains = 4,
     cores = parallel::detectCores()
 )
 
-precis(reg_mod)
 
-```
-
-```{r}
-
-pred_df <- tibble(t = seq(0, 48, by = 0.1))
+pred_df <- tibble(t = seq(0, 12, by = 0.1))
 
 reg_preds <- link(reg_mod, pred_df)
 
 pred_mean <- apply(reg_preds, 2, mean)
 pred_ci <- apply(reg_preds, 2, PI)
 
-pred_df %>%
+margin_pred <- pred_df %>%
     mutate(
         mean = pred_mean,
         low = pred_ci[1, ],
         high = pred_ci[2, ]
-    ) %>%
+    ) 
+
+margin_pred %>%
     ggplot(aes(t, mean)) +
         geom_line() +
-        geom_point(data = reg_df, aes(minuteGame, marginScore)) +
+        geom_point(data = reg_df, aes(minuteGame - 36, marginScore)) +
         geom_ribbon(aes(ymin = low, ymax = high), alpha = 0.2) +
-        scale_x_continuous(limits = c(36, 48)) +
+        scale_x_continuous(limits = c(0, 12)) +
         labs(
             x = "game minute",
             y = "score margin",
@@ -329,9 +313,11 @@ pred_df %>%
 
 ```
 
+This model gives us the estimate of the score margin that we expect garbage time to kick in at each point in time. It seems to fit the data well, but it may not be the most informative way to formulate the question. 
+
 ### Survival analysis
 
-First, we will create a data frame the keeps a record of each j
+Survival analysis is fundamentally about time to event. Here we'll use a Cox Proportional Hazard model which takes the probability of a team not entering garbage time a given point in time, and factors in a parameter for the score margin.
 
 ```{r}
 
@@ -377,20 +363,20 @@ surv_preds %>%
         geom_line(size = 1.5) +
         scale_y_continuous(limits = c(0, NA), labels = scales::percent) +
         labs(
-            title = "Cumulative hazard curves for garbage time based on Cox Hazard model of score margins",
+            title = "Cumulative hazard curves for garbage time",
             y = "cumulative hazard of entering garbage time",
             x = "minute in game",
-            color = "score margin"
+            color = "score margin",
+            caption = "hazards are cumulative and can sum to greater than one"
         )
 
 ```
 
-While this works, it seems to overestimate the probability low scoring games have garbage time. A game with 0 score margin should never enter garbage time. Let's try a different technique. 
-
+Since the hazards are cumulative, they can have a greater than 100% probability. One limitation of this model is that is that the score margins are based on an average, so it seems to be overestimating the probability of entering garbage time for low margin games. For example, a game that has a 10-point margin with 3 minutes to go would be considered a close scoring game, but this model estimates it has a 25% probability of entering garbage time. 
 
 ### When is a game decided? 
 
-The other way to look at garbage time is to examine at what point the outcome is already decided. Below I calculate the margin above which a percentage of games end with the leading team winning. I use a 90%, 95%, and 99% threshold.
+The other way to look at garbage time is to examine at what point the outcome is already decided. Below I'll fit a logistic regression that calculates the probability that the team ahead at a given point in time ends up winning. We'll also factor in whether the team is home or away as home teams have a higher chance of winning the game from the start, all other things being equal. 
 
 ```{r}
 
@@ -425,9 +411,7 @@ scores_w_final <- scores_df %>%
     gather(metric, margin, -idGame, -minuteGame) %>%
     separate(metric, c("team", "type")) %>%
     spread(type, margin) %>% 
-    mutate(
-        win = final > 0
-    ) %>%
+    mutate(win = final > 0) %>%
     filter(margin >= 0)
 
 win_mod <- glm(
@@ -450,7 +434,7 @@ win_preds %>%
         geom_line(size = 1.5) +
         scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
         labs(
-            title = "Probability that games the winning team at time will win game",
+            title = "Probability that games the winning team at time\nwill win game",
             y = "probability of winning",
             x = "game minute",
             color = "current margin",
@@ -459,15 +443,31 @@ win_preds %>%
 
 ```
 
-There are a few interesting things happening here. You can see the home team's advantage diminishing over time. Games with a 30 point margin are basically decided at half time, and overcoming a 20 point deficit in the 4th quarter is quite rare. However, there are a few issues with this model. I belive the home and away margin should converge at the end of regulation and that all other margins should be at 1 at minute 48. These are limitations of how we defined our model. 
+There are a few interesting things happening here. You can see the home team's advantage diminishing over time. Games with a 30 point margin are basically decided at half time, and overcoming a 20 point deficit in the 4th quarter is quite rare.
+
+However, there are a few limitations of this model. The home and away margin should converge at the end of regulation and all other margins should be at 1 at minute 48. These are limitations of how we defined our model. 
 
 ### Putting it together
 
-
 ```{r}
 
+margins <- seq(0, 30, by = 5)
+
+time_preds <- margin_pred %>%
+    gather(metric, margin, -t) %>%
+    mutate(margin = round(margin, 0)) %>%
+    filter(margin %in% margins) %>% 
+    group_by(margin) %>%
+    summarise(
+        low_time = min(t),
+        mid_time = median(t),
+        high_time = max(t)
+    ) %>%
+    mutate_at(vars(low_time:high_time), function(x) x + 36)
+
 win_preds %>%
-  left_join(surv_preds, by =c("margin", "minuteGame")) %>% 
+  left_join(surv_preds, by = c("margin", "minuteGame")) %>% 
+  left_join(time_preds, by = "margin") %>%
   select(-win_se) %>%
   gather(metric, val, win_prob:haz_prob) %>% 
   mutate(team = if_else(metric == "haz_prob", "away", team)) %>% 
@@ -478,25 +478,33 @@ win_preds %>%
   ggplot(aes(minuteGame, val,linetype = team, color = metric)) +
     geom_line(size = 1.5) +
     geom_hline(yintercept = 1, linetype = 2, alpha = 0.5, color = jtc_primary[[1]]) +
+    geom_rect(aes(ymin = 0, ymax = Inf, xmin = low_time, xmax = high_time),
+              inherit.aes = FALSE, alpha = 0.05, fill = jtc_greys[[3]]) +
     facet_wrap(~ margin) +
     scale_x_continuous(limits = c(0, 48), breaks = seq(0, 48, by = 12)) +
     scale_y_continuous(
       limits = c(0, 1.25), labels = scales::percent,
       breaks = seq(0, 1, by = 0.25)
     ) +
-    scale_color_discrete(labels = c("cumulative hazard", "win probability")) +
+    scale_color_manual(
+        labels = c("cumulative hazard", "win probability"),
+        values = jtc_primary[c(2,3)]
+    ) +
     labs(
       linetype = "",
       color = "",
       y = "",
       x = "game minute",
-      title = "Coaches only put in deep bench reserves well after game is decided"
+      title = "Coaches put in deep bench reserves after\ngame is decided",
+      subtitle = "Model predictions at different score margins",
+      caption = "Vertical grey bars show estimates of entering garbage time from regression model"
     ) 
 
 ```
 
-This implies that coaches are more conservative than necessary in their assesment of 
+This chart is showing all three models together broken down by a range of margins. The blue lines show the cumulative hazard curves of survival model, the orange lines show the probability of winning at each point in the game for each margin, and the vertical grey bars show the estimate of the most likely time of entering garbage time[^1].
 
+Unsurprisingly, coaches seem to have a very low risk tolerance to putting in their deep bench players when the game has been decided beyond any doubt. 
 
 ## Other questions
 
@@ -505,16 +513,16 @@ There are a number of other questions that would be interesting to explore in th
 - What are other ways to define garbage time start (than a player's first action)? 
 - How do coaches differ in whether or not they go into garbage time mode? 
 - How does the time of season factor in? 
-- Has the boundry for garbage time changed over time? 
+- Has the boundary for garbage time changed over time? 
 - How close does the score have to get for a coach to put their starters back in? 
 - How to factor in games going to overtime? 
 
 ## Conclusion
 
-I set out here to examine the question of when garbage time does and should start. As I went along, I became interested in how the different problem definitions led to different modeling choices. Each of the models we created is imperfect in some way and could be improved. However, it is important to understand how each model represents a different formulation of the question, and ultimately that formulation should be driven by the decision that needs to be made. 
+I set out here to examine the question of when garbage time does and should start. As I went along, I became interested in how the different problem definitions led to different modeling choices. Each of the different models we chose gives insight into the question we asked it; however, each also has tradeoffs. It's important to understand how different framings of a similar questions lead to modeling decisions and therefore to insight we gain from an analysis. 
 
+What are other ways that we could address the question of when garbage time does and should start? How could we improve the models presented here. Feel free to share any feedback you have. 
 
-
-
+[^1]: The regression model predicts that margins less than 10 will 'enter' garbage time after the 48th minute and scores pver 30 enter garbage time before the 4th quarter, inconsistent with our definition.
 
 
