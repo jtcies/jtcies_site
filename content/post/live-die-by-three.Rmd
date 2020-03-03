@@ -1,0 +1,111 @@
+---
+draft:true
+---
+
+```{r}
+
+library(tidyverse)
+library(rethinking)
+library(nbastatR)
+library(tidymodels)
+
+games <- nbastatR::game_logs(seasons = 2020)
+
+game_threes <- games %>%
+    group_by(idGame, nameTeam, isWin) %>%
+    summarise(
+        fg3a = sum(fg3a),
+        fg3m = sum(fg3m)
+    ) %>%
+    mutate(pct3 = fg3m / fg3a)
+
+
+team_threes <- game_threes %>%
+    group_by(nameTeam) %>%
+    summarise(
+        season_fg3a = sum(fg3a),
+        season_fg3m = sum(fg3m),
+        season_wins = sum(isWin),
+        season_played = n()
+    ) %>%
+    mutate(
+        season_pct3 = season_fg3m / season_fg3a,
+        win_pct = season_wins / season_played
+    )
+
+team_threes %>%
+    mutate(
+        nameTeam = fct_reorder(nameTeam, season_pct3)
+    ) %>%
+    ggplot(aes(nameTeam, season_pct3)) +
+        geom_col() +
+        coord_flip()
+
+
+```
+
+What is the relationship between three point percentage and winning percentage? 
+
+```{r}
+team_threes %>%
+    ggplot(aes(season_pct3, win_pct)) +
+        geom_point() +
+        geom_text(aes(label = nameTeam), check_overlap = TRUE, hjust = 1, vjust = 1) 
+```
+
+Which teams are most dependent on the three? 
+
+```{r}
+
+three_summary <- game_threes %>%
+    inner_join(team_threes, by = "nameTeam") %>%
+    mutate(isWin = as.integer(isWin))
+
+three_summary %>%
+    ggplot(aes(factor(isWin), pct3)) +
+        geom_boxplot() +
+        facet_wrap(~ nameTeam)
+
+```
+```{r}
+
+three_mod <- glm(isWin ~ pct3 * nameTeam, data = three_summary)
+three_mod_pct <- glm(isWin ~ pct3, data = three_summary)
+
+```
+
+How predictive is this model? 
+
+```{r}
+
+ratio_preds <- broom::augment(three_mod, type.predict = "response") %>% 
+    mutate(mod = "ratio") 
+
+pct_preds <- broom::augment(three_mod_pct, type.predict = "response") %>% 
+            mutate(mod = "pct")
+
+roc_auc(ratio_preds, factor(isWin), .fitted) %>%
+    mutate(mod = "ratio") %>%
+    bind_rows(
+        roc_auc(pct_preds, factor(isWin), .fitted) %>%
+            mutate(mod = "pct")
+    ) %>%
+    select(mod, .estimate)
+
+```
+
+```{r}
+
+three_mod %>%
+    broom::tidy() %>%
+    filter(str_detect(term, "^pct3:nameTeam")) %>%
+    mutate(
+        team = str_replace_all(term, "pct3:nameTeam", ""),
+        team = fct_reorder(team, estimate)
+    ) %>%
+    ggplot(aes(team, estimate)) +
+        geom_col() +
+        coord_flip()
+
+```
+
