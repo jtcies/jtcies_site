@@ -15,13 +15,13 @@ theme_set(theme_jtc())
 games <- nbastatR::game_logs(seasons = 2020)
 
 game_threes <- games %>%
-    group_by(idGame, nameTeam, isWin) %>%
+    group_by(idGame, nameTeam, isWin, locationGame) %>%
     summarise(
         fg3a = sum(fg3a),
         fg3m = sum(fg3m)
     ) %>%
+    ungroup() %>%
     mutate(pct3 = fg3m / fg3a)
-
 
 team_threes <- game_threes %>%
     group_by(nameTeam) %>%
@@ -53,7 +53,12 @@ What is the relationship between three point percentage and winning percentage?
 team_threes %>%
     ggplot(aes(season_pct3, win_pct)) +
         geom_point() +
-        geom_text(aes(label = nameTeam), check_overlap = TRUE, hjust = 1, vjust = 1) 
+        geom_text(
+            aes(label = nameTeam),
+            check_overlap = TRUE,
+            hjust = 1,
+            vjust = 1
+        ) 
 ```
 
 Which teams are most dependent on the three? 
@@ -62,7 +67,12 @@ Which teams are most dependent on the three?
 
 three_summary <- game_threes %>%
     inner_join(team_threes, by = "nameTeam") %>%
-    mutate(isWin = as.integer(isWin))
+    mutate(win = as.integer(isWin))
+
+three_summary$pct_3_scaled <- scale(three_summary$pct3)
+three_summary$team <- as.integer(as.factor(three_summary$nameTeam))
+three_summary$home <- as.integer(three_summary$locationGame == "H")
+
 
 three_summary %>%
     ggplot(aes(factor(isWin), pct3)) +
@@ -72,35 +82,88 @@ three_summary %>%
 ```
 ```{r}
 
+set.seed(2020)
+
 dat_list <- list(
-    team = as.integer(as.factor(three_summary$nameTeam)),
-    win = as.integer(three_summary$isWin),
-    pct3 = scale(three_summary$pct3)
+    team = three_summary$team,
+    win = three_summary$win,
+    pct_3_scaled = three_summary$pct_3_scaled,
+    home = three_summary$home
 )
 
+# using non-centered paramaterization because of divergent transitions
 three_mod <- ulam(
     alist(
         win ~ binomial(1, p),
-        logit(p) <- a[team] + b[team] * pct3,
-        # priors
-        a ~ multi_normal(0, Rho_a, sigma_a),
-        b ~ multi_normal(0, Rho_b, sigma_b),
-        sigma_a ~ exponential(1),
+        logit(p) <- a[team] + b[team] * sigma_b * pct_3_scaled + b2 * home,
+        a[team] ~ normal(a_mu, a_sigma),
+        b[team] ~ normal(0, 1),
         sigma_b ~ exponential(1),
-        Rho_a ~ lkj_corr(2),
-        Rho_b ~ lkj_corr(2)
+        a_mu ~ normal(0, 1),
+        a_sigma ~ exponential(1),
+        b2 ~ normal(0, 0.5)
     ),
     data = dat_list,
-    chains = 4, 
+    chains = 4,
     cores = parallel::detectCores()
 )
 
 precis(three_mod, depth = 2)
+```
+
+```{r}
+
+post <- extract.samples(three_mod, pars = paste("b[", 1:30, "]"))
+
+tbl_df(precis(post)) %>%
+    mutate(nameTeam = team_threes$nameTeam,
+           nameTeam = fct_reorder(nameTeam, mean)) %>%
+    ggplot(aes(nameTeam, mean)) +
+        geom_point(size = 2, color = jtc_primary[[1]]) +
+        geom_linerange(
+            aes(ymin = `5.5%`, ymax = `94.5%`),
+            color = jtc_primary[[1]]
+        ) +
+        coord_flip() +
+        labs(
+            title = str_wrap("Change in log odds of winning for each standard deviation increase in thre point percentage", 50)
+        )
 
 ```
 
-How predictive is this model? 
+## How predictive is this model? 
 
+```{r}
 
+three_preds <- sim(three_mod, data = three_summary)
 
+pred_comp <- three_preds %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate(nameTeam = three_summary$nameTeam) %>%
+    group_by(nameTeam) %>%
+    summarise_all(sum) %>%
+    gather(sim, wins, -nameTeam) %>%
+    group_by(nameTeam) %>%
+    summarise(
+        mean_wins = mean(wins),
+        low = quantile(wins, probs = 0.05),
+        high = quantile(wins, probs = 0.95)
+    ) %>%
+    left_join(team_threes, by = "nameTeam")
+
+pred_comp %>%
+    mutate(nameTeam = fct_reorder(nameTeam, mean_wins)) %>%
+    ggplot(aes(nameTeam, season_wins)) +
+        geom_linerange(aes(ymin = low, ymax = high), color = jtc_primary[[1]],
+                       alpha = 0.5) +
+        geom_point(aes(y = mean_wins), size = 2, color = jtc_primary[[1]]) +
+        geom_point(size = 2, color = jtc_primary[[3]]) +
+        coord_flip()
+
+```
+## How does each team finish? 
+
+```{r}
+```
 
