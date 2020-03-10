@@ -187,6 +187,51 @@ pred_comp %>%
 ## How does each team finish? 
 
 ```{r}
+n_sims <- 100
+
+three_sims <- three_summary %>%
+    group_by(team, nameTeam) %>%
+    summarise(
+        mean_pct3 = mean(pct_3_scaled),
+        sd_pct3 = sd(pct_3_scaled)
+    ) %>%
+    mutate(sample_pct3 = map2(mean_pct3, sd_pct3, ~ rnorm(n = n_sims, mean = .x, sd = .y)))
+
+future_games <- nbastatR::current_schedule() %>%
+    filter(dateGame >= lubridate::today())
+
+future_games_tidy <- future_games %>%
+    # this id game is different than the other
+    select(dateGame, nameTeamHome, nameTeamAway, idGame) %>%
+    gather(type, nameTeam, -idGame, -dateGame) %>%
+    mutate(
+        type = str_replace_all(type, "nameTeam", ""),
+        home = as.integer(as.factor(type)) - 1
+    ) %>%
+    select(-type)
+
+future_game_sims <- future_games_tidy %>%
+    inner_join(three_sims, by = "nameTeam") %>%
+    unnest(sample_pct3) %>%
+    rename(pct_3_scaled = sample_pct3)
+
+future_preds <- sim(three_mod, data = future_game_sims)
+
+future_preds %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate(
+        nameTeam = future_game_sims$nameTeam,
+        idGame = future_game_sims$idGame
+    ) %>%
+    group_by(nameTeam, idGame) %>%
+    summarise_all(sum) %>%
+    gather(sim, wins, -nameTeam, -idGame) %>%
+    group_by(nameTeam, idGame) %>%
+    summarise(
+        mean = mean(wins) / n_sims,
+        sd = sd(wins) / n_sims
+    )
 
 ```
 
