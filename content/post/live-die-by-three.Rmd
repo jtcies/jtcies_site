@@ -58,10 +58,37 @@ team_threes %>%
             check_overlap = TRUE,
             hjust = 1,
             vjust = 1
-        ) 
+        )
 ```
 
 Which teams are most dependent on the three? 
+
+```{r}
+
+threes_dif <- game_threes %>%
+    group_by(nameTeam, isWin) %>%
+    summarise_at(vars(fg3a, fg3m), sum) %>%
+    mutate(pct = fg3m / fg3a,
+    ) %>%
+    group_by(nameTeam) %>%
+    mutate(dif = pct[isWin] - pct[!isWin]) %>%
+    ungroup() %>%
+    mutate(nameTeam = fct_reorder(nameTeam, dif))
+
+threes_dif %>%
+    ggplot(aes(nameTeam, pct, color = isWin)) +
+        geom_point(size = 2) +
+        geom_text(
+            data = threes_dif %>% filter(isWin), 
+            aes(label = round(dif, 4) * 100, y =  0.28), color = jtc_primary[[2]])  +
+        coord_flip() +
+        scale_y_continuous(labels = scales::percent, limits = c(0.26, 0.5)) +
+        scale_color_manual(values = jtc_primary[c(1,3)], labels = c("loss", "win")) +
+        labs(color = "")
+
+
+```
+
 
 ```{r}
 
@@ -73,11 +100,6 @@ three_summary$pct_3_scaled <- scale(three_summary$pct3)
 three_summary$team <- as.integer(as.factor(three_summary$nameTeam))
 three_summary$home <- as.integer(three_summary$locationGame == "H")
 
-
-three_summary %>%
-    ggplot(aes(factor(isWin), pct3)) +
-        geom_boxplot() +
-        facet_wrap(~ nameTeam)
 
 ```
 ```{r}
@@ -165,5 +187,6 @@ pred_comp %>%
 ## How does each team finish? 
 
 ```{r}
+
 ```
 
