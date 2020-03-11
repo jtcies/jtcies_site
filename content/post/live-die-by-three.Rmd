@@ -190,12 +190,16 @@ pred_comp %>%
 n_sims <- 100
 
 three_sims <- three_summary %>%
-    group_by(team, nameTeam) %>%
+    group_by(team) %>%
     summarise(
         mean_pct3 = mean(pct_3_scaled),
         sd_pct3 = sd(pct_3_scaled)
     ) %>%
-    mutate(sample_pct3 = map2(mean_pct3, sd_pct3, ~ rnorm(n = n_sims, mean = .x, sd = .y)))
+    mutate(pct_3_scaled = map2(mean_pct3, sd_pct3, ~ rnorm(n = n_sims, mean = .x, sd = .y))) %>%
+    unnest(pct_3_scaled) %>%
+    mutate(n_sim = row_number()) %>%
+    ungroup() %>%
+    select(-mean_pct3, -sd_pct3)
 
 future_games <- nbastatR::current_schedule() %>%
     filter(dateGame >= lubridate::today())
@@ -206,32 +210,45 @@ future_games_tidy <- future_games %>%
     gather(type, nameTeam, -idGame, -dateGame) %>%
     mutate(
         type = str_replace_all(type, "nameTeam", ""),
-        home = as.integer(as.factor(type)) - 1
+        home = as.integer(as.factor(type)) - 1,
+        team = as.integer(as.factor(nameTeam))
     ) %>%
     select(-type)
 
 future_game_sims <- future_games_tidy %>%
-    inner_join(three_sims, by = "nameTeam") %>%
-    unnest(sample_pct3) %>%
-    rename(pct_3_scaled = sample_pct3)
+    inner_join(three_sims, by = "team")
 
 future_preds <- sim(three_mod, data = future_game_sims)
 
-future_preds %>%
+future_wins <- future_preds %>%
     t() %>%
     as.data.frame() %>%
     mutate(
         nameTeam = future_game_sims$nameTeam,
-        idGame = future_game_sims$idGame
+        n_sim = future_game_sims$n_sim
     ) %>%
-    group_by(nameTeam, idGame) %>%
-    summarise_all(sum) %>%
-    gather(sim, wins, -nameTeam, -idGame) %>%
-    group_by(nameTeam, idGame) %>%
+    group_by(nameTeam, n_sim) %>%
+    summarise_at(vars(starts_with("V")), sum) %>%
+    gather(sim, wins, -nameTeam,  -n_sim) %>%
+    group_by(nameTeam) %>%
     summarise(
-        mean = mean(wins) / n_sims,
-        sd = sd(wins) / n_sims
+        mean_future_wins = mean(wins),
+        sd_future_wins = sd(wins) 
     )
+
+bind_cols(team_threes, future_wins) %>%
+    mutate(
+        total_wins_mean = season_wins + mean_future_wins,
+        total_wins_high = season_wins + (mean_future_wins + 1.96 * sd_future_wins),
+        total_wins_low = season_wins + (mean_future_wins - 1.96 * sd_future_wins),
+        current_expected = win_pct * 82,
+        nameTeam = fct_reorder(nameTeam, total_wins_mean)
+    ) %>%
+    ggplot(aes(nameTeam, total_wins_mean)) +
+        geom_point(size = 2) +
+        geom_linerange(aes(ymin = total_wins_low, ymax = total_wins_high)) +
+        geom_point(aes(y = current_expected), color = jtc_primary[[3]], size = 2) +
+        coord_flip()
 
 ```
 
