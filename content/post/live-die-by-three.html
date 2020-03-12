@@ -1,0 +1,407 @@
+---
+draft:true
+---
+
+
+
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✔ ggplot2 3.2.1     ✔ purrr   0.3.3
+## ✔ tibble  2.1.3     ✔ dplyr   0.8.4
+## ✔ tidyr   1.0.2     ✔ stringr 1.4.0
+## ✔ readr   1.3.1     ✔ forcats 0.4.0</code></pre>
+<pre><code>## ── Conflicts ───────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(rethinking)</code></pre>
+<pre><code>## Loading required package: rstan</code></pre>
+<pre><code>## Loading required package: StanHeaders</code></pre>
+<pre><code>## rstan (Version 2.19.2, GitRev: 2e1f913d3ca3)</code></pre>
+<pre><code>## For execution on a local, multicore CPU with excess RAM we recommend calling
+## options(mc.cores = parallel::detectCores()).
+## To avoid recompilation of unchanged Stan programs, we recommend calling
+## rstan_options(auto_write = TRUE)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;rstan&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:tidyr&#39;:
+## 
+##     extract</code></pre>
+<pre><code>## Loading required package: parallel</code></pre>
+<pre><code>## rethinking (Version 1.88)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;rethinking&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     map</code></pre>
+<pre class="r"><code>library(nbastatR)</code></pre>
+<pre><code>## Warning: replacing previous import &#39;dplyr::collapse&#39; by &#39;glue::collapse&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;curl::handle_reset&#39; by
+## &#39;httr::handle_reset&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;dplyr::intersect&#39; by
+## &#39;lubridate::intersect&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;dplyr::union&#39; by &#39;lubridate::union&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;dplyr::setdiff&#39; by &#39;lubridate::setdiff&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;httr::timeout&#39; by &#39;memoise::timeout&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;magrittr::set_names&#39; by
+## &#39;purrr::set_names&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;jsonlite::flatten&#39; by &#39;purrr::flatten&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;curl::parse_date&#39; by
+## &#39;readr::parse_date&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::list_along&#39; by
+## &#39;rlang::list_along&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::invoke&#39; by &#39;rlang::invoke&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten_raw&#39; by
+## &#39;rlang::flatten_raw&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::modify&#39; by &#39;rlang::modify&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::as_function&#39; by
+## &#39;rlang::as_function&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten_dbl&#39; by
+## &#39;rlang::flatten_dbl&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;jsonlite::unbox&#39; by &#39;rlang::unbox&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten_lgl&#39; by
+## &#39;rlang::flatten_lgl&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten_int&#39; by
+## &#39;rlang::flatten_int&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::%@%&#39; by &#39;rlang::%@%&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten_chr&#39; by
+## &#39;rlang::flatten_chr&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::splice&#39; by &#39;rlang::splice&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::flatten&#39; by &#39;rlang::flatten&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::prepend&#39; by &#39;rlang::prepend&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;readr::guess_encoding&#39; by
+## &#39;rvest::guess_encoding&#39; when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;purrr::pluck&#39; by &#39;rvest::pluck&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;magrittr::extract&#39; by &#39;tidyr::extract&#39;
+## when loading &#39;nbastatR&#39;</code></pre>
+<pre><code>## Warning: replacing previous import &#39;rlang::as_list&#39; by &#39;xml2::as_list&#39; when
+## loading &#39;nbastatR&#39;</code></pre>
+<pre class="r"><code>library(tidymodels)</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;xts&#39;:
+##   method     from
+##   as.zoo.xts zoo</code></pre>
+<pre><code>## ── Attaching packages ───────────────────────────────── tidymodels 0.0.2 ──</code></pre>
+<pre><code>## ✔ broom     0.5.2       ✔ recipes   0.1.5  
+## ✔ dials     0.0.2       ✔ rsample   0.0.4  
+## ✔ infer     0.4.0.1     ✔ yardstick 0.0.3  
+## ✔ parsnip   0.0.2</code></pre>
+<pre><code>## ── Conflicts ──────────────────────────────────── tidymodels_conflicts() ──
+## ✖ scales::discard() masks purrr::discard()
+## ✖ dplyr::filter()   masks stats::filter()
+## ✖ recipes::fixed()  masks stringr::fixed()
+## ✖ dplyr::lag()      masks stats::lag()
+## ✖ rethinking::map() masks purrr::map()
+## ✖ yardstick::spec() masks readr::spec()
+## ✖ recipes::step()   masks stats::step()</code></pre>
+<pre class="r"><code>library(jtcr)</code></pre>
+<pre><code>## Registering fonts with R</code></pre>
+<pre class="r"><code>theme_set(theme_jtc())
+
+games &lt;- nbastatR::game_logs(seasons = 2020)</code></pre>
+<pre><code>## Acquiring NBA basic player game logs for the 2019-20 Regular Season</code></pre>
+<pre><code>## Warning: Unknown columns: `orderSort`, `idLeague`, `namePlayerLastFirst`,
+## `dateGameLastPlayed`</code></pre>
+<pre><code>## Warning: All elements of `...` must be named.
+## Did you want `dataTables = c(typeSeason, dateGame, idGame, numberGameTeamSeason, nameTeam, 
+##     idTeam, isB2B, isB2BFirst, isB2BSecond, locationGame, slugMatchup, 
+##     slugTeam, countDaysRestTeam, countDaysNextGameTeam, slugOpponent, 
+##     slugTeamWinner, slugTeamLoser, outcomeGame, namePlayer, numberGamePlayerSeason, 
+##     countDaysRestPlayer, countDaysNextGamePlayer, idPlayer, isWin, 
+##     fgm, fga, pctFG, fg3m, fg3a, pctFG3, pctFT, hasVideo, fg2m, 
+##     fg2a, pctFG2, minutes, ftm, fta, oreb, dreb, treb, ast, stl, 
+##     blk, tov, pf, pts, plusminus, urlTeamSeasonLogo, urlPlayerStats, 
+##     urlPlayerThumbnail, urlPlayerHeadshot, urlPlayerActionPhoto, 
+##     urlPlayerPhoto)`?</code></pre>
+<pre><code>## Warning: `cols` is now required.
+## Please use `cols = c(dataTables)`</code></pre>
+<pre class="r"><code>game_threes &lt;- games %&gt;%
+    group_by(idGame, nameTeam, isWin, locationGame) %&gt;%
+    summarise(
+        fg3a = sum(fg3a),
+        fg3m = sum(fg3m)
+    ) %&gt;%
+    ungroup() %&gt;%
+    mutate(pct3 = fg3m / fg3a)
+
+team_threes &lt;- game_threes %&gt;%
+    group_by(nameTeam) %&gt;%
+    summarise(
+        season_fg3a = sum(fg3a),
+        season_fg3m = sum(fg3m),
+        season_wins = sum(isWin),
+        season_played = n()
+    ) %&gt;%
+    mutate(
+        season_pct3 = season_fg3m / season_fg3a,
+        win_pct = season_wins / season_played
+    )
+
+team_threes %&gt;%
+    mutate(
+        nameTeam = fct_reorder(nameTeam, season_pct3)
+    ) %&gt;%
+    ggplot(aes(nameTeam, season_pct3)) +
+        geom_col() +
+        coord_flip()</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>What is the relationship between three point percentage and winning percentage?</p>
+<pre class="r"><code>team_threes %&gt;%
+    ggplot(aes(season_pct3, win_pct)) +
+        geom_point() +
+        geom_text(
+            aes(label = nameTeam),
+            check_overlap = TRUE,
+            hjust = 1,
+            vjust = 1
+        )</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Which teams are most dependent on the three?</p>
+<pre class="r"><code>threes_dif &lt;- game_threes %&gt;%
+    group_by(nameTeam, isWin) %&gt;%
+    summarise_at(vars(fg3a, fg3m), sum) %&gt;%
+    mutate(pct = fg3m / fg3a,
+    ) %&gt;%
+    group_by(nameTeam) %&gt;%
+    mutate(dif = pct[isWin] - pct[!isWin]) %&gt;%
+    ungroup() %&gt;%
+    mutate(nameTeam = fct_reorder(nameTeam, dif))
+
+threes_dif %&gt;%
+    ggplot(aes(nameTeam, pct, color = isWin)) +
+        geom_point(size = 2) +
+        geom_text(
+            data = threes_dif %&gt;% filter(isWin), 
+            aes(label = round(dif, 4) * 100, y =  0.28), color = jtc_primary[[2]])  +
+        coord_flip() +
+        scale_y_continuous(labels = scales::percent, limits = c(0.26, 0.5)) +
+        scale_color_manual(values = jtc_primary[c(1,3)], labels = c(&quot;loss&quot;, &quot;win&quot;)) +
+        labs(color = &quot;&quot;)</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>three_summary &lt;- game_threes %&gt;%
+    inner_join(team_threes, by = &quot;nameTeam&quot;) %&gt;%
+    mutate(win = as.integer(isWin))
+
+three_summary$pct_3_scaled &lt;- scale(three_summary$pct3)
+three_summary$team &lt;- as.integer(as.factor(three_summary$nameTeam))
+three_summary$home &lt;- as.integer(three_summary$locationGame == &quot;H&quot;)</code></pre>
+<pre class="r"><code>set.seed(2020)
+
+dat_list &lt;- list(
+    team = three_summary$team,
+    win = three_summary$win,
+    pct_3_scaled = three_summary$pct_3_scaled,
+    home = three_summary$home
+)
+
+# using non-centered paramaterization because of divergent transitions
+three_mod &lt;- ulam(
+    alist(
+        win ~ binomial(1, p),
+        logit(p) &lt;- a[team] * a_sigma + b[team] * sigma_b * pct_3_scaled + b2 * home,
+        a[team] ~ normal(0, 1),
+        b[team] ~ normal(0, 1),
+        sigma_b ~ exponential(1),
+        a_sigma ~ exponential(1),
+        b2 ~ normal(0, 0.5)
+    ),
+    data = dat_list,
+    chains = 4,
+    cores = parallel::detectCores()
+)</code></pre>
+<pre><code>## Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+## Running the chains for more iterations may help. See
+## http://mc-stan.org/misc/warnings.html#bulk-ess</code></pre>
+<pre class="r"><code>precis(three_mod, depth = 2)</code></pre>
+<pre><code>##                mean         sd         5.5%      94.5%     n_eff      Rhat
+## a[1]    -1.07828575 0.39320317 -1.723694690 -0.4792283 1776.2299 1.0030008
+## a[2]     0.71389626 0.38429623  0.131016453  1.3121583 2116.3398 0.9995924
+## a[3]    -0.27396484 0.34088539 -0.830104744  0.2636273 2419.3696 1.0003184
+## a[4]    -0.95774479 0.36589482 -1.540170394 -0.4067725 1769.5169 1.0005830
+## a[5]    -1.09088787 0.38244040 -1.706791573 -0.5218180 1870.7425 0.9988227
+## a[6]    -1.34285140 0.35883625 -1.939384328 -0.8018237 1112.5249 1.0018233
+## a[7]     0.13387902 0.35984771 -0.432979168  0.7338314 2173.3957 0.9984128
+## a[8]     0.78473959 0.39466907  0.180464663  1.4335242 1647.9419 0.9997092
+## a[9]    -1.58761071 0.42015930 -2.262274183 -0.9492645 1285.3157 1.0025872
+## a[10]   -1.61268292 0.39942431 -2.288821132 -1.0046356 1208.2259 1.0023224
+## a[11]    0.69418361 0.39728152  0.107253718  1.3473179 2067.4217 0.9992388
+## a[12]    0.23934051 0.33576557 -0.308368319  0.7661091 2340.0000 0.9993780
+## a[13]    0.69319679 0.37614589  0.105028257  1.2999796 1844.3968 0.9993728
+## a[14]    1.38529856 0.42843980  0.746361292  2.1245983 1117.3689 1.0029173
+## a[15]   -0.24022219 0.33590383 -0.768532888  0.2864750 1961.8256 1.0007094
+## a[16]    0.04526942 0.38716860 -0.568773197  0.6702822 2313.9190 1.0003378
+## a[17]    1.64716011 0.46684580  0.963441181  2.4556978 1534.3857 1.0014872
+## a[18]   -1.14660038 0.39102241 -1.796895947 -0.5555858 1069.6700 1.0036161
+## a[19]   -0.97491260 0.41371579 -1.657639880 -0.3442507 1362.5207 1.0033184
+## a[20]   -1.08457458 0.37170622 -1.694983793 -0.5253578 1760.6796 1.0014551
+## a[21]    0.41867255 0.34578351 -0.119556274  0.9621493 1715.4754 0.9992874
+## a[22]   -0.19929068 0.36960238 -0.791229005  0.3865531 2968.7842 0.9986194
+## a[23]    0.26461750 0.33402327 -0.256340515  0.8030945 2534.6889 0.9990331
+## a[24]   -0.77099788 0.37477451 -1.376041093 -0.1807101 1802.1906 1.0026126
+## a[25]   -0.66783306 0.35645607 -1.253714390 -0.1154495 1698.6034 1.0001619
+## a[26]   -0.67019648 0.37089692 -1.267705842 -0.1106373 2041.5403 1.0008792
+## a[27]   -0.69130921 0.34267853 -1.270424807 -0.1576292 1555.1799 1.0045530
+## a[28]    0.83600275 0.40256834  0.242293205  1.4914779 1781.6553 0.9984670
+## a[29]    0.31260625 0.35893837 -0.264648775  0.8853948 2013.5154 1.0005827
+## a[30]   -1.03227719 0.37960193 -1.660847406 -0.4383249 1381.8888 1.0008994
+## b[1]     1.06971436 0.38127271  0.520256175  1.7076669 1391.8909 0.9987551
+## b[2]     1.51272503 0.46670325  0.809968170  2.2952213 1452.7921 1.0008097
+## b[3]     0.70505709 0.33859778  0.196210394  1.2648453 1470.1681 0.9992230
+## b[4]     0.49089773 0.29713145  0.046831936  0.9865003 1876.9636 1.0013102
+## b[5]     0.99877639 0.35831625  0.465665733  1.5952821 1257.8031 1.0002299
+## b[6]    -0.04456034 0.30210431 -0.534148105  0.4347013 2437.8947 0.9995041
+## b[7]     1.39496992 0.43208307  0.726270601  2.1304859 1676.4147 1.0001206
+## b[8]     0.93686958 0.31320636  0.474354431  1.4740308 1433.9764 1.0005387
+## b[9]     1.10814230 0.36484636  0.539551081  1.7279025 1520.4578 1.0008953
+## b[10]    0.55914473 0.30518196  0.108671423  1.0449603 1492.8555 1.0017498
+## b[11]    1.35079091 0.40406529  0.736772520  2.0406352 1084.8482 1.0014486
+## b[12]    0.51927795 0.29246900  0.068029815  1.0193567 1504.6519 1.0003937
+## b[13]    0.39954212 0.29416673 -0.054541480  0.8894243 1664.9597 1.0002783
+## b[14]    0.70332465 0.34287255  0.188415358  1.2826156 1738.3583 0.9992813
+## b[15]    0.68854526 0.29517766  0.257918219  1.1810231 1446.3110 1.0000240
+## b[16]    1.63481726 0.44033514  0.978543194  2.3469755 1390.2022 1.0013266
+## b[17]    0.78844350 0.39954410  0.147013526  1.4452887 1913.9372 1.0007444
+## b[18]    0.84591723 0.34568614  0.351274985  1.4299573 1058.4707 1.0020231
+## b[19]    1.42509773 0.43977941  0.780192111  2.1727125 1497.4078 0.9995277
+## b[20]    0.43447179 0.27893872  0.005937727  0.9008397 1915.2302 0.9990176
+## b[21]    0.50722686 0.29547390  0.062466199  1.0099007 1742.4078 1.0028903
+## b[22]    1.27484974 0.36483459  0.738203167  1.9110723  968.0772 1.0034016
+## b[23]    0.41217189 0.26479262  0.008192649  0.8579587 1442.9714 0.9992016
+## b[24]    1.03832195 0.35996515  0.496402824  1.6420924 1412.8595 1.0024858
+## b[25]    0.66402208 0.28813183  0.220987776  1.1541451 1363.2616 0.9994014
+## b[26]    1.03690788 0.33772988  0.540968079  1.6198952 1353.9799 1.0018754
+## b[27]    0.56235408 0.28114371  0.148133898  1.0393935 1826.6120 1.0007378
+## b[28]    1.02100051 0.38802494  0.455609487  1.6924421 1186.7934 1.0006007
+## b[29]    0.74679396 0.34754462  0.224120880  1.3258153 1359.5498 1.0016601
+## b[30]    0.68518772 0.31442958  0.230187724  1.2030857 1467.5965 0.9993162
+## sigma_b  0.96185465 0.14679950  0.754427226  1.2145893  372.1713 1.0052041
+## a_sigma  0.76374546 0.12162840  0.586409804  0.9708892  502.3153 1.0059271
+## b2       0.41662746 0.09583367  0.269235630  0.5678759 1244.4303 1.0018860</code></pre>
+<pre class="r"><code>post &lt;- extract.samples(three_mod, pars = paste(&quot;b[&quot;, 1:30, &quot;]&quot;))
+
+tbl_df(precis(post)) %&gt;%
+    mutate(nameTeam = team_threes$nameTeam,
+           nameTeam = fct_reorder(nameTeam, mean)) %&gt;%
+    ggplot(aes(nameTeam, mean)) +
+        geom_point(size = 2, color = jtc_primary[[1]]) +
+        geom_linerange(
+            aes(ymin = `5.5%`, ymax = `94.5%`),
+            color = jtc_primary[[1]]
+        ) +
+        coord_flip() +
+        labs(
+            title = str_wrap(&quot;Change in log odds of winning for each standard deviation increase in thre point percentage&quot;, 50)
+        )</code></pre>
+<pre><code>## Warning in class(x) &lt;- c(subclass, tibble_class): Setting class(x) to
+## multiple strings (&quot;tbl_df&quot;, &quot;tbl&quot;, ...); result will no longer be an S4
+## object</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<div id="how-predictive-is-this-model" class="section level2">
+<h2>How predictive is this model?</h2>
+<pre class="r"><code>three_preds &lt;- sim(three_mod, data = three_summary)
+
+pred_comp &lt;- three_preds %&gt;%
+    t() %&gt;%
+    as.data.frame() %&gt;%
+    mutate(nameTeam = three_summary$nameTeam) %&gt;%
+    group_by(nameTeam) %&gt;%
+    summarise_all(sum) %&gt;%
+    gather(sim, wins, -nameTeam) %&gt;%
+    group_by(nameTeam) %&gt;%
+    summarise(
+        mean_wins = mean(wins),
+        low = quantile(wins, probs = 0.05),
+        high = quantile(wins, probs = 0.95)
+    ) %&gt;%
+    left_join(team_threes, by = &quot;nameTeam&quot;)
+
+pred_comp %&gt;%
+    mutate(nameTeam = fct_reorder(nameTeam, mean_wins)) %&gt;%
+    ggplot(aes(nameTeam, season_wins)) +
+        geom_linerange(aes(ymin = low, ymax = high), color = jtc_primary[[1]],
+                       alpha = 0.5) +
+        geom_point(aes(y = mean_wins), size = 2, color = jtc_primary[[1]]) +
+        geom_point(size = 2, color = jtc_primary[[3]]) +
+        coord_flip()</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+## How does each team finish?</p>
+<pre class="r"><code>n_sims &lt;- 100
+
+three_sims &lt;- three_summary %&gt;%
+    group_by(team) %&gt;%
+    summarise(
+        mean_pct3 = mean(pct_3_scaled),
+        sd_pct3 = sd(pct_3_scaled)
+    ) %&gt;%
+    mutate(pct_3_scaled = map2(mean_pct3, sd_pct3, ~ rnorm(n = n_sims, mean = .x, sd = .y))) %&gt;%
+    unnest(pct_3_scaled) %&gt;%
+    mutate(n_sim = row_number()) %&gt;%
+    ungroup() %&gt;%
+    select(-mean_pct3, -sd_pct3)
+
+future_games &lt;- nbastatR::current_schedule() %&gt;%
+    filter(dateGame &gt;= lubridate::today())</code></pre>
+<pre><code>## Joining, by = &quot;idTeamHome&quot;</code></pre>
+<pre><code>## Joining, by = &quot;idTeamAway&quot;</code></pre>
+<pre><code>## Joining, by = &quot;idRow&quot;
+## Joining, by = &quot;idRow&quot;
+## Joining, by = &quot;idRow&quot;
+## Joining, by = &quot;idRow&quot;</code></pre>
+<pre class="r"><code>future_games_tidy &lt;- future_games %&gt;%
+    # this id game is different than the other
+    select(dateGame, nameTeamHome, nameTeamAway, idGame) %&gt;%
+    gather(type, nameTeam, -idGame, -dateGame) %&gt;%
+    mutate(
+        type = str_replace_all(type, &quot;nameTeam&quot;, &quot;&quot;),
+        home = as.integer(as.factor(type)) - 1,
+        team = as.integer(as.factor(nameTeam))
+    ) %&gt;%
+    select(-type)
+
+future_game_sims &lt;- future_games_tidy %&gt;%
+    inner_join(three_sims, by = &quot;team&quot;)
+
+future_preds &lt;- sim(three_mod, data = future_game_sims)
+
+future_wins &lt;- future_preds %&gt;%
+    t() %&gt;%
+    as.data.frame() %&gt;%
+    mutate(
+        nameTeam = future_game_sims$nameTeam,
+        n_sim = future_game_sims$n_sim
+    ) %&gt;%
+    group_by(nameTeam, n_sim) %&gt;%
+    summarise_at(vars(starts_with(&quot;V&quot;)), sum) %&gt;%
+    gather(sim, wins, -nameTeam,  -n_sim) %&gt;%
+    group_by(nameTeam) %&gt;%
+    summarise(
+        mean_future_wins = mean(wins),
+        sd_future_wins = sd(wins) 
+    )
+
+bind_cols(team_threes, future_wins) %&gt;%
+    mutate(
+        total_wins_mean = season_wins + mean_future_wins,
+        total_wins_high = season_wins + (mean_future_wins + 1.96 * sd_future_wins),
+        total_wins_low = season_wins + (mean_future_wins - 1.96 * sd_future_wins),
+        current_expected = win_pct * 82,
+        nameTeam = fct_reorder(nameTeam, total_wins_mean)
+    ) %&gt;%
+    ggplot(aes(nameTeam, total_wins_mean)) +
+        geom_point(size = 2) +
+        geom_linerange(aes(ymin = total_wins_low, ymax = total_wins_high)) +
+        geom_point(aes(y = current_expected), color = jtc_primary[[3]], size = 2) +
+        coord_flip()</code></pre>
+<p><img src="/post/live-die-by-three_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>

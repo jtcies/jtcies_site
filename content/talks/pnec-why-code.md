@@ -1,11 +1,11 @@
 ---
 title: "Why code?" 
-weight: -100
+weight: -200
 comments: false
 showDate: false
 ---
 
-### [Philadelphia Non-profit Evaluators Coalition - January 2020] 
+### Philadelphia Non-profit Evaluators Coalition - January 2020 
 
 In this talk, I describe why I use code to do data analysis and make the case that other evalutors can and should do the same. This starts from the perspective that:
 
