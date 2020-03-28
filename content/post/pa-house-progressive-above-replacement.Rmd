@@ -264,51 +264,51 @@ Here we can see some of the results of the 'blue wave'. Many districts that went
 ### Progressiveness by win margin
 
 ```{r mod}
+
 pa_house_tidy <- pa_house_tidy %>%
-    filter(!is.na(progressive_avg))
+    filter(!is.na(progressive_avg)) %>%
+    mutate(
+        margin_scaled = scale(margin_2016),
+        party_int = as.integer(as.factor(party_2016))
+    )
 
 model_dat <- list(
     votes = pa_house_tidy$votes_cast,
     progressive_votes = as.integer(pa_house_tidy$progressive_votes),
-    party = as.integer(as.factor(pa_house_tidy$party_2016)),
-    margin = scale(pa_house_tidy$margin_2016)[,1]
+    party_int = pa_house_tidy$party_int,
+    margin_scaled = pa_house_tidy$margin_scaled
 )
+
+set.seed(2019)
 
 glmod <- ulam(
     alist(
-        progressive_votes ~ dbinom(votes, p),
-        logit(p) <- a[party] + b[party] * margin,
-        a[party] ~ dnorm(a_bar, a_sigma),
-        a_bar ~ dnorm(0, 1.5),
-        a_sigma ~ dexp(1),
-        b[party] ~ dnorm(0, b_sigma),
-        b_sigma ~ dexp(1)
-    ), data = model_dat,
-    chains = 4, cores = 4, log_lik = TRUE
+        progressive_votes ~ binomial(votes, p),
+        logit(p) <- a_mu[1] + a[party_int, 1] + (a_mu[2] + a[party_int, 2]) * margin_scaled,
+        matrix[party_int, 2]: a <- t(diag_pre_multiply(sigma, L_Rho) * z),
+        matrix[2, party_int]: z ~ normal(0, 1),
+        vector[2]: a_mu[[1]] ~ normal(0, 1),
+        vector[2]: a_mu[[2]] ~ normal(0, 1),
+        vector[2]: sigma ~ exponential(1),
+        cholesky_factor_corr[2]: L_Rho ~ lkj_corr_cholesky(3)
+    ),
+    data = model_dat,
+    chains = 4,
+    cores = 4,
+    log_lik = TRUE
 )
 
-
-precis(glmod, depth = 2)
-
-pairs(glmod)
 ```
+```{r}
 
-```{r modpredplot}
+sim_dat <- crossing(
+    party_int = 1:2,
+    margin_scaled = seq(-3, 3, length.out = 0.1)
+)
 
-post <- extract.samples(glmod)
+post_sim <- link(glmod, sim_dat)
 
-apply_preds <- function(margin, party) {
-
-    post$a[, party] + post$b * margin
-
-} 
-
-possible <- crossing(margin = seq(-1, 1, length.out = 100),
-         party = c(1, 2))
-
-preds <- purrr::map2(possible$margin, possible$party, apply_preds)
 ```
-
 
 I'll come back to the shaded part in a second. 
 

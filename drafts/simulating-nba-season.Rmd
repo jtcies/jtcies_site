@@ -1,0 +1,68 @@
+```{r setup}
+
+library(tidyverse)
+library(rethinking)
+library(reticulate)
+library(jtcr)
+library(lubridate)
+
+theme_set(theme_jtc())
+
+box_scores <- read_csv(here::here("content/data/nba-boxscores-2020.csv")) %>%
+    rename(game_id = X1)
+
+box_scores_processed <- box_scores %>%
+    mutate_at(
+        vars(pace, home_offensive_rating, away_offensive_rating,
+             home_defensive_rating, away_defensive_rating),
+        scale
+    ) %>%
+    mutate(
+        home_win = if_else(home_points > away_points, 1L, 0L),
+        home_team = if_else(home_wins == 1, winning_abbr, losing_abbr),
+        away_team = if_else(home_wins == 1, losing_abbr, winning_abbr),
+        home_net = home_offensive_rating - home_defensive_rating,
+        away_net = away_offensive_rating - away_defensive_rating,
+        game_net = home_net - away_net
+    )
+
+```
+```{r}
+
+dat_list <- list(
+    home_team = as.integer(as.factor(box_scores_processed$home_team)),
+    away_team = as.integer(as.factor(box_scores_processed$away_team)),
+    game_net = box_scores_processed$game_net,
+    home_net = box_scores_processed$home_net,
+    away_net = box_scores_processed$away_net
+)
+
+mod <- ulam(
+    alist(
+        game_net ~ normal(mu, sigma),
+        mu <- a1[home_team] - a2[away_team],
+        a1[home_team] ~ normal(0, 1),
+        a2[away_team] ~ normal(0, 1),
+        sigma ~ exponential(1)
+    ),
+    data = dat_list,
+    cores = parallel::detectCores()
+)
+
+precis(mod, depth = 2)
+```
+
+```{r}
+
+preds <- sim(mod)
+
+mean_pred <- apply(preds, 2, mean)
+
+box_scores_processed %>%
+    mutate(mean_pred = mean_pred) %>%
+    ggplot(aes(mean_pred, game_net)) +
+        geom_point()
+
+
+```
+
