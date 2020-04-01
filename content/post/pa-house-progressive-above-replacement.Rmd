@@ -21,10 +21,9 @@ I set out to replicate this analysis. In addition, I wanted to see if scores on 
 
 library(tidyverse)
 library(rvest)
-library(broom)
 library(scales)
-library(rethinking)
 library(plotly)
+library(tidymodels)
 
 theme_set(theme_minimal())
 
@@ -53,29 +52,28 @@ First we'll scrape results from the 2016 and 2018 elections.
 ```{r}
 
 scrape_election <- function(year) {
-  
- sprintf(
-   "https://en.wikipedia.org/wiki/%i_Pennsylvania_House_of_Representatives_election",
-   year
- ) %>% 
-    read_html() %>%
-    html_table(fill = TRUE) %>%
-    .[[19]] %>%
-    janitor::clean_names() %>%
-    tbl_df() %>%
-    select(-party, -party_2, -party_3, -percent) %>%
-    rename(party = party_4) %>% 
-    mutate(
-      year = year,
-      votes = parse_number(votes)
-    )
 
+    sprintf(
+       "https://en.wikipedia.org/wiki/%i_Pennsylvania_House_of_Representatives_election",
+       year
+     ) %>% 
+        read_html() %>%
+        html_table(fill = TRUE) %>%
+        .[[19]] %>%
+        janitor::clean_names() %>%
+        tbl_df() %>%
+        select(-party, -party_2, -party_3, -percent) %>%
+        rename(party = party_4) %>% 
+        mutate(
+          year = year,
+          votes = parse_number(votes)
+        )
 }
 
-election_results <- c(2016,  2018) %>% 
-  map_dfr(scrape_election) %>% 
-  group_by(district, year) %>% 
-  mutate(percent = votes / sum(votes)) %>% 
+election_results <- c(2016,  2018) %>%
+  map_dfr(scrape_election) %>%
+  group_by(district, year) %>%
+  mutate(percent = votes / sum(votes)) %>%
   ungroup()
 
 ```
@@ -132,7 +130,7 @@ Next we'll create a summary of each representative's voting behavior by
 
 ```{r}
 
-prog_summary <- votes %>% 
+prog_summary <- votes %>%
     left_join(bills, by = "bill") %>%
     mutate(
       progressive_vote = case_when(
@@ -141,12 +139,12 @@ prog_summary <- votes %>%
         progressive == 1 & vote == "nay" ~ 0,
         progressive == -1 & vote == "nay" ~ 1
       )
-    ) %>% 
-  group_by(rep) %>% 
+    ) %>%
+  group_by(rep) %>%
   summarise(
     progressive_votes = sum(progressive_vote),
-	progressive_avg = mean(progressive_vote),
-	votes_cast = n()
+    progressive_avg = mean(progressive_vote),
+    votes_cast = n()
   )
 
 ```
@@ -156,35 +154,36 @@ Merge the data.
 ```{r}
 
 election_merge <- election_both %>%
-	separate(representative_2016, into = c("first", "last", "suffix"), sep = " |-",
-	         remove = FALSE) %>%
-	mutate_at(vars(first, last, suffix), tolower) %>%
-	group_by(last) %>%
-	mutate(
-		merge_name = case_when(
-			!is.na(suffix) ~ suffix,
-			length(row_number()) > 1 ~ paste0(last, " ", str_sub(first, 1, 1)),
-			TRUE ~ last
-		),
-		merge_name = case_when(
-			merge_name == "keller m" ~ "keller mk",
-			merge_name == "keller b" ~ "keller w",
-			merge_name == "braneky" ~ "krueger",
-			merge_name == "quinn" & str_detect(last, "marguerite") ~ "quinn m",
-			merge_name == "quinn" ~ "quinn c",
-			merge_name == "day g" ~ "day",
-			TRUE ~ merge_name
-		)
-	) %>%
-	ungroup()
+    separate(representative_2016, into = c("first", "last", "suffix"),
+             sep = " |-",
+             remove = FALSE) %>%
+    mutate_at(vars(first, last, suffix), tolower) %>%
+    group_by(last) %>%
+    mutate(
+    merge_name = case_when(
+            !is.na(suffix) ~ suffix,
+            length(row_number()) > 1 ~ paste0(last, " ", str_sub(first, 1, 1)),
+            TRUE ~ last
+        ),
+        merge_name = case_when(
+            merge_name == "keller m" ~ "keller mk",
+            merge_name == "keller b" ~ "keller w",
+            merge_name == "braneky" ~ "krueger",
+            merge_name == "quinn" & str_detect(last, "marguerite") ~ "quinn m",
+            merge_name == "quinn" ~ "quinn c",
+            merge_name == "day g" ~ "day",
+            TRUE ~ merge_name
+        )
+    ) %>%
+    ungroup()
 
 
 prog_merge <- prog_summary %>%
-	mutate(rep = tolower(str_replace_all(rep, ",|\\.", "")))
+    mutate(rep = tolower(str_replace_all(rep, ",|\\.", "")))
 
 
 pa_house_tidy <- election_merge %>%
-	left_join(prog_merge, by = c("merge_name" = "rep"))
+    left_join(prog_merge, by = c("merge_name" = "rep"))
 
 ```
 
@@ -209,7 +208,7 @@ pa_house_tidy %>%
                  "Republican" = "red")
     ) +
     labs(
-			x = "margin of victory - 2016 election"
+        x = "margin of victory - 2016 election"
     )
     
 
@@ -266,48 +265,54 @@ Here we can see some of the results of the 'blue wave'. Many districts that went
 ```{r mod}
 
 pa_house_tidy <- pa_house_tidy %>%
-    filter(!is.na(progressive_avg)) %>%
-    mutate(
-        margin_scaled = scale(margin_2016),
-        party_int = as.integer(as.factor(party_2016))
-    )
-
-model_dat <- list(
-    votes = pa_house_tidy$votes_cast,
-    progressive_votes = as.integer(pa_house_tidy$progressive_votes),
-    party_int = pa_house_tidy$party_int,
-    margin_scaled = pa_house_tidy$margin_scaled
-)
+    filter(!is.na(progressive_avg))
 
 set.seed(2019)
 
-glmod <- ulam(
-    alist(
-        progressive_votes ~ binomial(votes, p),
-        logit(p) <- a_mu[1] + a[party_int, 1] + (a_mu[2] + a[party_int, 2]) * margin_scaled,
-        matrix[party_int, 2]: a <- t(diag_pre_multiply(sigma, L_Rho) * z),
-        matrix[2, party_int]: z ~ normal(0, 1),
-        vector[2]: a_mu[[1]] ~ normal(0, 1),
-        vector[2]: a_mu[[2]] ~ normal(0, 1),
-        vector[2]: sigma ~ exponential(1),
-        cholesky_factor_corr[2]: L_Rho ~ lkj_corr_cholesky(3)
-    ),
-    data = model_dat,
-    chains = 4,
-    cores = 4,
-    log_lik = TRUE
-)
+votes_sample <- bootstraps(pa_house_tidy, times = 100)
+
+glm_fit <- function(dat) {
+
+    glm(progressive_avg ~ party_2016 + party_2016 * margin_2016,
+        data = dat,
+        weights = votes_cast,
+        family = "binomial")
+
+}
+
+sample_fits <- votes_sample %>%
+    mutate(model_fit = map(splits, glm_fit))
 
 ```
+
 ```{r}
 
-sim_dat <- crossing(
-    party_int = 1:2,
-    margin_scaled = seq(-3, 3, length.out = 0.1)
-)
+sim_dat <- crossing(party_2016 = c("Democratic", "Republican"),
+                    margin_2016 = seq(0, 100, length.out = 100))
 
-post_sim <- link(glmod, sim_dat)
+simulations <- sim_dat %>%
+    nest(data = everything()) %>%
+    crossing(model_fit = sample_fits$model_fit) %>%
+    mutate(
+        augmented = map2(model_fit, data, 
+                         ~ broom::augment(.x, newdata = .y, type.predict = "response")),
+        id = row_number()
+    ) %>%
+    select(augmented, id) %>%
+    unnest(cols = augmented)
 
+simulations %>%
+    mutate(group = paste0(party_2016, id)) %>%
+    group_by(party_2016, margin_2016) %>%
+    mutate(mean_fit = mean(.fitted)) %>%
+    ungroup() %>%
+    ggplot(aes(margin_2016, .fitted, color = party_2016, group = group)) +
+        geom_line(alpha = 0.2) +
+        geom_line(aes(y = mean_fit), size = 2) +
+        scale_color_manual(
+          values = c("Democratic" = "blue",
+                     "Republican" = "red")
+        )
 ```
 
 I'll come back to the shaded part in a second. 
@@ -318,15 +323,11 @@ There is definitely a trend that shows Democrats as more progressive and Republi
 
 The original PAR article looked at Democrats who were less progressive than expected based on their margin of victory. So who are they in PA? 
 
-
-```{r}
-```
+## code
 
 There are ... Democrats who won uncontested in 2016 races who were less progressive than expected. Let's look at some of them. 
 
-```{r}
-
-```
+## code
 
 All were re-elected, and all but one had uncontested general elections in 2018 (although some may have been primaried). 
 
