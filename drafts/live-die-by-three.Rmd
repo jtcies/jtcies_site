@@ -1,0 +1,251 @@
+---
+draft: true
+---
+
+```{r}
+
+library(tidyverse)
+library(rethinking)
+library(nbastatR)
+library(tidymodels)
+library(jtcr)
+
+theme_set(theme_jtc())
+
+games <- nbastatR::game_logs(seasons = 2020)
+
+game_threes <- games %>%
+    group_by(idGame, nameTeam, isWin, locationGame) %>% summarise( fg3a = sum(fg3a),
+        fg3m = sum(fg3m)
+    ) %>%
+    ungroup() %>%
+    mutate(pct3 = fg3m / fg3a)
+
+team_threes <- game_threes %>%
+    group_by(nameTeam) %>%
+    summarise(
+        season_fg3a = sum(fg3a),
+        season_fg3m = sum(fg3m),
+        season_wins = sum(isWin),
+        season_played = n()
+    ) %>%
+    mutate(
+        season_pct3 = season_fg3m / season_fg3a,
+        win_pct = season_wins / season_played
+    )
+
+team_threes %>%
+    mutate(
+        nameTeam = fct_reorder(nameTeam, season_pct3)
+    ) %>%
+    ggplot(aes(nameTeam, season_pct3)) +
+        geom_col() +
+        coord_flip()
+
+
+```
+
+What is the relationship between three point percentage and winning percentage? 
+
+```{r}
+team_threes %>%
+    ggplot(aes(season_pct3, win_pct)) +
+        geom_point() +
+        geom_text(
+            aes(label = nameTeam),
+            check_overlap = TRUE,
+            hjust = 1,
+            vjust = 1
+        )
+```
+
+Which teams are most dependent on the three? 
+
+```{r}
+
+threes_dif <- game_threes %>%
+    group_by(nameTeam, isWin) %>%
+    summarise_at(vars(fg3a, fg3m), sum) %>%
+    mutate(pct = fg3m / fg3a,
+    ) %>%
+    group_by(nameTeam) %>%
+    mutate(dif = pct[isWin] - pct[!isWin]) %>%
+    ungroup() %>%
+    mutate(nameTeam = fct_reorder(nameTeam, dif))
+
+threes_dif %>%
+    ggplot(aes(nameTeam, pct, color = isWin)) +
+        geom_point(size = 2) +
+        geom_text(
+            data = threes_dif %>% filter(isWin), 
+            aes(label = round(dif, 4) * 100, y =  0.28), color = jtc_primary[[2]])  +
+        coord_flip() +
+        scale_y_continuous(labels = scales::percent, limits = c(0.26, 0.5)) +
+        scale_color_manual(values = jtc_primary[c(1,3)], labels = c("loss", "win")) +
+        labs(color = "")
+
+
+```
+
+
+```{r}
+
+three_summary <- game_threes %>%
+    inner_join(team_threes, by = "nameTeam") %>%
+    mutate(win = as.integer(isWin))
+
+three_summary$pct_3_scaled <- scale(three_summary$pct3)
+three_summary$team <- as.integer(as.factor(three_summary$nameTeam))
+three_summary$home <- as.integer(three_summary$locationGame == "H")
+
+
+```
+```{r}
+
+# set.seed(2020)
+# 
+# dat_list <- list(
+#     team = three_summary$team,
+#     win = three_summary$win,
+#     pct_3_scaled = three_summary$pct_3_scaled,
+#     home = three_summary$home
+# )
+# 
+using non-centered paramaterization because of divergent transitions
+# three_mod <- ulam(
+#     alist(
+#         win ~ binomial(1, p),
+#         logit(p) <- a[team] * a_sigma + b[team] * sigma_b * pct_3_scaled + b2 * home,
+#         a[team] ~ normal(0, 1),
+#         b[team] ~ normal(0, 1),
+#         sigma_b ~ exponential(1),
+#         a_sigma ~ exponential(1),
+#         b2 ~ normal(0, 0.5)
+#     ),
+#     data = dat_list,
+#     chains = 4,
+#     cores = parallel::detectCores()
+# )
+# 
+# precis(three_mod, depth = 2)
+```
+
+```{r}
+# 
+# post <- extract.samples(three_mod, pars = paste("b[", 1:30, "]"))
+# 
+# tbl_df(precis(post)) %>%
+#     mutate(nameTeam = team_threes$nameTeam,
+#            nameTeam = fct_reorder(nameTeam, mean)) %>%
+#     ggplot(aes(nameTeam, mean)) +
+#         geom_point(size = 2, color = jtc_primary[[1]]) +
+#         geom_linerange(
+#             aes(ymin = `5.5%`, ymax = `94.5%`),
+#             color = jtc_primary[[1]]
+#         ) +
+#         coord_flip() +
+#         labs(
+#             title = str_wrap("Change in log odds of winning for each standard deviation increase in thre point percentage", 50)
+#         )
+# 
+```
+
+## How predictive is this model? 
+
+```{r}
+
+# three_preds <- sim(three_mod, data = three_summary)
+# 
+# pred_comp <- three_preds %>%
+#     t() %>%
+#     as.data.frame() %>%
+#     mutate(nameTeam = three_summary$nameTeam) %>%
+#     group_by(nameTeam) %>%
+#     summarise_all(sum) %>%
+#     gather(sim, wins, -nameTeam) %>%
+#     group_by(nameTeam) %>%
+#     summarise(
+#         mean_wins = mean(wins),
+#         low = quantile(wins, probs = 0.05),
+#         high = quantile(wins, probs = 0.95)
+#     ) %>%
+#     left_join(team_threes, by = "nameTeam")
+# 
+# pred_comp %>%
+#     mutate(nameTeam = fct_reorder(nameTeam, mean_wins)) %>%
+#     ggplot(aes(nameTeam, season_wins)) +
+#         geom_linerange(aes(ymin = low, ymax = high), color = jtc_primary[[1]],
+#                        alpha = 0.5) +
+#         geom_point(aes(y = mean_wins), size = 2, color = jtc_primary[[1]]) +
+#         geom_point(size = 2, color = jtc_primary[[3]]) +
+#         coord_flip()
+# 
+```
+## How does each team finish? 
+
+```{r}
+# n_sims <- 100
+# 
+# three_sims <- three_summary %>%
+#     group_by(team) %>%
+#     summarise(
+#         mean_pct3 = mean(pct_3_scaled),
+#         sd_pct3 = sd(pct_3_scaled)
+#     ) %>%
+#     mutate(pct_3_scaled = map2(mean_pct3, sd_pct3, ~ rnorm(n = n_sims, mean = .x, sd = .y))) %>%
+#     unnest(pct_3_scaled) %>%
+#     mutate(n_sim = row_number()) %>%
+#     ungroup() %>%
+#     select(-mean_pct3, -sd_pct3)
+# 
+# future_games <- nbastatR::current_schedule() %>%
+#     filter(dateGame >= lubridate::today())
+# 
+# future_games_tidy <- future_games %>%
+this id game is different than the other
+#     select(dateGame, nameTeamHome, nameTeamAway, idGame) %>%
+#     gather(type, nameTeam, -idGame, -dateGame) %>%
+#     mutate(
+#         type = str_replace_all(type, "nameTeam", ""),
+#         home = as.integer(as.factor(type)) - 1,
+#         team = as.integer(as.factor(nameTeam))
+#     ) %>%
+#     select(-type)
+# 
+# future_game_sims <- future_games_tidy %>%
+#     inner_join(three_sims, by = "team")
+# 
+# future_preds <- sim(three_mod, data = future_game_sims)
+# 
+# future_wins <- future_preds %>%
+#     t() %>%
+#     as.data.frame() %>%
+#     mutate(
+#         nameTeam = future_game_sims$nameTeam,
+#         n_sim = future_game_sims$n_sim
+#     ) %>%
+#     group_by(nameTeam, n_sim) %>%
+#     summarise_at(vars(starts_with("V")), sum) %>%
+#     gather(sim, wins, -nameTeam,  -n_sim) %>%
+#     group_by(nameTeam) %>%
+#     summarise(
+#         mean_future_wins = mean(wins),
+#         sd_future_wins = sd(wins) 
+#     )
+# 
+# bind_cols(team_threes, future_wins) %>%
+#     mutate(
+#         total_wins_mean = season_wins + mean_future_wins,
+#         total_wins_high = season_wins + (mean_future_wins + 1.96 * sd_future_wins),
+#         total_wins_low = season_wins + (mean_future_wins - 1.96 * sd_future_wins),
+#         current_expected = win_pct * 82,
+#         nameTeam = fct_reorder(nameTeam, total_wins_mean)
+#     ) %>%
+#     ggplot(aes(nameTeam, total_wins_mean)) +
+#         geom_point(size = 2) +
+#         geom_linerange(aes(ymin = total_wins_low, ymax = total_wins_high)) +
+#         geom_point(aes(y = current_expected), color = jtc_primary[[3]], size = 2) +
+#         coord_flip()
+
+```
+

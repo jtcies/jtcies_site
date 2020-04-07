@@ -17,13 +17,18 @@ Earlier this year, Data for Progress put out a piece of US House Democrats fared
 
 I set out to replicate this analysis. In addition, I wanted to see if scores on this metrics had any relationship to whether candidates were re-elected (or decided not to run) in 2018. 
 
+```{r setup, echo = FALSE}
+
+knitr::opts_chunk$set(fig.width = 10, fig.asp = 0.618, fig.align = "center",
+                      message = FALSE, warning = FALSE)
+```
 ```{r}
 
-library(tidyverse)
+suppressMessages({library(tidyverse)
 library(rvest)
 library(scales)
 library(plotly)
-library(tidymodels)
+library(tidymodels)})
 
 theme_set(theme_minimal())
 
@@ -312,7 +317,62 @@ simulations %>%
         scale_color_manual(
           values = c("Democratic" = "blue",
                      "Republican" = "red")
+        ) +
+        ylim(c(0, 1)) + 
+        labs(y = "Expected progressive average",
+             x = "margin of victory 2016",
+             color = "")
+
+```
+```{r}
+
+sim_mean <- simulations %>%
+    group_by(party_2016, margin_2016) %>%
+    mutate(mean_fit = mean(.fitted),
+           sd_fit = sd(.fitted)) %>%
+    ungroup()
+
+
+prog_plot <- pa_house_tidy %>%
+    ggplot(aes(margin_2016, progressive_avg, color = party_2016)) +
+        geom_point(
+            data = pa_house_tidy[pa_house_tidy$same, ],
+            size = 3,
+            color = "black"
+        ) +
+        geom_point(size = 2) +
+        geom_line(
+            data = sim_mean,
+            aes(y = mean_fit),
+            size = 1.5,
+            show.legend = FALSE
+        ) +
+        geom_ribbon(
+            data = sim_mean,
+            aes(x = margin_2016,
+                fill = party_2016,
+                ymin = mean_fit - sd_fit * 2,
+                ymax = mean_fit + sd_fit * 2),
+            alpha = 0.2,
+            inherit.aes = FALSE,
+            show.legend = FALSE,
+        ) +
+        scale_color_manual(
+          values = c("Democratic" = "blue",
+                    "Republican" = "red")
+        ) +
+        scale_fill_manual(
+          values = c("Democratic" = "blue",
+                    "Republican" = "red")
+        ) +
+        labs(
+             y = "progressive average",
+             x = "margin of victory 2016",
+             color = ""
         )
+
+ggplotly(prog_plot, tooltip = "district")
+
 ```
 
 I'll come back to the shaded part in a second. 
@@ -331,7 +391,7 @@ There are ... Democrats who won uncontested in 2016 races who were less progress
 
 All were re-elected, and all but one had uncontested general elections in 2018 (although some may have been primaried). 
 
-Chris Sainato has is the represenative for New Castle in Western PA and has been in office since 1995. However, he received a challenge from Republican in 2018 and won by only 13 points. So perhaps he knew that this was coming. He also released an (op-ed)[https://www.ncnewsonline.com/opinion/columns/chris-sainato-restoring-civility-to-our-politics/article_9e82083d-e78d-58e2-8527-4957bc9710b0.html] about civility in politics, so he's definitely going all-in on the moderate Dem approach. 
+Chris Sainato has is the represenative for New Castle in Western PA and has been in office since 1995. However, he received a challenge from Republican in 2018 and won by only 13 points. So perhaps he knew that this was coming. He also released an [op-ed](https://www.ncnewsonline.com/opinion/columns/chris-sainato-restoring-civility-to-our-politics/article_9e82083d-e78d-58e2-8527-4957bc9710b0.html) about civility in politics, so he's definitely going all-in on the moderate Dem approach. 
 
 Tony DeLuca is has been in office since 1983 has been the subject of multiple investiagtions related to issues related to nepotism and fraud, was the subject of a recent BuzzFeed article about his relationship with insurance compaines. Safe to say he's not the most progressive guy in the House. 
 
