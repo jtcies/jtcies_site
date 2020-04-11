@@ -293,14 +293,16 @@ sample_fits <- votes_sample %>%
 ```{r}
 
 sim_dat <- crossing(party_2016 = c("Democratic", "Republican"),
-                    margin_2016 = seq(0, 100, length.out = 100))
+                    margin_2016 = seq(0, 100, by = 0.1))
 
 simulations <- sim_dat %>%
     nest(data = everything()) %>%
     crossing(model_fit = sample_fits$model_fit) %>%
     mutate(
-        augmented = map2(model_fit, data, 
-                         ~ broom::augment(.x, newdata = .y, type.predict = "response")),
+        augmented = map2(
+            model_fit, data,
+            ~ broom::augment(.x, newdata = .y, type.predict = "response")
+        ),
         id = row_number()
     ) %>%
     select(augmented, id) %>%
@@ -318,23 +320,27 @@ simulations %>%
           values = c("Democratic" = "blue",
                      "Republican" = "red")
         ) +
-        ylim(c(0, 1)) + 
+        ylim(c(0, 1)) +
         labs(y = "Expected progressive average",
              x = "margin of victory 2016",
              color = "")
 
 ```
+
+
 ```{r}
 
-sim_mean <- simulations %>%
-    group_by(party_2016, margin_2016) %>%
-    mutate(mean_fit = mean(.fitted),
-           sd_fit = sd(.fitted)) %>%
-    ungroup()
+sample_fits
 
 
 prog_plot <- pa_house_tidy %>%
-    ggplot(aes(margin_2016, progressive_avg, color = party_2016)) +
+    ggplot(
+        aes(margin_2016, progressive_avg, color = party_2016,
+            text = paste0("District:", district, "\n",
+                          "Rep:", representative, "\n",
+                          "Margin of Victory:", margin_2016, "\n",
+                          "Progressive Avg:", progressive_avg, "\n",
+                          "Re-elected:", same))) +
         geom_point(
             data = pa_house_tidy[pa_house_tidy$same, ],
             size = 3,
@@ -343,9 +349,10 @@ prog_plot <- pa_house_tidy %>%
         geom_point(size = 2) +
         geom_line(
             data = sim_mean,
-            aes(y = mean_fit),
+            aes(x = margin_2016, y = mean_fit, color = party_2016),
             size = 1.5,
-            show.legend = FALSE
+            show.legend = FALSE,
+            inherit.aes = FALSE
         ) +
         geom_ribbon(
             data = sim_mean,
@@ -371,15 +378,44 @@ prog_plot <- pa_house_tidy %>%
              color = ""
         )
 
-ggplotly(prog_plot, tooltip = "district")
+prog_plotly <- ggplotly(prog_plot,
+                        tooltip = c("text"))
 
+#prog_plotly$x$data[[4]]$hoverinfo <- "none"
+#prog_plotly$x$data[[1]]$hoverinfo <- "none"
+#prog_plotly$x$data[[5]]$hoverinfo <- "none"
+
+prog_plotly
 ```
-
-I'll come back to the shaded part in a second. 
 
 There is definitely a trend that shows Democrats as more progressive and Republicans as less progressive if they won their district by a greater margin. However, it's not a huge magnitude. A Democrat who won by less than one point is expeted to have about a .73 progressive average, compared to a Democrat winning uncontested, who is expected to vote progressive about 82% of the time. 
 
 ## Whos is most and least progressive based on their margin of victory? 
+
+We can join our modeled avereages with the original data in order to look at how House members voting partterns differ from their 
+
+```{r}
+pa_house_preds <- pa_house_tidy %>%
+    nest(data = everything()) %>%
+    crossing(model_fit = sample_fits$model_fit) %>%
+    mutate(
+        augmented = map2(
+            model_fit, data,
+            ~ broom::augment(.x, newdata = .y, type.predict = "response")
+        ),
+        id = row_number()
+    ) %>%
+    select(augmented, id) %>%
+    unnest(cols = augmented) %>%
+    group_by_at(vars(-starts_with("."), -id)) %>%
+    summarise(
+        pred = mean(.fitted),
+        pred_se = mean(.se.fit)
+    ) %>%
+    mutate(resid = pred - progressive_avg)
+
+```
+
 
 The original PAR article looked at Democrats who were less progressive than expected based on their margin of victory. So who are they in PA? 
 
