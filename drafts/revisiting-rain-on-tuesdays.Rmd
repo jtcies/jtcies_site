@@ -1,0 +1,130 @@
+A couple of years ago, I wrote about rain on different days of the week in Philadelphia. I was annoyed because it felt like, every time I took out the trash, it was raining. This is something I only noticed because I live in a row home and I have to lug my trash cans from my back yard through my house to the front. 
+
+Our trash day is Wednesdays, so I take it out on Tuesday nights. When I did that analysis, I found that, sure enough, it did rain more on Tuesdays! Maybe not that interesting - it's gotta rain more on some day, right? The surprising thing though was that the confidence interval for Tuesday did not include 0. So I could reject my null hypothesis that it rained the same amount on each day. 
+
+In the ongoing war between Bayesian and frequentist approaches, another lob was thrown. In an article in the Spanish Journal of Psychology, Garcia-Perez wrote that Bayesian estimatation with information priors amounts to data falsification. This puts Bayseians in something of a catch-22: if you use informative priors, you could be seen as maniuplating your data to find the outcomes you want; if you use uninformative priors, you are going to get the same results as a Bayesian. 
+
+At the time, my view was that this was a fluke of randomness; occassionally you will find a result that looks like there is something going on when there isn't. Obviously the day of the week doesn't impact the weather. I was really just joking when I did it the first time and didn't expect to find anything. 
+
+However, maybe a Bayesian approach will give us an answer that we know is more in line with reality. 
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(here)
+library(rstanarm)
+library(jtcr)
+library(broom)
+
+theme_set(theme_jtc())
+
+# use same data that goes up to September 2018
+weather <- "https://jtcies.com/data/phl_weather_20090925-20180924.csv" %>% 
+  read_csv(guess_max = 2000) %>%
+  janitor::clean_names()
+
+weather_processed <- weather %>%
+    mutate(
+        dow = as.factor(wday(date)),
+        rain = as.integer(prcp > 0)
+    )
+```
+
+Below is the percentage of days that it rained in Philadelphia by day of the week:
+
+```{r}
+
+weather_processed %>%
+    group_by(dow) %>%
+    summarise(
+        n = n(),
+        avg_days_of_rain = mean(rain)
+    ) %>%
+    knitr::kable()
+
+```
+
+We'll fit four models to see how the priors impact the coefficients. My assumption is that the day of the week has no impact on whether it rains so models that produce coefficients closer to zero should be closer to what we'd expect. The first model is a liklihood model and the next three are Bayesian models with increasingly informative priors. 
+
+```{r}
+
+mod1 <- glm(
+    rain ~ dow,
+    family = binomial(link = "logit"),
+    data = weather_processed
+)
+
+mod2 <- stan_glm(
+    rain ~ 1 + dow,
+    family = binomial(link = "logit"),
+    data = weather_processed,
+    prior = normal(0, 0.5),
+    prior_intercept = normal(-0.8, 1)
+)
+
+mod3 <- stan_glm(
+    rain ~ 1 + dow,
+    family = binomial(link = "logit"),
+    data = weather_processed,
+    prior = normal(0, 0.25),
+    prior_intercept = normal(-0.8, 1)
+)
+
+mod4 <- stan_glm(
+    rain ~ 1 + dow,
+    family = binomial(link = "logit"),
+    data = weather_processed,
+    prior = normal(0, 0.1),
+    prior_intercept = normal(-0.8, 1)
+)
+                      
+```
+```{r}
+
+extract_coef <- function(x) {
+
+    labels <-  c("Intercept", as.character(wday(2:7, label = TRUE)))
+    priors <- prior_summary(x)$prior
+    dist <- priors$dist
+    mu <- unique(priors$location)
+    sigma <- unique(priors$scale)
+
+    if (is.null(priors)) {
+            prior_label <- "no prior"
+    } else {
+        prior_label <- paste0(dist, "(", mu, ", ", sigma, ")")
+    }
+
+    broom::tidy(x) %>%
+        mutate(param = labels,
+               prior = prior_label)
+}
+
+results <- list(mod1, mod2, mod3, mod4) %>%
+    purrr::map_dfr(extract_coef, .id = "model")
+
+results %>%
+    mutate(param = fct_rev(fct_inorder(param)),
+           prior = fct_rev(fct_inorder(prior))) %>%
+    ggplot(aes(param, estimate, color = prior)) +
+        geom_point(
+            size = 2,
+            position = position_dodge(width = 0.5)
+        ) +
+        geom_linerange(
+            aes(ymin = estimate - 1.96 * std.error,
+                ymax = estimate + 1.96 * std.error),
+            position = position_dodge(width = 0.5)
+        ) +
+        coord_flip() +
+        color_jtc("color") +
+        guides(color = guide_legend(reverse = TRUE)) + 
+        labs(
+            title = "Informative priors get us closer to what we expect",
+            y = "coefficient",
+            x = "parameter"
+        )
+
+```
+
+

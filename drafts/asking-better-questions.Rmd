@@ -1,0 +1,21 @@
+I recently came across [this](https://raw.githubusercontent.com/adamrossnelson/HelloWorld/master/sparefiles/DataScienceCartoon.png) cartoon on r/datascience and it crystalized a few things I have been thinking about over the past few weeks.
+
+## Data scientist skill set
+
+In discussion around data science careers and practice, there are often three types of skills that are discussed. Everyone recognizes that *technical skills* - fitting models, understanding how to work with databases, know the math behind the algorithms you are using - are essential. I wouldn't go so far as to say that this is taken for granted, but it is often discussed as just some percentage (maybe somwhere between 25-75% if I'm judging from reading lots of blog posts and articles on the subject) of what determines wheter an individual or project is successful. 
+
+*Industry and domain knowledge* are also often covered. This might be things like knowing which research questions are worthwile and which are a waste-of-time garbage. It often is about understanding data provenance so you can question assumptions when presented with your data set. Again, this might contribute anywhere from 25% to 50% to success. 
+
+The last thing that is often mentioned, and the one that cartoon made me think about, is the importance of *communication and interpersonal skills*. Almost always (counterintuitively) when brought up, it is discussed as though it is an undervalued skill. For example, I've seen a number of hiring managers lament that fact that candidates want to show off their ability to fit some fancy model but that it doesn't matter how good your model is if you can't communicate to a business leader why it's good and what it will do to help the organization reach its goals. Not always, but often, individuals making this point imply that the practitioner needs to do a better job of understanding the motivations of those they are pitching to and make slides which speak directly to those motivations. 
+
+The mental model employed when discussing communication skills this way looks a lot like that cartoon. It goes something like this:
+
+1. Business leader or product manager has some question or problem and they go to the data scientist for insight or solution.
+2. Data scientists does some cool analysis related to quesiton. 
+3. Data scientist shares result of analysis with quesiton asker through some charts in a slide deck.
+
+It seems to me that this is an overly simplified model of a data project and leaves out a key aspect of the data scientist's job 
+
+I don't think this part of the practice was left out just to simplify the cartoon - I think many data scientists 
+
+The tanglible output of an analsyt effectively facilitating the process of narrowing down a research question is that leaders will start to ask better questions in fututre. 

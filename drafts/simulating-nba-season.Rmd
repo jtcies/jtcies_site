@@ -2,7 +2,6 @@
 
 library(tidyverse)
 library(rethinking)
-library(reticulate)
 library(jtcr)
 library(lubridate)
 
@@ -12,37 +11,54 @@ box_scores <- read_csv(here::here("content/data/nba-boxscores-2020.csv")) %>%
     rename(game_id = X1)
 
 box_scores_processed <- box_scores %>%
-    mutate_at(
-        vars(pace, home_offensive_rating, away_offensive_rating,
-             home_defensive_rating, away_defensive_rating),
-        scale
-    ) %>%
     mutate(
-        home_win = if_else(home_points > away_points, 1L, 0L),
+        winner = if_else(home_points > away_points, "home", "away"),
         home_team = if_else(home_wins == 1, winning_abbr, losing_abbr),
         away_team = if_else(home_wins == 1, losing_abbr, winning_abbr),
-        home_net = home_offensive_rating - home_defensive_rating,
-        away_net = away_offensive_rating - away_defensive_rating,
-        game_net = home_net - away_net
+        home_net_rtg = home_offensive_rating - home_defensive_rating,
+        away_net_rtg = away_offensive_rating - away_defensive_rating,
     )
+
+fix_names <- function(dat, home_away) {
+
+    type <- home_away
+    dat$win <- ifelse(dat$winner == type, 1L, 0L)
+    dat <- select(dat, game_id, win, starts_with(type))
+    orig <- names(dat)
+    new <- str_remove(orig, "home_|away_")
+    names(dat) <- new
+    dat$type <- type
+    dat$home <- as.integer(as.factor(dat$type))
+    dat
+
+}
+
+box_scores_tidy <- bind_rows(
+    fix_names(box_scores_processed, "home"),
+    fix_names(box_scores_processed, "away")
+) %>%
+    mutate(team_int = as.integer(as.factor(team)))
+
+box_scores_tidy %>%
+    mutate(team = fct_reorder(team, net_rtg)) %>%
+    ggplot(aes(team, net_rtg)) +
+        geom_boxplot() +
+        coord_flip() +
+        theme(axis.text.x = element_text(angle = 90))
 
 ```
 ```{r}
 
-dat_list <- list(
-    home_team = as.integer(as.factor(box_scores_processed$home_team)),
-    away_team = as.integer(as.factor(box_scores_processed$away_team)),
-    game_net = box_scores_processed$game_net,
-    home_net = box_scores_processed$home_net,
-    away_net = box_scores_processed$away_net
-)
+dat_list <- purrr::map(box_scores_tidy, as.vector)
 
 mod <- ulam(
     alist(
-        game_net ~ normal(mu, sigma),
-        mu <- a1[home_team] - a2[away_team],
-        a1[home_team] ~ normal(0, 1),
-        a2[away_team] ~ normal(0, 1),
+        net_rtg ~ normal(mu, sigma),
+        mu <- b1[team_int] *  + b2 * home,
+        b1[team_int] ~ normal(b_mu, b_sig),
+        b_mu ~ normal(0, 10),
+        b_sig ~ exponential(1),
+        b2 ~ normal(0, 0.5),
         sigma ~ exponential(1)
     ),
     data = dat_list,
@@ -50,6 +66,7 @@ mod <- ulam(
 )
 
 precis(mod, depth = 2)
+
 ```
 
 ```{r}
@@ -58,11 +75,13 @@ preds <- sim(mod)
 
 mean_pred <- apply(preds, 2, mean)
 
-box_scores_processed %>%
-    mutate(mean_pred = mean_pred) %>%
-    ggplot(aes(mean_pred, game_net)) +
-        geom_point()
-
+box_scores_tidy %>%
+    mutate(pred = mean_pred,
+           resid = pred - net_rtg) %>%
+    ggplot(aes(net_rtg, resid)) +
+        geom_point() +
+        geom_smooth(method = "lm") +
+        geom_abline()
 
 ```
 
