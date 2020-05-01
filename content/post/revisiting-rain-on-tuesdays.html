@@ -5,9 +5,9 @@ date: 2020-04-30
 
 
 
-<p>A couple of years ago, I wrote about rain on different days of the week in Philadelphia. I was annoyed because it felt like every time I took out the trash, it was raining. Our trash day is Wednesdays, so I take it out on Tuesday nights. When I did that analysis, I found that, sure enough, it did rain more on Tuesdays! Maybe not that interesting - it’s gotta rain more on some day, right? The surprising thing though was that the confidence interval for Tuesday did not include 0. So I could reject my null hypothesis that it rained the same amount on each day and say my results were statistically significant.</p>
-<p><a href="https://www.cambridge.org/core/services/aop-cambridge-core/content/view/FFAB96BDC5EE3C64B144ECF8F90F31E9/S1138741619000416a.pdf/bayesian_estimation_with_informative_priors_is_indistinguishable_from_data_falsification.pdf">This</a> article exmemplifies a typical argument in the frequent vs Bayesian, even if the title - ‘Bayesian Estimation with Informative Priors is Indistinguishable from Data Falsification’ - is somewhat provactive. The argument goes that using priors is basically just maniuplating the data to get the results you want. This puts Bayseians in something of a catch-22: if you use informative priors, you could be seen as maniuplating your data to find the outcomes you want; if you use uninformative priors, then you’re just doing frequentist statistics!</p>
-<p>Reading this recently made me think about the rain on Tuesdays article. At the time, my view was that this was a fluke of randomness; occassionally you will find a result that looks like there is something going on when there isn’t. Obviously the day of the week doesn’t impact the weather. I was really just joking when I did it the first time and didn’t expect to find anything. However, maybe a Bayesian approach will give us an answer that we know is more in line with reality.</p>
+<p>A couple of years ago, I <a href="https://jtcies.com/2018/09/is-it-more-likely-to-rain-on-tuesdays-in-philadelphia/">wrote</a> about rain on different days of the week in Philadelphia. I was annoyed because it felt like every time I took out the trash, it was raining. Our trash day is Wednesdays, so I take it out on Tuesday nights. When I did that analysis, I found that, sure enough, it did rain more on Tuesdays! Maybe not that interesting - it’s gotta rain more on some day, right? The surprising thing though was that the confidence interval for Tuesday did not include 0. So I could reject my null hypothesis that it rained the same amount on each day and say my results were statistically significant.</p>
+<p><a href="https://www.cambridge.org/core/services/aop-cambridge-core/content/view/FFAB96BDC5EE3C64B144ECF8F90F31E9/S1138741619000416a.pdf/bayesian_estimation_with_informative_priors_is_indistinguishable_from_data_falsification.pdf">This</a> article exemplifies a typical argument in the frequent vs Bayesian, even if the title - ‘Bayesian Estimation with Informative Priors is Indistinguishable from Data Falsification’ - is somewhat provocative. The argument goes that using priors is basically just manipulating the data to get the results you want. This puts Bayseians in something of a catch-22: if you use informative priors, you could be seen as fiddling your data to find the outcomes you want; if you use uninformative priors, then you’re just doing frequentist statistics!</p>
+<p>Reading this recently made me think about the rain on Tuesdays article. At the time, my view was that this was a fluke of randomness; occasionally you will find a result that looks like there is something going on when there isn’t. Obviously the day of the week doesn’t impact the weather. I was really just joking when I did it the first time and didn’t expect to find anything. However, maybe a Bayesian approach will give us an answer that we know is more in line with reality.</p>
 <pre class="r"><code>library(tidyverse)
 library(lubridate)
 library(here)
@@ -31,7 +31,7 @@ weather_processed &lt;- weather %&gt;%
     )</code></pre>
 <p>Below is the percentage of days that it rained in Philadelphia by day of the week:</p>
 <pre class="r"><code>weather_processed %&gt;%
-    group_by(dow) %&gt;%
+    group_by(`day ofweek` = dow) %&gt;%
     summarise(
         n = n(),
         `percent rainy days` = mean(rain)
@@ -40,7 +40,7 @@ weather_processed &lt;- weather %&gt;%
 <table>
 <thead>
 <tr class="header">
-<th align="left">dow</th>
+<th align="left">day ofweek</th>
 <th align="right">n</th>
 <th align="right">percent rainy days</th>
 </tr>
@@ -152,7 +152,7 @@ results %&gt;%
         ) +
         coord_flip() +
         color_jtc(&quot;color&quot;) +
-        guides(color = guide_legend(reverse = TRUE)) + 
+        guides(color = guide_legend(reverse = TRUE)) +
         labs(
             title = &quot;Informative priors get us closer to what we expect&quot;,
             subtitle = &quot;bars represent 95% interval around estimates&quot;,
@@ -160,6 +160,7 @@ results %&gt;%
             x = &quot;parameter&quot;
         )</code></pre>
 <p><img src="/post/revisiting-rain-on-tuesdays_files/figure-html/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>The more informative our priors, the closer they get us to our expectation that day of the has no impact on rain.</p>
 <p>The informative priors don’t substantially change the predictions in this example. There are very slight differences with more informative priors having a negative impact on in-sample fit and a better impact on out-of-sample fit.</p>
 <pre class="r"><code>calc_roc &lt;- function(x) {
     preds &lt;- augment(x, type.predict = &quot;response&quot;)
@@ -231,34 +232,34 @@ list(mod1, mod2, mod3, mod4) %&gt;%
 <td>mod4</td>
 <td align="right">0.0000000</td>
 <td align="right">0.000000</td>
-<td align="right">-2073.552</td>
-<td align="right">19.57960</td>
-<td align="right">3.726136</td>
-<td align="right">0.0514615</td>
-<td align="right">4147.103</td>
-<td align="right">39.15921</td>
+<td align="right">-2073.438</td>
+<td align="right">19.56956</td>
+<td align="right">3.649464</td>
+<td align="right">0.0500956</td>
+<td align="right">4146.875</td>
+<td align="right">39.13912</td>
 </tr>
 <tr class="even">
 <td>mod3</td>
-<td align="right">-0.2490228</td>
-<td align="right">1.246672</td>
-<td align="right">-2073.801</td>
-<td align="right">19.69632</td>
-<td align="right">5.890217</td>
-<td align="right">0.0784900</td>
-<td align="right">4147.601</td>
-<td align="right">39.39265</td>
+<td align="right">-0.2450624</td>
+<td align="right">1.253806</td>
+<td align="right">-2073.683</td>
+<td align="right">19.71778</td>
+<td align="right">5.777965</td>
+<td align="right">0.0775727</td>
+<td align="right">4147.366</td>
+<td align="right">39.43556</td>
 </tr>
 <tr class="odd">
 <td>mod2</td>
-<td align="right">-0.3743849</td>
-<td align="right">1.864321</td>
-<td align="right">-2073.926</td>
-<td align="right">19.79567</td>
-<td align="right">6.564268</td>
-<td align="right">0.0862961</td>
-<td align="right">4147.852</td>
-<td align="right">39.59135</td>
+<td align="right">-0.5622858</td>
+<td align="right">1.850424</td>
+<td align="right">-2074.000</td>
+<td align="right">19.81985</td>
+<td align="right">6.636183</td>
+<td align="right">0.0873770</td>
+<td align="right">4148.000</td>
+<td align="right">39.63971</td>
 </tr>
 </tbody>
 </table>
@@ -266,9 +267,7 @@ list(mod1, mod2, mod3, mod4) %&gt;%
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>The point of looking at this was to see if informative priors helped us in this particular case. They did, but where does that end? How do you know in more ambiguous cases? I don’t know.</p>
-<p>It seems to me that informative priors are really only data falsification if you don’t have good reasons to use them. I get the sense that those who advocate against informative priors are concerned that researchers are fishing for a particular result, either intentionally or unintentionally. We had a good reason to use informative priors here - the day of the week doesn’t do shit to the weather! It’s ridiculous to think that it does.</p>
-<p>This also shows how throwing a bunch of stuff at your model without some form of regularization or priors will occassionally find patterns that don’t exist in reality.</p>
-<p>I also wonder if there is a distinction between priors which push the paramers toward or away form a null result.</p>
-<p>Mostly though, the techniques one uses should be based on the type of question you’re trying to answer, the data you have, and what an answer to that quesiton means for decision-making.</p>
+<p>I wanted to revisit this because the original analysis always felt strange to me. I was right that it did rain more on Tuesdays, and this gave my wife and I something to joke about. But day of the week doesn’t actually do anything to the weather, but you could interpret my results to say that it did (within some probability).</p>
+<p>As discussed in the article I referenced above, the frequentist analysis asks “What’s the probability of the data given the hypothesis that day of the week has no impact on whether it rains.” We saw that there was a pretty small chance of that. The Bayesian analysis asks “What’s the probability that day of week has some impact on whether it rains given the data?” There’s still some chance it does but we’re less sure.</p>
+<p>It seems to me that the technique should be based on the question you want answered and the data you have. In this case, using informative priors gave me something closer to what I’d expect.</p>
 </div>
