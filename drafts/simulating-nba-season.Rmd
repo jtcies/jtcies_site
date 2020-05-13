@@ -1,29 +1,29 @@
 ```{r setup}
-
 library(tidyverse)
 library(rethinking)
 library(jtcr)
 library(lubridate)
+library(ggrepel)
 
 theme_set(theme_jtc())
 
 box_scores <- read_csv(here::here("content/data/nba-boxscores-2020.csv")) %>%
-    rename(game_id = X1)
+    rename(game_id = X1) %>%
+    # appears to grab each row twice
+    distinct(game_id, .keep_all = TRUE)
 
 box_scores_processed <- box_scores %>%
     mutate(
-        winner = if_else(home_points > away_points, "home", "away"),
-        home_team = if_else(home_wins == 1, winning_abbr, losing_abbr),
-        away_team = if_else(home_wins == 1, losing_abbr, winning_abbr),
-        home_net_rtg = home_offensive_rating - home_defensive_rating,
-        away_net_rtg = away_offensive_rating - away_defensive_rating,
+        winner = tolower(winner),
+        home_team = if_else(winner == "home", winning_abbr, losing_abbr),
+        away_team = if_else(winner == "away", winning_abbr, losing_abbr)
     )
 
-fix_names <- function(dat, home_away) {
+tidy_box_scores <- function(dat, home_away) {
 
     type <- home_away
     dat$win <- ifelse(dat$winner == type, 1L, 0L)
-    dat <- select(dat, game_id, win, starts_with(type))
+    dat <- dplyr::select(dat, game_id, win, pace, starts_with(type))
     orig <- names(dat)
     new <- str_remove(orig, "home_|away_")
     names(dat) <- new
@@ -34,54 +34,108 @@ fix_names <- function(dat, home_away) {
 }
 
 box_scores_tidy <- bind_rows(
-    fix_names(box_scores_processed, "home"),
-    fix_names(box_scores_processed, "away")
-) %>%
-    mutate(team_int = as.integer(as.factor(team)))
-
-box_scores_tidy %>%
-    mutate(team = fct_reorder(team, net_rtg)) %>%
-    ggplot(aes(team, net_rtg)) +
-        geom_boxplot() +
-        coord_flip() +
-        theme(axis.text.x = element_text(angle = 90))
-
-```
-```{r}
-
-dat_list <- purrr::map(box_scores_tidy, as.vector)
-
-mod <- ulam(
-    alist(
-        net_rtg ~ normal(mu, sigma),
-        mu <- b1[team_int] *  + b2 * home,
-        b1[team_int] ~ normal(b_mu, b_sig),
-        b_mu ~ normal(0, 10),
-        b_sig ~ exponential(1),
-        b2 ~ normal(0, 0.5),
-        sigma ~ exponential(1)
-    ),
-    data = dat_list,
-    cores = parallel::detectCores()
+    tidy_box_scores(box_scores_processed, "home"),
+    tidy_box_scores(box_scores_processed, "away")
 )
 
-precis(mod, depth = 2)
-
 ```
+
+## Looking at expected win percentage
+
+Formula is:
+
+$P = \mathcal{N}\frac{PPG - DPPG}{\sqrt{(var(PPG) + var(DPPG) - 2cov(PPG, DPPG)}}$
+
+So for each team that looks like
 
 ```{r}
 
-preds <- sim(mod)
+calc_win_pct <- function(ortg, drtg) {
 
-mean_pred <- apply(preds, 2, mean)
+    mean_o <- mean(ortg)
+    mean_d <- mean(drtg)
+    var_o <- var(ortg)
+    var_d <- var(drtg)
+    cov_od <- cov(ortg, drtg)
 
-box_scores_tidy %>%
-    mutate(pred = mean_pred,
-           resid = pred - net_rtg) %>%
-    ggplot(aes(net_rtg, resid)) +
+   pnorm((mean_o - mean_d) / sqrt(var_o + var_d - (2 * cov_od)))
+}
+
+predicted_wins <- box_scores_tidy %>%
+    group_by(team) %>%
+    summarise(win_pct_calc = calc_win_pct(offensive_rating, defensive_rating),
+              win_pct_actual = mean(win),
+              wins = sum(win))
+
+predicted_wins %>%
+    ggplot(aes(win_pct_calc, win_pct_actual, label = team)) +
         geom_point() +
-        geom_smooth(method = "lm") +
-        geom_abline()
+        geom_text_repel() +
+        geom_abline() +
+        ylim(c(0, 1)) +
+        xlim(c(0, 1))
+
+```
+
+## How predictive is this of the winner?
+
+```{r}
+
+home_metrics <- box_scores_processed %>%
+    group_by(home_team) %>%
+    summarise(
+        mean_net = mean(home_offensive_rating - home_defensive_rating),
+        var_net = var(home_offensive_rating - home_defensive_rating),
+        cov_net = cov(home_offensive_rating, home_defensive_rating)
+    )
+
+away_metrics <- box_scores_processed %>%
+    group_by(away_team) %>%
+    summarise(
+        mean_net = mean(away_offensive_rating - away_defensive_rating),
+        var_net = var(away_offensive_rating - away_defensive_rating),
+        cov_net = cov(away_offensive_rating, away_defensive_rating)
+    )
+
+predict_winners <- function(home_team, away_team) {
+
+    home_net <- home_metrics$mean_net[home_metrics$home_team == home_team]
+    away_net <- away_metrics$mean_net[away_metrics$away_team == away_team]
+    home_var <- home_metrics$var_net[home_metrics$home_team == home_team]
+    away_var <- away_metrics$var_net[away_metrics$away_team == away_team]
+    home_cov <- home_metrics$cov_net[home_metrics$home_team == home_team]
+    away_cov <- away_metrics$cov_net[away_metrics$away_team == away_team]
+
+    pnorm((home_net - away_net) / sqrt(home_var + away_var - (home_cov + away_cov)))
+}
+
+preds <- map2_dbl(box_scores_processed$home_team, box_scores_processed$away_team, 
+              predict_winners)
+
+box_scores_preds <- box_scores_processed %>%
+    mutate(home_win_pred = preds > 0.5)
+
+box_scores_preds %>%
+    count(winner, home_win_pred) %>%
+    group_by(winner) %>%
+    mutate(pct = n / sum(n))
+
+preds_tidy <- box_scores_preds %>%
+    mutate(
+        win_name = ifelse(winner == "home", home_team, away_team),
+        pred_name = ifelse(home_win_pred, home_team, away_team)
+    ) %>%
+    select(win_name, pred_name)
+
+preds_tidy %>%
+    count(win_name, name = "wins") %>%
+    left_join(preds_tidy %>% count(pred_name, name = "pred_wins"),
+              by = c("win_name" = "pred_name")) %>%
+    replace_na(list(pred_wins = 0)) %>%
+    ggplot(aes(pred_wins, wins, label = win_name)) +
+        geom_text() + 
+        geom_abline() +
+        geom_smooth(method = "lm", se = FALSE)
 
 ```
 
