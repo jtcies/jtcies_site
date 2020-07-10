@@ -4,6 +4,8 @@ library(rethinking)
 library(jtcr)
 library(lubridate)
 library(ggrepel)
+library(scales)
+library(readxl)
 
 theme_set(theme_jtc())
 
@@ -11,6 +13,8 @@ box_scores <- read_csv(here::here("content/data/nba-boxscores-2020.csv")) %>%
     rename(game_id = X1) %>%
     # appears to grab each row twice
     distinct(game_id, .keep_all = TRUE)
+
+orig_sched <- read_excel(here::here("content/data/nba-full-schedule-2019-2020.xls"))
 
 box_scores_processed <- box_scores %>%
     mutate(
@@ -58,7 +62,7 @@ calc_win_pct <- function(ortg, drtg) {
     var_d <- var(drtg)
     cov_od <- cov(ortg, drtg)
 
-   pnorm((mean_o - mean_d) / sqrt(var_o + var_d - (2 * cov_od)))
+    pnorm((mean_o - mean_d) / sqrt(var_o + var_d - (2 * cov_od)))
 }
 
 predicted_wins <- box_scores_tidy %>%
@@ -77,65 +81,36 @@ predicted_wins %>%
 
 ```
 
-## How predictive is this of the winner?
+## How would we expect teams to finish? 
+
+Using the formula for expected win percentage, we can examine how we would have expected teams to finish the season. With this, we can look at how it compares to a) teams included in the bubble, b) how teams finish the first round of the bubble season before the playoffs start.  
 
 ```{r}
 
-home_metrics <- box_scores_processed %>%
-    group_by(home_team) %>%
-    summarise(
-        mean_net = mean(home_offensive_rating - home_defensive_rating),
-        var_net = var(home_offensive_rating - home_defensive_rating),
-        cov_net = cov(home_offensive_rating, home_defensive_rating)
-    )
+east_teams <- c("ATL", "BOS", "BRK", "CHI", "CHO", "CLE", "DET", "IND",
+                "MIA", "MIL", "NYK", "ORL", "PHI", "TOR", "WAS")
 
-away_metrics <- box_scores_processed %>%
-    group_by(away_team) %>%
-    summarise(
-        mean_net = mean(away_offensive_rating - away_defensive_rating),
-        var_net = var(away_offensive_rating - away_defensive_rating),
-        cov_net = cov(away_offensive_rating, away_defensive_rating)
-    )
-
-predict_winners <- function(home_team, away_team) {
-
-    home_net <- home_metrics$mean_net[home_metrics$home_team == home_team]
-    away_net <- away_metrics$mean_net[away_metrics$away_team == away_team]
-    home_var <- home_metrics$var_net[home_metrics$home_team == home_team]
-    away_var <- away_metrics$var_net[away_metrics$away_team == away_team]
-    home_cov <- home_metrics$cov_net[home_metrics$home_team == home_team]
-    away_cov <- away_metrics$cov_net[away_metrics$away_team == away_team]
-
-    pnorm((home_net - away_net) / sqrt(home_var + away_var - (home_cov + away_cov)))
-}
-
-preds <- map2_dbl(box_scores_processed$home_team, box_scores_processed$away_team, 
-              predict_winners)
-
-box_scores_preds <- box_scores_processed %>%
-    mutate(home_win_pred = preds > 0.5)
-
-box_scores_preds %>%
-    count(winner, home_win_pred) %>%
-    group_by(winner) %>%
-    mutate(pct = n / sum(n))
-
-preds_tidy <- box_scores_preds %>%
-    mutate(
-        win_name = ifelse(winner == "home", home_team, away_team),
-        pred_name = ifelse(home_win_pred, home_team, away_team)
-    ) %>%
-    select(win_name, pred_name)
-
-preds_tidy %>%
-    count(win_name, name = "wins") %>%
-    left_join(preds_tidy %>% count(pred_name, name = "pred_wins"),
-              by = c("win_name" = "pred_name")) %>%
-    replace_na(list(pred_wins = 0)) %>%
-    ggplot(aes(pred_wins, wins, label = win_name)) +
-        geom_text() + 
-        geom_abline() +
-        geom_smooth(method = "lm", se = FALSE)
+predicted_wins %>%
+    mutate(conference = if_else(team %in% east_teams, "East", "West")) %>%
+    group_by(conference) %>%
+    select(team, conference, win_pct_calc, win_pct_actual) %>%
+    gather(type, pct, win_pct_calc:win_pct_actual) %>%
+    ggplot(aes(type, pct, color = team, group = team)) +
+        geom_point() +
+        geom_line() +
+        facet_wrap(~ conference) +
+        geom_text_repel(aes(label = team)) +
+        scale_y_continuous(labels = scales::percent) +
+        scale_x_discrete(labels = c("Actual", "Predicted")) +
+        theme(legend.position = "none") +
+        labs(x = "",
+             y = "Win Percentage")
 
 ```
 
+A few things stand out:
+
+1. Top of East: Many basketball commentators think that 2nd place in the East is really a toss up between Toronto and Boston. We know that Boston was on a hot streak right before the season was paused. While Toronto had a better regular-season record so far, this formula gives the slight edge to Boston for the second spot (although it doesn't say anything about how they would match-up in a playoff series). 
+2. Top of West: The thing that really stands out here is Dallas. The predicted win perctange gives Dallas a much better record than their actual record. 
+3. Bottom of East: Almost everyone agrees (or at least they did before all of Brooklyn's starting 5 completely turendover) that Washington had no buisness playing more basketball this year. And while there's still a large gap between the 8th and 9th spots, the predicted win percentage actually has CHicago and Detroit above Washington. 
+4. Bottom of West: Similarly here, everyone thinks Phoenix is the outlier. And even though it will be almost impossible for them to get into the playoffs, from a predicted win percentage standpoint, they are much more in the mix than their actual record would suggest. 
