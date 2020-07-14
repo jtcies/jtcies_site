@@ -23,7 +23,7 @@ There are more sophisticated ways to predict wins but I was interested to see ho
 
 First we'll download and do some processing of the data[^1]:
 
-```{r, echo = FALSE}
+```{r}
 library(tidyverse)
 library(rethinking)
 library(jtcr)
@@ -78,11 +78,11 @@ The formula for win percentage he presents is this:
 
 Formula is:
 
-$$P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}$$
+$$
+P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}
+$$
 
-where
-
-ORtg is team offensive rating, DRtg is team defensive rating, var(ORtg) is variance of team offensive rating (similarly for defensive rating), and cov(ORtg, DRtg) is the covariance between offensive and defensive rating. 
+where $ORtg$ is team offensive rating, $DRtg$ is team defensive rating, $var(ORtg)$ is variance of team offensive rating (similarly for defensive rating), and $cov(ORtg, DRtg)$ is the covariance between offensive and defensive rating. 
 
 So for each team that looks like:
 
@@ -153,12 +153,14 @@ predicted_wins %>%
 A few things stand out:
 
 1. Top of East: Many basketball commentators think that 2nd place in the East is really a toss up between Toronto and Boston. We know that Boston was on a hot streak right before the season was paused. While Toronto had a better regular-season record so far, this formula gives the slight edge to Boston for the second spot (although it doesn't say anything about how they would match-up in a playoff series). 
+
 2. Top of West: The thing that really stands out here is Dallas. The predicted win perctange gives Dallas a much better record than their actual record. More on this below.
-3. Bottom of East: Almost everyone agrees (or at least they did before all of Brooklyn's starting 5 turned over completely) that Washington had no buisness playing more basketball this year. And while there's still a large gap between the 8th and 9th spots, the predicted win percentage actually has CHicago and Detroit above Washington. 
+   
+3. Bottom of East: Almost everyone agrees (or at least they did before all of Brooklyn's starting 5 turned over completely) that Washington had no buisness playing more basketball this year. And while there's still a large gap between the 8th and 9th spots, the predicted win percentage actually has Chicago and Detroit above Washington. 
+
 4. Bottom of West: Similarly here, everyone thinks Phoenix is the outlier. And even though it will be almost impossible for them to get into the playoffs, from a predicted win percentage standpoint, they are much more in the mix than their actual record would suggest. 
 
-
-Dalls really stands out in the 'should have won more games' category. The plot below shows each team's average offensive and defensive rating. 
+Dallas really stands out in the 'should have won more games' category. The plot below shows each team's average offensive and defensive rating. 
 
 ```{r}
 
