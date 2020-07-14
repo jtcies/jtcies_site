@@ -1,0 +1,123 @@
+---
+title: "How would the NBA season have finished?"
+author: "Joe Ciesielski"
+date: '2020-07-13'
+tags:
+  - R
+  - NBA
+output: html_document
+---
+
+
+
+<p>I recently read <strong>Basketball on Paper</strong> by Dean Oliver. In this book, he presents a formula for expected winning percentage. Given that we’re in such a weird situation with the current basketball season, I wanted to see what that formula would have to say about how things are shaking out.</p>
+<p>Using the formula for expected win percentage, we can examine how we would have expected teams to finish the season. With this, we can look at how it compares to a) teams included in the bubble, b) how teams finish the first round of the bubble season before the playoffs start.</p>
+<p>There are more sophisticated ways to predict wins but I was interested to see how this performed, and a basical formula like this is always a good benchmark.</p>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<p>First we’ll download and do some processing of the data<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>:</p>
+</div>
+<div id="calculating-expected-win-percentage" class="section level2">
+<h2>Calculating expected win percentage</h2>
+<p>The formula for win percentage he presents is this:</p>
+<p>Formula is:</p>
+<p><span class="math display">\[P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}\]</span></p>
+<p>where</p>
+<p>ORtg is team offensive rating, DRtg is team defensive rating, var(ORtg) is variance of team offensive rating (similarly for defensive rating), and cov(ORtg, DRtg) is the covariance between offensive and defensive rating.</p>
+<p>So for each team that looks like:</p>
+<pre class="r"><code>calc_win_pct &lt;- function(ortg, drtg) {
+
+    mean_o &lt;- mean(ortg)
+    mean_d &lt;- mean(drtg)
+    var_o &lt;- var(ortg)
+    var_d &lt;- var(drtg)
+    cov_od &lt;- cov(ortg, drtg)
+
+    pnorm((mean_o - mean_d) / sqrt(var_o + var_d - (2 * cov_od)))
+}
+
+predicted_wins &lt;- box_scores_tidy %&gt;%
+    group_by(team) %&gt;%
+    summarise(
+        win_pct_calc = calc_win_pct(offensive_rating, defensive_rating),
+        win_pct_actual = mean(win),
+        wins = sum(win))
+
+predicted_wins %&gt;%
+    ggplot(aes(win_pct_calc, win_pct_actual, label = team, color = team)) +
+        geom_abline(lty = 2) +
+        geom_point() +
+        geom_text_repel() +
+        scale_y_continuous(labels = scales::percent, limits = c(0,1)) + 
+        scale_x_continuous(labels = scales::percent, limits = c(0,1)) + 
+        theme(legend.position = &quot;none&quot;) + 
+        labs(x = &quot;Expected win percentage&quot;,
+             y = &quot;Actual win percentage&quot;,
+             title = &quot;Compared expected and actual win percentage&quot;,
+             subtitle = &quot;Using Dean Oliver&#39;s formula in &#39;Basketball on Paper&#39;&quot;)</code></pre>
+<p><img src="/post/simulating-nba-season_files/figure-html/unnamed-chunk-2-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>You can see that the formula has some regression to the mean built in with the better teams have a lower expected win percentage than actual and the worse teams having a higher expected win percentage than actual.</p>
+</div>
+<div id="how-would-we-expect-teams-to-finish" class="section level2">
+<h2>How would we expect teams to finish?</h2>
+<p>Using this calculation, we can look at how teams rank compared to their actual current rankings. This is interesting but current records were used to make decisions about which teams were included in the season restart.</p>
+<pre class="r"><code>east_teams &lt;- c(&quot;ATL&quot;, &quot;BOS&quot;, &quot;BRK&quot;, &quot;CHI&quot;, &quot;CHO&quot;, &quot;CLE&quot;, &quot;DET&quot;, &quot;IND&quot;,
+                &quot;MIA&quot;, &quot;MIL&quot;, &quot;NYK&quot;, &quot;ORL&quot;, &quot;PHI&quot;, &quot;TOR&quot;, &quot;WAS&quot;)
+
+predicted_wins %&gt;%
+    mutate(conference = if_else(team %in% east_teams, &quot;East&quot;, &quot;West&quot;)) %&gt;%
+    group_by(conference) %&gt;%
+    select(team, conference, win_pct_calc, win_pct_actual) %&gt;%
+    gather(type, pct, win_pct_calc:win_pct_actual) %&gt;%
+    ggplot(aes(type, pct, color = team, group = team)) +
+        geom_point() +
+        geom_line() +
+        facet_wrap(~ conference) +
+        geom_text_repel(aes(label = team)) +
+        scale_y_continuous(labels = scales::percent) +
+        scale_x_discrete(labels = c(&quot;Actual&quot;, &quot;Expected&quot;)) +
+        theme(legend.position = &quot;none&quot;) +
+        labs(x = &quot;&quot;,
+             y = &quot;Win Percentage&quot;)</code></pre>
+<p><img src="/post/simulating-nba-season_files/figure-html/unnamed-chunk-3-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>A few things stand out:</p>
+<ol style="list-style-type: decimal">
+<li>Top of East: Many basketball commentators think that 2nd place in the East is really a toss up between Toronto and Boston. We know that Boston was on a hot streak right before the season was paused. While Toronto had a better regular-season record so far, this formula gives the slight edge to Boston for the second spot (although it doesn’t say anything about how they would match-up in a playoff series).</li>
+<li>Top of West: The thing that really stands out here is Dallas. The predicted win perctange gives Dallas a much better record than their actual record. More on this below.</li>
+<li>Bottom of East: Almost everyone agrees (or at least they did before all of Brooklyn’s starting 5 turned over completely) that Washington had no buisness playing more basketball this year. And while there’s still a large gap between the 8th and 9th spots, the predicted win percentage actually has CHicago and Detroit above Washington.</li>
+<li>Bottom of West: Similarly here, everyone thinks Phoenix is the outlier. And even though it will be almost impossible for them to get into the playoffs, from a predicted win percentage standpoint, they are much more in the mix than their actual record would suggest.</li>
+</ol>
+<p>Dalls really stands out in the ‘should have won more games’ category. The plot below shows each team’s average offensive and defensive rating.</p>
+<pre class="r"><code>rating_averages &lt;- box_scores_tidy %&gt;%
+    group_by(team) %&gt;%
+    summarise(
+        offensive_rating = mean(offensive_rating),
+        defensive_rating = mean(defensive_rating)
+    )
+
+rating_averages %&gt;%
+    ggplot(aes(defensive_rating, offensive_rating, color = team)) +
+        geom_point() +
+        geom_text_repel(aes(label = team)) +
+        geom_vline(xintercept = mean(rating_averages$defensive_rating),
+                   lty = 2) +
+        geom_hline(yintercept = mean(rating_averages$offensive_rating),
+                   lty = 2) +
+        theme(legend.position = &quot;none&quot;) +
+        labs(x = &quot;Average defensive rating&quot;,
+             y = &quot;Average offensive rating&quot;,
+             title = &quot;Dallas has highest offensive rating by far&quot;,
+             subtitle = &quot;dashed lines show average ratings&quot;)</code></pre>
+<p><img src="/post/simulating-nba-season_files/figure-html/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>Dallas has <em>by far</em> the best offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto.</p>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>There are clear limitations in using a formula like this. It might help describe the historical distrubtion but it’s not terribly predictive. However,I think it is useful to start with a relatively straightforward, easy to interpret model, and see what insights it can reveal before moving to something more complicated.</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I used <a href="content/scripts/download-nba-box-scores.py">this</a> script to download the box scores, but here pulling it directly from my Github page for speed and reproducibility.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</div>

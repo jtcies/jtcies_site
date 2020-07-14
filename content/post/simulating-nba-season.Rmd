@@ -1,4 +1,29 @@
-```{r setup}
+---
+title: "How would the NBA season have finished?"
+author: "Joe Ciesielski"
+date: '2020-07-13'
+tags:
+  - R
+  - NBA
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.asp = 0.618, fig.align = "center",
+                      message = FALSE, warning = FALSE)
+```
+
+I recently read **Basketball on Paper** by Dean Oliver. In this book, he presents a formula for expected winning percentage. Given that we're in such a weird situation with the current basketball season, I wanted to see what that formula would have to say about how things are shaking out. 
+
+Using the formula for expected win percentage, we can examine how we would have expected teams to finish the season. With this, we can look at how it compares to a) teams included in the bubble, b) how teams finish the first round of the bubble season before the playoffs start.  
+
+There are more sophisticated ways to predict wins but I was interested to see how this performed, and a basical formula like this is always a good benchmark. 
+
+## Setup
+
+First we'll download and do some processing of the data[^1]:
+
+```{r, echo = FALSE}
 library(tidyverse)
 library(rethinking)
 library(jtcr)
@@ -9,12 +34,9 @@ library(readxl)
 
 theme_set(theme_jtc())
 
-box_scores <- read_csv(here::here("content/data/nba-boxscores-2020.csv")) %>%
+box_scores <- read_csv("https://raw.githubusercontent.com/jtcies/jtcies_site/master/content/data/nba-boxscores-2020.csv") %>%
     rename(game_id = X1) %>%
-    # appears to grab each row twice
     distinct(game_id, .keep_all = TRUE)
-
-orig_sched <- read_excel(here::here("content/data/nba-full-schedule-2019-2020.xls"))
 
 box_scores_processed <- box_scores %>%
     mutate(
@@ -48,14 +70,7 @@ box_scores_tidy <- bind_rows(
     tidy_box_scores(box_scores_processed, "away")
 )
 
-box_scores_tidy %>% View()
 ```
-
-I recently read **Basketball on Paper** by Dean Oliver. In this book, he presents a formula for expected winning percentage. Given that we're in such a weird situation with the current basketball season, I wanted to see what that formula would have to say about how things are shaking out. 
-
-Using the formula for expected win percentage, we can examine how we would have expected teams to finish the season. With this, we can look at how it compares to a) teams included in the bubble, b) how teams finish the first round of the bubble season before the playoffs start.  
-
-There are more sophisticated ways to predict wins but I was interested to see how this performed, and a basical formula like this is always a good benchmark. 
 
 ## Calculating expected win percentage
 
@@ -63,9 +78,13 @@ The formula for win percentage he presents is this:
 
 Formula is:
 
-$P = \mathcal{N}\frac{PPG - DPPG}{\sqrt{(var(PPG) + var(DPPG) - 2cov(PPG, DPPG)}}$
+$$P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}$$
 
-So for each team that looks like[^1]:
+where
+
+ORtg is team offensive rating, DRtg is team defensive rating, var(ORtg) is variance of team offensive rating (similarly for defensive rating), and cov(ORtg, DRtg) is the covariance between offensive and defensive rating. 
+
+So for each team that looks like:
 
 ```{r}
 
@@ -84,7 +103,6 @@ predicted_wins <- box_scores_tidy %>%
     group_by(team) %>%
     summarise(
         win_pct_calc = calc_win_pct(offensive_rating, defensive_rating),
-        win_pct_calc_normal = calc_win_pct(points, points_allowed),
         win_pct_actual = mean(win),
         wins = sum(win))
 
@@ -169,4 +187,9 @@ rating_averages %>%
 
 Dallas has *by far* the best offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto. 
 
-[^1]: I tried this with both actual points per game and ratings (i.e points per 100 possessions) and using ratings makes the calculation perform much better. 
+## Conclusion
+
+There are clear limitations in using a formula like this. It might help describe the historical distrubtion but it's not terribly predictive. However,I think it is useful to start with a relatively straightforward, easy to interpret model, and see what insights it can reveal before moving to something more complicated. 
+
+[^1]: I used [this](content/scripts/download-nba-box-scores.py) script to download the box scores, but here pulling it directly from my Github page for speed and reproducibility.
+

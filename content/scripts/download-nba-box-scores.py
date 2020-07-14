@@ -19,11 +19,3 @@ for index in indexes:
     df = score.dataframe
     scores = scores.append(df)
 
-scores.to_csv("content/data/nba-boxscores-2020.csv")
-
-phi_sched = Schedule('PHI')
-
-for game in phi_sched:
-    print(game.date)
-
-
