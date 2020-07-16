@@ -169,6 +169,9 @@ canonifyurls = true
   # and set `autoThumbnailImage` to `false` on a post to overwrite this setting
   autoThumbnailImage = true
 
+  # enable mathjax
+  math = true
+
   # Your favicon path, default is "/favicon.png"
   # favicon = "/favicon.png"
 
