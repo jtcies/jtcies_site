@@ -125,7 +125,7 @@ You can see that the formula has some regression to the mean built in with the b
 
 ## How would we expect teams to finish? 
 
-Using this calculation, we can look at how teams rank compared to their actual current rankings. This is interesting but current records were used to make decisions about which teams were included in the season restart.
+Using this calculation, we can look at how a team's rank compared to their actual current rankings. This is interesting because current records were used to make decisions about which teams were included in the season restart.
 
 ```{r}
 
