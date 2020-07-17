@@ -20,12 +20,11 @@ output:
 <h2>Setup</h2>
 <p>First we’ll download and do some processing of the data<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>:</p>
 <pre class="r"><code>library(tidyverse)
-library(rethinking)
+# remotes::install_github(&quot;jtcies/jtcr&quot;)
 library(jtcr)
 library(lubridate)
 library(ggrepel)
 library(scales)
-library(readxl)
 
 theme_set(theme_jtc())
 
@@ -68,7 +67,6 @@ box_scores_tidy &lt;- bind_rows(
 <div id="calculating-expected-win-percentage" class="section level2">
 <h2>Calculating expected win percentage</h2>
 <p>The formula for win percentage he presents is this:</p>
-<p>Formula is:</p>
 <p><span class="math display">\[
 P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}
 \]</span></p>
@@ -97,12 +95,12 @@ predicted_wins %&gt;%
         geom_abline(lty = 2) +
         geom_point() +
         geom_text_repel() +
-        scale_y_continuous(labels = scales::percent, limits = c(0,1)) + 
-        scale_x_continuous(labels = scales::percent, limits = c(0,1)) + 
+        scale_y_continuous(labels = scales::percent) + 
+        scale_x_continuous(labels = scales::percent) + 
         theme(legend.position = &quot;none&quot;) + 
         labs(x = &quot;Expected win percentage&quot;,
              y = &quot;Actual win percentage&quot;,
-             title = &quot;Compared expected and actual win percentage&quot;,
+             title = &quot;Comparing expected and actual win percentage&quot;,
              subtitle = &quot;Using Dean Oliver&#39;s formula in &#39;Basketball on Paper&#39;&quot;)</code></pre>
 <p><img src="/post/simulating-nba-season_files/figure-html/unnamed-chunk-2-1.png" width="960" style="display: block; margin: auto;" /></p>
 <p>You can see that the formula has some regression to the mean built in with the better teams have a lower expected win percentage than actual and the worse teams having a higher expected win percentage than actual.</p>
@@ -118,13 +116,14 @@ predicted_wins %&gt;%
     group_by(conference) %&gt;%
     select(team, conference, win_pct_calc, win_pct_actual) %&gt;%
     gather(type, pct, win_pct_calc:win_pct_actual) %&gt;%
+    mutate(type = fct_rev(type)) %&gt;%
     ggplot(aes(type, pct, color = team, group = team)) +
         geom_point() +
         geom_line() +
         facet_wrap(~ conference) +
         geom_text_repel(aes(label = team)) +
         scale_y_continuous(labels = scales::percent) +
-        scale_x_discrete(labels = c(&quot;Actual&quot;, &quot;Expected&quot;)) +
+        scale_x_discrete(labels = c(&quot;Expected&quot;, &quot;Actual&quot;)) +
         theme(legend.position = &quot;none&quot;) +
         labs(x = &quot;&quot;,
              y = &quot;Win Percentage&quot;)</code></pre>
@@ -158,7 +157,7 @@ rating_averages %&gt;%
              title = &quot;Dallas has highest offensive rating by far&quot;,
              subtitle = &quot;dashed lines show average ratings&quot;)</code></pre>
 <p><img src="/post/simulating-nba-season_files/figure-html/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>Dallas has <em>by far</em> the best offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto.</p>
+<p>Dallas has <em>by far</em> the best average offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto.</p>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>

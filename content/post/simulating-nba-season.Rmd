@@ -28,12 +28,11 @@ First we'll download and do some processing of the data[^1]:
 
 ```{r}
 library(tidyverse)
-library(rethinking)
+# remotes::install_github("jtcies/jtcr")
 library(jtcr)
 library(lubridate)
 library(ggrepel)
 library(scales)
-library(readxl)
 
 theme_set(theme_jtc())
 
@@ -79,8 +78,6 @@ box_scores_tidy <- bind_rows(
 
 The formula for win percentage he presents is this: 
 
-Formula is:
-
 $$
 P = \mathcal{N}\frac{ORtg - DRtg}{\sqrt{(var(ORtg) + var(DRtg) - 2 * cov(ORtg, DRtg)}}
 $$
@@ -114,12 +111,12 @@ predicted_wins %>%
         geom_abline(lty = 2) +
         geom_point() +
         geom_text_repel() +
-        scale_y_continuous(labels = scales::percent, limits = c(0,1)) + 
-        scale_x_continuous(labels = scales::percent, limits = c(0,1)) + 
+        scale_y_continuous(labels = scales::percent) + 
+        scale_x_continuous(labels = scales::percent) + 
         theme(legend.position = "none") + 
         labs(x = "Expected win percentage",
              y = "Actual win percentage",
-             title = "Compared expected and actual win percentage",
+             title = "Comparing expected and actual win percentage",
              subtitle = "Using Dean Oliver's formula in 'Basketball on Paper'")
 
 ```
@@ -140,13 +137,14 @@ predicted_wins %>%
     group_by(conference) %>%
     select(team, conference, win_pct_calc, win_pct_actual) %>%
     gather(type, pct, win_pct_calc:win_pct_actual) %>%
+    mutate(type = fct_rev(type)) %>%
     ggplot(aes(type, pct, color = team, group = team)) +
         geom_point() +
         geom_line() +
         facet_wrap(~ conference) +
         geom_text_repel(aes(label = team)) +
         scale_y_continuous(labels = scales::percent) +
-        scale_x_discrete(labels = c("Actual", "Expected")) +
+        scale_x_discrete(labels = c("Expected", "Actual")) +
         theme(legend.position = "none") +
         labs(x = "",
              y = "Win Percentage")
@@ -190,7 +188,7 @@ rating_averages %>%
     
 ```
 
-Dallas has *by far* the best offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto. 
+Dallas has *by far* the best average offensive rating. The rest of the best teams in the league (Lakers, Clippers, Boston, Toronto, and especially Milwaukee) all have very low defensive ratings. The formula appears to value offense over defense, which may be why most of those teams have a lower expected win percentage than actual. This is also why the model thinks Boston is better than Toronto. 
 
 ## Conclusion
 
