@@ -32,39 +32,39 @@ weather &lt;- &quot;https://jtcies.com/data/phl_weather_20090925-20180924.csv&qu
 <pre class="r"><code>glimpse(weather)</code></pre>
 <pre><code>## Observations: 3,284
 ## Variables: 33
-## $ STATION   &lt;chr&gt; &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW000...
-## $ NAME      &lt;chr&gt; &quot;PHILADELPHIA INTERNATIONAL AIRPORT, PA US&quot;, &quot;PHILAD...
-## $ LATITUDE  &lt;dbl&gt; 39.87327, 39.87327, 39.87327, 39.87327, 39.87327, 39...
-## $ LONGITUDE &lt;dbl&gt; -75.22678, -75.22678, -75.22678, -75.22678, -75.2267...
-## $ ELEVATION &lt;dbl&gt; 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3...
-## $ DATE      &lt;date&gt; 2009-09-25, 2009-09-26, 2009-09-27, 2009-09-28, 200...
-## $ AWND      &lt;dbl&gt; 9.84, 7.83, 8.28, 10.29, 16.11, 9.62, 8.05, 6.93, 2....
-## $ PRCP      &lt;dbl&gt; 0.00, 0.24, 0.77, 0.27, 0.00, 0.00, 0.00, 0.03, 0.01...
-## $ PSUN      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ SNOW      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
-## $ SNWD      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0...
-## $ TAVG      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ TMAX      &lt;dbl&gt; 75, 69, 75, 79, 70, 64, 59, 68, 76, 74, 68, 68, 72, ...
-## $ TMIN      &lt;dbl&gt; 56, 54, 59, 57, 53, 53, 48, 47, 60, 55, 50, 48, 56, ...
-## $ TSUN      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT01      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, 1, 1, 1, NA, NA, 1, NA, N...
-## $ WT02      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT03      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT04      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT05      &lt;dbl&gt; NA, 1, 1, 1, NA, 1, NA, 1, NA, NA, NA, NA, 1, NA, 1,...
-## $ WT06      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT07      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT08      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT09      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT11      &lt;dbl&gt; NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
-## $ WT13      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, NA, 1, NA, NA, NA, 1, NA,...
-## $ WT14      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N...
-## $ WT15      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT16      &lt;dbl&gt; NA, 1, 1, 1, NA, 1, NA, 1, 1, NA, NA, 1, 1, 1, 1, 1,...
-## $ WT17      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT18      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...
-## $ WT21      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, 1, NA, NA, NA, NA, N...
-## $ WT22      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, ...</code></pre>
+## $ STATION   &lt;chr&gt; &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW00013739&quot;, &quot;USW00013739&quot;,…
+## $ NAME      &lt;chr&gt; &quot;PHILADELPHIA INTERNATIONAL AIRPORT, PA US&quot;, &quot;PHILADELPHIA …
+## $ LATITUDE  &lt;dbl&gt; 39.87327, 39.87327, 39.87327, 39.87327, 39.87327, 39.87327,…
+## $ LONGITUDE &lt;dbl&gt; -75.22678, -75.22678, -75.22678, -75.22678, -75.22678, -75.…
+## $ ELEVATION &lt;dbl&gt; 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,…
+## $ DATE      &lt;date&gt; 2009-09-25, 2009-09-26, 2009-09-27, 2009-09-28, 2009-09-29…
+## $ AWND      &lt;dbl&gt; 9.84, 7.83, 8.28, 10.29, 16.11, 9.62, 8.05, 6.93, 2.01, 7.1…
+## $ PRCP      &lt;dbl&gt; 0.00, 0.24, 0.77, 0.27, 0.00, 0.00, 0.00, 0.03, 0.01, 0.00,…
+## $ PSUN      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ SNOW      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ SNWD      &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ TAVG      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ TMAX      &lt;dbl&gt; 75, 69, 75, 79, 70, 64, 59, 68, 76, 74, 68, 68, 72, 67, 80,…
+## $ TMIN      &lt;dbl&gt; 56, 54, 59, 57, 53, 53, 48, 47, 60, 55, 50, 48, 56, 48, 59,…
+## $ TSUN      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT01      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, 1, 1, 1, NA, NA, 1, NA, NA, NA, …
+## $ WT02      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT03      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT04      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT05      &lt;dbl&gt; NA, 1, 1, 1, NA, 1, NA, 1, NA, NA, NA, NA, 1, NA, 1, NA, NA…
+## $ WT06      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT07      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT08      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT09      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT11      &lt;dbl&gt; NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+## $ WT13      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, NA, 1, NA, NA, NA, 1, NA, NA, NA…
+## $ WT14      &lt;dbl&gt; NA, NA, 1, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, …
+## $ WT15      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT16      &lt;dbl&gt; NA, 1, 1, 1, NA, 1, NA, 1, 1, NA, NA, 1, 1, 1, 1, 1, NA, NA…
+## $ WT17      &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT18      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+## $ WT21      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, 1, NA, NA, NA, NA, NA, NA, …
+## $ WT22      &lt;dbl&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…</code></pre>
 <p>I requested a bunch of variables when getting the data initially because I thought some might might be useful in the future. The only two we care about here are <code>DATE</code> and <code>PRCP</code> which is daily rainfall total in inches. Let’s check to make sure we got the dates we requested.</p>
 <pre class="r"><code>range(weather$DATE)</code></pre>
 <pre><code>## [1] &quot;2009-09-25&quot; &quot;2018-09-21&quot;</code></pre>
@@ -78,39 +78,25 @@ count(weather, day_of_week) %&gt;%
   as_hux() %&gt;% 
   add_colnames() %&gt;% 
   theme_article()</code></pre>
-<table class="huxtable" style="border-collapse: collapse; margin-bottom: 2em; margin-top: 2em; width: 50%; margin-left: auto; margin-right: auto;  ">
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-3">
 <col><col><tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_week</td>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">n</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">day_of_week</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">n</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Sun</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">day_of_week</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">n</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Mon</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Sun</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Tue</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Mon</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Wed</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Tue</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Thu</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Wed</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Fri</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">470</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Thu</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Sat</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt;">469</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Fri</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">470</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Sat</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">469</td></tr>
 </table>
 
 <p>Perfect.</p>
@@ -140,45 +126,31 @@ weather %&gt;%
   as_hux() %&gt;% 
   add_colnames() %&gt;% 
   theme_article()</code></pre>
-<table class="huxtable" style="border-collapse: collapse; margin-bottom: 2em; margin-top: 2em; width: 50%; margin-left: auto; margin-right: auto;  ">
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-6">
 <col><col><tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_week</td>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">avg_days_rain</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">day_of_week</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">avg_days_rain</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Sun</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.286</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">day_of_week</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">avg_days_rain</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Mon</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.32&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Sun</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.286</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Tue</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.386</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Mon</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.32&nbsp;</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Wed</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.326</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Tue</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.386</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Thu</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.341</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Wed</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.326</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Fri</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.306</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Thu</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.341</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">Sat</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt;">0.318</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Fri</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.306</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">Sat</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.318</td></tr>
 </table>
 
 <p>Wait … what? It actually does rain more on Tuesdays. By quite a bit. Almost 40% of the time compared to less than 30% of Sundays.</p>
 <p>We can create a logistic regression model to help us figure out whether this result is likley to be just due to variation in the data or whether there is some underlying pattern here.</p>
 <pre class="r"><code>fit &lt;- weather %&gt;% 
-  mutate(day_of_week = as.character(day_of_week)) %&gt;% 
+  mutate(day_of_week = as.character(day_of_week)) %&gt;%
   glm(
     rain ~ day_of_week, 
     family = &quot;binomial&quot;,
@@ -186,57 +158,32 @@ weather %&gt;%
   )
 
 fit_tidy &lt;- fit %&gt;% 
-  broom::tidy() 
+  broom::tidy()
 
-colors &lt;- c(&quot;#ab3c00&quot;, &quot;#f7882f&quot;, &quot;#ffd57c&quot;)[cut(fit_tidy$p.value, 3)]
-
-fit_tidy %&gt;% 
-  select(term, estimate, p.value) %&gt;% 
-  as_hux() %&gt;% 
-  set_background_color(everywhere, &quot;p.value&quot;, colors) %&gt;% 
-  add_colnames() %&gt;% 
+fit_tidy %&gt;%
+  select(term, estimate, p.value) %&gt;%
+  as_hux() %&gt;%
+  add_colnames() %&gt;%
   theme_article()</code></pre>
-<table class="huxtable" style="border-collapse: collapse; margin-bottom: 2em; margin-top: 2em; width: 50%; margin-left: auto; margin-right: auto;  ">
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-7">
 <col><col><col><tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">term</td>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">estimate</td>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 1pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">p.value</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">term</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">estimate</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">p.value</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">(Intercept)</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">-0.817&nbsp;</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(171, 60, 0);">3.19e-16</td>
-</tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: bold;">term</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">estimate</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: bold;">p.value</th></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekMon</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.0625</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(255, 213, 124);">0.657&nbsp;&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">(Intercept)</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">-0.817&nbsp;</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">3.19e-16</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekSat</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.0527</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(255, 213, 124);">0.708&nbsp;&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekMon</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.0625</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.657&nbsp;&nbsp;&nbsp;</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekSun</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">-0.0992</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(255, 213, 124);">0.488&nbsp;&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekSat</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.0527</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.708&nbsp;&nbsp;&nbsp;</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekThu</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.159&nbsp;</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(247, 136, 47);">0.255&nbsp;&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekSun</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">-0.0992</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.488&nbsp;&nbsp;&nbsp;</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekTue</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt;">0.353&nbsp;</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; padding: 4pt 4pt 4pt 4pt; background-color: rgb(171, 60, 0);">0.0105&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekThu</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.159&nbsp;</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.255&nbsp;&nbsp;&nbsp;</td></tr>
 <tr>
-<td style="vertical-align: top; text-align: left; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; font-weight: bold;">day_of_weekWed</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt;">0.0918</td>
-<td style="vertical-align: top; text-align: right; white-space: nowrap; border-style: solid solid solid solid; border-width: 0pt 0pt 1pt 0pt; padding: 4pt 4pt 4pt 4pt; background-color: rgb(255, 213, 124);">0.513&nbsp;&nbsp;&nbsp;</td>
-</tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekTue</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.353&nbsp;</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.0105&nbsp;&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 0pt; font-weight: normal;">day_of_weekWed</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.0918</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 0pt 6pt 6pt; font-weight: normal;">0.513&nbsp;&nbsp;&nbsp;</td></tr>
 </table>
 
 <p>Let’s plot these coefficients.</p>

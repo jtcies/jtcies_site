@@ -65,11 +65,10 @@ game_1_pbp &lt;- play_by_play_v2(game_1)</code></pre>
 ## #   idPlayerNBA2 &lt;dbl&gt;, idTeamPlayer2 &lt;dbl&gt;, idPersonType3 &lt;dbl&gt;,
 ## #   idPlayerNBA3 &lt;dbl&gt;, idTeamPlayer3 &lt;dbl&gt;, hasVideo &lt;lgl&gt;,
 ## #   timeStringWC &lt;chr&gt;, timeQuarter &lt;chr&gt;, descriptionPlayHome &lt;chr&gt;,
-## #   descriptionPlayVisitor &lt;chr&gt;, cityTeamPlayer1 &lt;chr&gt;,
-## #   cityTeamPlayer2 &lt;chr&gt;, cityTeamPlayer3 &lt;chr&gt;, minuteGame &lt;dbl&gt;,
-## #   timeRemaining &lt;dbl&gt;, minuteRemainingQuarter &lt;dbl&gt;,
-## #   secondsRemainingQuarter &lt;dbl&gt;, scoreAway &lt;dbl&gt;, scoreHome &lt;dbl&gt;,
-## #   marginScore &lt;dbl&gt;</code></pre>
+## #   descriptionPlayVisitor &lt;chr&gt;, cityTeamPlayer1 &lt;chr&gt;, cityTeamPlayer2 &lt;chr&gt;,
+## #   cityTeamPlayer3 &lt;chr&gt;, minuteGame &lt;dbl&gt;, timeRemaining &lt;dbl&gt;,
+## #   minuteRemainingQuarter &lt;dbl&gt;, secondsRemainingQuarter &lt;dbl&gt;,
+## #   scoreAway &lt;dbl&gt;, scoreHome &lt;dbl&gt;, marginScore &lt;dbl&gt;</code></pre>
 <p>Ah yes, I remember this game - Sixers lost to the Celtics.</p>
 <p>The first question we’ll look is when does the coach decides to put in their substitutes, presumably because the outcome of the game has been decided and they want their less experienced players to get experience. To analyze this, we should take look at when a</p>
 <pre class="r"><code>game_1_first_action &lt;- game_1_pbp %&gt;%
@@ -595,7 +594,7 @@ pbp_gt &lt;- games_pbp %&gt;%
 <pre><code>## # A tibble: 1 x 1
 ##   mean_gt
 ##   &lt;chr&gt;  
-## 1 33.5%</code></pre>
+## 1 34%</code></pre>
 <p>That sounds about right to me.</p>
 <p>What is was the score margin and time when garbage time began?</p>
 <pre class="r"><code>pbp_gt %&gt;%
@@ -765,9 +764,7 @@ scores_w_final &lt;- scores_df %&gt;%
     gather(metric, margin, -idGame, -minuteGame) %&gt;%
     separate(metric, c(&quot;team&quot;, &quot;type&quot;)) %&gt;%
     spread(type, margin) %&gt;% 
-    mutate(
-        win = final &gt; 0
-    ) %&gt;%
+    mutate(win = final &gt; 0) %&gt;%
     filter(margin &gt;= 0)
 
 win_mod &lt;- glm(
@@ -837,8 +834,10 @@ win_preds %&gt;%
       limits = c(0, 1.25), labels = scales::percent,
       breaks = seq(0, 1, by = 0.25)
     ) +
-    scale_color_manual(labels = c(&quot;cumulative hazard&quot;, &quot;win probability&quot;),
-                       values = jtc_primary[c(2,3)]) +
+    scale_color_manual(
+        labels = c(&quot;cumulative hazard&quot;, &quot;win probability&quot;),
+        values = jtc_primary[c(2,3)]
+    ) +
     labs(
       linetype = &quot;&quot;,
       color = &quot;&quot;,

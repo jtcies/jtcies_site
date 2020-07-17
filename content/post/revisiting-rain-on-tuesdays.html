@@ -160,7 +160,7 @@ results %&gt;%
             x = &quot;parameter&quot;
         )</code></pre>
 <p><img src="/post/revisiting-rain-on-tuesdays_files/figure-html/unnamed-chunk-4-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>The more informative our priors, the closer they get us to our expectation that day of the has no impact on rain.</p>
+<p>The more informative our priors, the closer they get us to our expectation that day of the week has no impact on rain.</p>
 <p>The informative priors don’t substantially change the predictions in this example. There are very slight differences with more informative priors having a negative impact on in-sample fit and a better impact on out-of-sample fit.</p>
 <pre class="r"><code>calc_roc &lt;- function(x) {
     preds &lt;- augment(x, type.predict = &quot;response&quot;)
@@ -232,34 +232,34 @@ list(mod1, mod2, mod3, mod4) %&gt;%
 <td>mod4</td>
 <td align="right">0.0000000</td>
 <td align="right">0.000000</td>
-<td align="right">-2073.438</td>
-<td align="right">19.56956</td>
-<td align="right">3.649464</td>
-<td align="right">0.0500956</td>
-<td align="right">4146.875</td>
-<td align="right">39.13912</td>
+<td align="right">-2073.585</td>
+<td align="right">19.56417</td>
+<td align="right">3.777437</td>
+<td align="right">0.0519723</td>
+<td align="right">4147.171</td>
+<td align="right">39.12835</td>
 </tr>
 <tr class="even">
 <td>mod3</td>
-<td align="right">-0.2450624</td>
-<td align="right">1.253806</td>
-<td align="right">-2073.683</td>
-<td align="right">19.71778</td>
-<td align="right">5.777965</td>
-<td align="right">0.0775727</td>
-<td align="right">4147.366</td>
-<td align="right">39.43556</td>
+<td align="right">-0.2747685</td>
+<td align="right">1.275200</td>
+<td align="right">-2073.860</td>
+<td align="right">19.71171</td>
+<td align="right">6.001727</td>
+<td align="right">0.0798861</td>
+<td align="right">4147.721</td>
+<td align="right">39.42341</td>
 </tr>
 <tr class="odd">
 <td>mod2</td>
-<td align="right">-0.5622858</td>
-<td align="right">1.850424</td>
-<td align="right">-2074.000</td>
-<td align="right">19.81985</td>
-<td align="right">6.636183</td>
-<td align="right">0.0873770</td>
-<td align="right">4148.000</td>
-<td align="right">39.63971</td>
+<td align="right">-0.3594907</td>
+<td align="right">1.841144</td>
+<td align="right">-2073.945</td>
+<td align="right">19.75817</td>
+<td align="right">6.569758</td>
+<td align="right">0.0864072</td>
+<td align="right">4147.890</td>
+<td align="right">39.51634</td>
 </tr>
 </tbody>
 </table>

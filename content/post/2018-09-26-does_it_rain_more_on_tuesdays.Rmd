@@ -102,7 +102,7 @@ We can create a logistic regression model to help us figure out whether this res
 ```{r}
 
 fit <- weather %>% 
-  mutate(day_of_week = as.character(day_of_week)) %>% 
+  mutate(day_of_week = as.character(day_of_week)) %>%
   glm(
     rain ~ day_of_week, 
     family = "binomial",
@@ -110,15 +110,12 @@ fit <- weather %>%
   )
 
 fit_tidy <- fit %>% 
-  broom::tidy() 
+  broom::tidy()
 
-colors <- c("#ab3c00", "#f7882f", "#ffd57c")[cut(fit_tidy$p.value, 3)]
-
-fit_tidy %>% 
-  select(term, estimate, p.value) %>% 
-  as_hux() %>% 
-  set_background_color(everywhere, "p.value", colors) %>% 
-  add_colnames() %>% 
+fit_tidy %>%
+  select(term, estimate, p.value) %>%
+  as_hux() %>%
+  add_colnames() %>%
   theme_article()
 
 ```
