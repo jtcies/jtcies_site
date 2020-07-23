@@ -1,0 +1,223 @@
+```{r}
+library(tidyverse)
+library(rvest)
+library(jtcr)
+library(ggrepel)
+library(scales)
+library(rethinking)
+
+theme_set(theme_jtc())
+
+## get 2019 results
+results_2019_url <- "https://en.wikipedia.org/wiki/2019_Major_League_Baseball_season"
+
+names_2019 <- c("team", "wins", "losses", "pct", "games_back",
+                "home", "road")
+
+rename_table <- function(x) {
+    names(x) <- names_2019
+    x
+}
+
+leagues <- c("ALE", "ALC", "ALW", "NLE", "NLC", "NLW")
+
+results_2019 <- read_html(results_2019_url) %>%
+    html_nodes(".wikitable .wikitable") %>%
+    purrr::map(html_table) %>%
+    map_dfr(rename_table, .id = "league") %>%
+    na_if(list(games_back = "—")) %>%
+    mutate(
+        team = str_remove(team, "\\([0-9]\\)"),
+        league = leagues[as.numeric(league)]
+    ) %>%
+    arrange(team)
+
+## get 2019 preseason odds
+
+odds_2019_url <- "https://www.betcris.com/articles/baseball/mlb/mlb-futures-2019-world-series-odds-92616"
+
+odds_2019 <- read_html(odds_2019_url) %>%
+    html_nodes("h2~ p , p p") %>%
+    html_text() %>%
+    .[1:30] %>%
+    enframe() %>%
+    select(-name) %>%
+    separate(value, into = c("team", "odds"), sep = " \\+") %>%
+    mutate(odds = parse_number(odds),
+           year = 2019)
+    
+## get 2020 preseason odds
+
+odds_2020_url <- "https://www.betcris.com/en/articles/baseball/mlb/mlb-baseball-world-series-odds-97157"
+
+odds_2020 <- read_html(odds_2020_url) %>%
+    html_nodes("td") %>%
+    html_text() %>%
+    .[2:31] %>%
+    enframe() %>%
+    select(-name) %>%
+    separate(value, into = c("team", "odds"), sep = " \\+") %>%
+    mutate(odds = parse_number(odds),
+           year = 2020,
+           team = str_replace(team, "Saint", "St."))
+
+
+odds <- bind_rows(odds_2019, odds_2020) %>%
+    arrange(team)
+
+```
+
+## Visualize
+
+```{r}
+
+odds %>%
+    mutate(team = fct_reorder(team, -odds)) %>%
+    ggplot(aes(team, odds, color = factor(year))) +
+        geom_point() +
+        coord_flip() +
+        scale_y_continuous(labels = scales::comma, trans = "log10") +
+        labs(title = "Comparing World Series champion odds between years",
+             x = "",
+             color = "season",
+             caption = "odds from betcris.com")
+```
+
+
+```{r}
+
+odds %>%
+    filter(year == 2019) %>%
+    inner_join(results_2019, by = "team") %>%
+    ggplot(aes(odds, pct)) +
+        geom_point() +
+        geom_text_repel(aes(label = team)) +         
+        scale_x_log10(labels = scales::comma) +
+        scale_y_continuous(labels = scales::percent) +
+        labs(x = "preseason World Series odds",
+             y = "win percentage")
+
+```
+
+## Prior predictive checks
+
+```{r}
+
+b_prior <- rnorm(20, 0, 0.5)
+a_prior <- rnorm(20, 0, 1)
+odds_sample <- 0:12
+
+wins_prior_pred <- crossing(a_prior,
+                            b_prior,
+                            odds = odds_sample) %>%
+    group_by(odds) %>%
+    mutate(p = inv_logit(a_prior + b_prior * odds),
+           group = row_number()) %>%
+    ungroup()
+
+wins_prior_pred %>%
+    ggplot(aes(odds, p, group = group)) +
+        geom_line(alpha = 0.2)
+
+
+```
+
+### Modeling
+
+```{r}
+set.seed(2020)
+
+dat_list <- list(
+    team = as.integer(as.factor(results_2019$team)),
+    wins = results_2019$wins,
+    n_games = 162L,
+    log_odds = log(odds$odds[odds$year == 2019])
+)
+
+win_prob_model <- ulam(
+    alist(
+        wins ~ binomial(n_games, p),
+        logit(p) <- a + b * log_odds,
+        a ~ normal(0, 1),
+        b ~ normal(0, 0.5)
+    ),
+    data = dat_list,
+    chains = 4,
+    iter = 2000,
+    cores = parallel::detectCores()
+)
+
+precis(win_prob_model)
+
+```
+
+## Posterior Predictive Checks
+
+```{r}
+
+post_dat <- crossing(
+    log_odds = seq(6, 12, by = 0.1),
+    n_games = 162
+)
+
+post <- sim(win_prob_model, data = post_dat)
+
+post_mean <- apply(post, 2, mean)
+post_pi  <- apply(post, 2, PI)
+
+post_dat %>%
+    mutate(post_mean = post_mean,
+           post_high = post_pi[2, ],
+           post_low = post_pi[1, ]) %>%
+    ggplot(aes(log_odds, post_mean)) +
+        geom_line() +
+        geom_ribbon(aes(ymin = post_low, ymax = post_high),
+                    alpha = 0.5) +
+        geom_point(data = as_tibble(dat_list),
+                   aes(y = wins)) +
+        scale_x_continuous(
+            labels = function(x) 
+                paste0("+", comma(round(exp(x), 0)))
+        )
+
+```
+
+## How much uncertainty is there in this season? 
+
+```{r}
+
+pred_dat_short <- odds %>%  
+    filter(year == 2020) %>%
+    mutate(log_odds = log(odds),
+           n_games = 60)
+
+pred_dat_full <- odds %>%  
+    filter(year == 2020) %>%
+    mutate(log_odds = log(odds),
+           n_games = 162)
+
+preds_short <- sim(win_prob_model, data = pred_dat_short)
+pred_mean_short <- apply(preds, 2, mean)
+pred_pi_short <- apply(preds, 2, PI)
+
+preds_full <- sim(win_prob_model, data = pred_dat_full)
+pred_pi_full <- apply(preds_full, 2, PI)
+
+pred_dat_short %>%
+    mutate(pred_mean = pred_mean_short / 60,
+           high_short = pred_pi_short[2, ] / 60,
+           low_short = pred_pi_short[1, ] / 60,
+           high_full = pred_pi_full[2, ] / 162,
+           low_full = pred_pi_full[1, ] / 162) %>%
+    gather(type, val, high_short:low_full) %>%
+    separate(type, into = c("int", "season")) %>%
+    spread(int, val) %>%
+    mutate(team = fct_reorder(team, pred_mean)) %>%
+    ggplot(aes(team, pred_mean, color = season)) +
+        geom_errorbar(aes(ymin = low, ymax = high),
+                      size = 1.25, position = "dodge") +
+        coord_flip()
+
+
+```
+
