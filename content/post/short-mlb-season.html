@@ -312,7 +312,7 @@ outcomes_summary %&gt;%
              title = &quot;Final division position of different season outcomes&quot;,
              subtitle = &quot;Based on 4000 simulations each of full and shortened seasons&quot;)</code></pre>
 <p><img src="/post/short-mlb-season_files/figure-html/unnamed-chunk-9-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>Some things really stand out here. First, at the extreme ranges, there isn’t actually that much variation. Its really unlikely the Yankees or Dodgers finish out of first, and its also really unlikely that the worst teams - Marlins, Orioles, and Tigers - will finish above last.</p>
+<p>Some things really stand out here. First, at the extreme ranges, there isn’t actually that much variation. Its really unlikely the Yankees or Dodgers finish out of first, and its also really unlikely that the worst teams - Marlins and Orioles - will finish above last.</p>
 <p>A lot of these divisions have a lot of potential outcomes regardless of whether it’s a short or long season. For example, this model predicts that the Cardinals or the Braves could finish first or fourth regardless of how long the season is.</p>
 <p>Where things will potentially shake out in weird ways is in the middle of the pack. The table below shows the teams where the difference in the likelihood of a team finishing in a particular position between the shortened and a full season. The Blue Jays and the Royals both finish in fourth around 75% of time in the full season but just 55% of the time in the shortened season.</p>
 <pre class="r"><code>greatest_differences &lt;- outcomes_summary %&gt;%
@@ -343,84 +343,92 @@ outcomes_summary %&gt;%
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">Toronto Blue Jays</td>
-<td align="left">ALE</td>
-<td align="right">4</td>
-<td align="left">76.05%</td>
-<td align="left">54.82%</td>
-<td align="right">21.22</td>
-</tr>
-<tr class="even">
-<td align="left">Kansas City Royals</td>
-<td align="left">ALC</td>
-<td align="right">4</td>
-<td align="left">75.75%</td>
-<td align="left">56.15%</td>
-<td align="right">19.60</td>
-</tr>
-<tr class="odd">
 <td align="left">Tampa Bay Rays</td>
 <td align="left">ALE</td>
 <td align="right">2</td>
-<td align="left">65.18%</td>
-<td align="left">46.55%</td>
-<td align="right">18.63</td>
+<td align="left">66.62%</td>
+<td align="left">45.02%</td>
+<td align="right">21.60</td>
 </tr>
 <tr class="even">
-<td align="left">Colorado Rockies</td>
-<td align="left">NLW</td>
+<td align="left">Toronto Blue Jays</td>
+<td align="left">ALE</td>
 <td align="right">4</td>
-<td align="left">54.55%</td>
-<td align="left">36.20%</td>
-<td align="right">18.35</td>
+<td align="left">75.95%</td>
+<td align="left">54.62%</td>
+<td align="right">21.32</td>
 </tr>
 <tr class="odd">
-<td align="left">San Francisco Giants</td>
-<td align="left">NLW</td>
-<td align="right">5</td>
-<td align="left">81.42%</td>
-<td align="left">63.98%</td>
-<td align="right">17.45</td>
+<td align="left">Kansas City Royals</td>
+<td align="left">ALC</td>
+<td align="right">4</td>
+<td align="left">76.55%</td>
+<td align="left">55.97%</td>
+<td align="right">20.57</td>
 </tr>
 <tr class="even">
 <td align="left">Texas Rangers</td>
 <td align="left">ALW</td>
 <td align="right">4</td>
-<td align="left">54.65%</td>
-<td align="left">37.48%</td>
-<td align="right">17.17</td>
+<td align="left">56.57%</td>
+<td align="left">38.55%</td>
+<td align="right">18.02</td>
 </tr>
 <tr class="odd">
+<td align="left">Boston Red Sox</td>
+<td align="left">ALE</td>
+<td align="right">3</td>
+<td align="left">55.95%</td>
+<td align="left">38.22%</td>
+<td align="right">17.73</td>
+</tr>
+<tr class="even">
 <td align="left">Seattle Mariners</td>
 <td align="left">ALW</td>
 <td align="right">5</td>
-<td align="left">90.30%</td>
-<td align="left">73.55%</td>
-<td align="right">16.75</td>
+<td align="left">91.00%</td>
+<td align="left">73.68%</td>
+<td align="right">17.33</td>
+</tr>
+<tr class="odd">
+<td align="left">Colorado Rockies</td>
+<td align="left">NLW</td>
+<td align="right">4</td>
+<td align="left">54.00%</td>
+<td align="left">36.75%</td>
+<td align="right">17.25</td>
 </tr>
 <tr class="even">
+<td align="left">San Francisco Giants</td>
+<td align="left">NLW</td>
+<td align="right">5</td>
+<td align="left">81.55%</td>
+<td align="left">64.32%</td>
+<td align="right">17.23</td>
+</tr>
+<tr class="odd">
 <td align="left">Pittsburgh Pirates</td>
 <td align="left">NLC</td>
 <td align="right">5</td>
-<td align="left">94.15%</td>
-<td align="left">78.10%</td>
-<td align="right">16.05</td>
-</tr>
-<tr class="odd">
-<td align="left">New York Yankees</td>
-<td align="left">ALE</td>
-<td align="right">1</td>
-<td align="left">95.28%</td>
-<td align="left">80.55%</td>
-<td align="right">14.72</td>
+<td align="left">94.82%</td>
+<td align="left">78.00%</td>
+<td align="right">16.83</td>
 </tr>
 <tr class="even">
 <td align="left">Houston Astros</td>
 <td align="left">ALW</td>
 <td align="right">1</td>
-<td align="left">76.25%</td>
-<td align="left">61.75%</td>
-<td align="right">14.50</td>
+<td align="left">76.35%</td>
+<td align="left">61.70%</td>
+<td align="right">14.65</td>
+</tr>
+<tr class="odd">
+<td align="left">New York Yankees</td>
+<td align="left">ALE</td>
+<td align="right">1</td>
+<td align="left">94.68%</td>
+<td align="left">80.02%</td>
+<td align="right">14.65</td>
 </tr>
 </tbody>
 </table>

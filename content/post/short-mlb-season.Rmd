@@ -364,7 +364,7 @@ outcomes_summary %>%
 
 ```
 
-Some things really stand out here. First, at the extreme ranges, there isn't actually that much variation. Its really unlikely the Yankees or Dodgers finish out of first, and its also really unlikely that the worst teams - Marlins, Orioles, and Tigers - will finish above last. 
+Some things really stand out here. First, at the extreme ranges, there isn't actually that much variation. Its really unlikely the Yankees or Dodgers finish out of first, and its also really unlikely that the worst teams - Marlins and Orioles - will finish above last. 
 
 A lot of these divisions have a lot of potential outcomes regardless of whether it's a short or long season. For example, this model predicts that the Cardinals or the Braves could finish first or fourth regardless of how long the season is. 
 
