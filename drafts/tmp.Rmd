@@ -1,0 +1,8 @@
+
+
+$$
+W_i \sim {\sf Binom}(n, p_i) \\
+logit(p_i) = \alpha + \beta * O \\
+\alpha \sim \mathcal{N}(0, 1) \\
+\beta \sim \mathcal{N}(0, 0.5)
+$$

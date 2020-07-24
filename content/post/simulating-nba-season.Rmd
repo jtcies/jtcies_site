@@ -11,12 +11,12 @@ output:
     self_contained: true 
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include = FALSE, echo = FALSE}
 knitr::opts_chunk$set(fig.width = 10, fig.asp = 0.618, fig.align = "center",
                       message = FALSE, warning = FALSE)
 ```
 
-I recently read **Basketball on Paper** by Dean Oliver. In this book, he presents a formula for expected winning percentage. Given that we're in such a weird situation with the current basketball season, I wanted to see what that formula would have to say about how things are shaking out. 
+I recently read **Basketball on Paper** by Dean Oliver. In this book he, presents a formula for expected winning percentage. Given that we're in such a weird situation with the current basketball season, I wanted to see what that formula would have to say about how things are shaking out. 
 
 Using the formula for expected win percentage, we can examine how we would have expected teams to finish the season. With this, we can look at how it compares to a) teams included in the bubble, b) how teams finish the first round of the bubble season before the playoffs start.  
 
